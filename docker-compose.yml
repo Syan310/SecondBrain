@@ -73,8 +73,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data          # SQLite 持久化
-      - ./backend/app:/app/app    # 开发时热重载代码映射
+      - ./data:/app/data                    # SQLite 持久化 + 待摄入文档
+      - ./backend/app:/app/app              # 开发时热重载代码映射
+      - ./backend/models:/app/models        # Embedding + Reranker 模型
     depends_on:
       milvus:
         condition: service_healthy

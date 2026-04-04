@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     reranker_model_path: str = "./models/bge-reranker-v2-m3"
 
     # Milvus
-    milvus_host: str = "milvus-standalone"
+    milvus_host: str = "milvus"
     milvus_port: int = 19530
     milvus_collection_name: str = "secondbrain_docs"
 

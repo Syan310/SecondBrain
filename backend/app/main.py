@@ -6,12 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.db.database import init_db
 from app.api.routes import chat, quiz, gap, ingest
+from app.services.milvus_client import milvus_service
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: 初始化数据库表
+    # Startup
     await init_db()
+    milvus_service.connect()
+    milvus_service.init_collection()
     yield
     # Shutdown: 清理资源（预留）
 

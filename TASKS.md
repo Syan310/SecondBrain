@@ -17,9 +17,9 @@
 ## Step 2: Ingestion Pipeline
 
 - [x] `milvus_client.py` — child_chunks Collection(HNSW+IP+SPARSE_INVERTED_INDEX), insert/search/hybrid_search/delete_by_source 封装
-- [ ] 向量化写入 Milvus — 调用 embedding_service 编码 child chunks, 写入 Milvus
-- [ ] 概念写入 knowledge_concepts 表 — Ingestion 时提取 topic, 写入 SQLite
-- [ ] `ingest.py` API 路由 — 串联解析→向量化→写入 Milvus + knowledge_concepts
+- [x] 向量化写入 Milvus — 调用 embedding_service 编码 child chunks, 写入 Milvus
+- [x] 概念写入 knowledge_concepts 表 — Ingestion 时提取 topic, 写入 SQLite (crud.py upsert_concepts)
+- [x] `ingest.py` API 路由 — 串联解析→向量化→写入 Milvus + knowledge_concepts
 - [ ] ~~`notion_loader.py`~~ — 已取消, 不做 Notion 文档
 
 ## Step 3: Tools 层

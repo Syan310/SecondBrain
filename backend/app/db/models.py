@@ -35,6 +35,19 @@ class UserMastery(Base):
     )
 
 
+class KnowledgeConcept(Base):
+    """知识库概念索引（Ingestion时从文档Heading提取）"""
+
+    __tablename__ = "knowledge_concepts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    topic = Column(Text, nullable=False, unique=True)
+    source_doc = Column(Text)
+    heading_path = Column(Text)
+    chunk_count = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class QuizSession(Base):
     """Quiz会话记录"""
 
