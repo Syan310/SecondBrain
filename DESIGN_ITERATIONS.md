@@ -90,3 +90,18 @@
 - **保留相邻扩展能力**：child 上保留 parent_id + chunk_index 字段，后续可通过取相邻 chunk 做 A/B 测试
 - **索引**：HNSW + IP（BGE-m3 向量已归一化），source_doc 建 INVERTED 标量索引
 - **text 字段存 Milvus**：reranker 需要原文做 cross-encoder 打分，避免二次 IO
+
+## 2026-04-04: rag_search 混合检索实现
+
+### 决策
+- embedding.py 从 SentenceTransformer 切换到 FlagEmbedding.BGEM3FlagModel，同一模型解锁 dense + sparse 双输出
+- Milvus collection 新增 sparse_embedding (SPARSE_FLOAT_VECTOR) 字段 + SPARSE_INVERTED_INDEX 索引
+- hybrid_search 使用 Milvus 原生 AnnSearchRequest + RRFRanker(k=60) 融合双路召回
+- rag_search tool: encode(dense+sparse) → hybrid_search(top_k×3 candidates) → rerank(top_k) → 返回 RankedChunk
+- requirements.txt 移除 sentence-transformers，完全使用 FlagEmbedding
+
+### 变更文件
+- `backend/app/services/embedding.py` — BGEM3FlagModel, 新增 EmbeddingOutput dataclass, encode 返回 dense+sparse
+- `backend/app/services/milvus_client.py` — 新增 sparse_embedding 字段, hybrid_search 方法, insert 增加 sparse_embeddings 参数
+- `backend/app/agent/tools/rag_search.py` — 新建, 混合检索+rerank tool
+- `backend/tests/test_rag_search.py` — 新建, mock 测试

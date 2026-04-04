@@ -38,6 +38,11 @@ def _fake_embedding(seed: float = 0.0) -> list[float]:
     return [v / norm for v in vec]
 
 
+def _fake_sparse(seed: int = 0) -> dict[int, float]:
+    """Generate a fake sparse vector with a few non-zero entries."""
+    return {seed * 10 + i: 0.5 + i * 0.1 for i in range(5)}
+
+
 class TestInsertAndSearch:
     def test_insert(self, svc: MilvusService):
         count = svc.insert(
@@ -47,6 +52,7 @@ class TestInsertAndSearch:
             chunk_indices=[0, 1, 0],
             texts=["hello world", "foo bar baz", "another chunk"],
             embeddings=[_fake_embedding(0), _fake_embedding(1), _fake_embedding(2)],
+            sparse_embeddings=[_fake_sparse(0), _fake_sparse(1), _fake_sparse(2)],
         )
         assert count == 3
 
@@ -74,6 +80,30 @@ class TestInsertAndSearch:
         assert r.parent_id in ("p1", "p2")
         assert r.source_doc == "test.md"
         assert isinstance(r.chunk_index, int)
+
+    def test_hybrid_search(self, svc: MilvusService):
+        """Hybrid search (dense + sparse) with RRF fusion."""
+        results = svc.hybrid_search(
+            query_vector=_fake_embedding(0),
+            sparse_vector=_fake_sparse(0),
+            top_k=2,
+        )
+        assert len(results) <= 2
+        assert len(results) > 0
+        # Results should have all metadata fields
+        r = results[0]
+        assert r.child_id
+        assert r.text
+        assert r.score > 0
+
+    def test_hybrid_search_with_filter(self, svc: MilvusService):
+        results = svc.hybrid_search(
+            query_vector=_fake_embedding(0),
+            sparse_vector=_fake_sparse(0),
+            top_k=10,
+            expr='heading_path == "A/C"',
+        )
+        assert all(r.heading_path == "A/C" for r in results)
 
 
 class TestDelete:
