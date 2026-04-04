@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Reranker service using BAAI/bge-reranker-v2-m3 (cross-encoder)."""
 
 import logging

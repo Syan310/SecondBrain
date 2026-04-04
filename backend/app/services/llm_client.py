@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """LLM client for Qwen3.6-Plus via OpenAI-compatible DashScope API.
 
 Provides:

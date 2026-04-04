@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """QA SubAgent: Plan & Execute + ReAct hybrid for knowledge Q&A.
 
 Architecture:

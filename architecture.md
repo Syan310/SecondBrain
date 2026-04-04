@@ -52,21 +52,25 @@
 ## 2. Agent 分层架构
 
 ```
-Orchestrator (意图路由 + 结果汇总, 不参与具体执行)
+Orchestrator (Plan & Execute, LangGraph StateGraph)
+  │  LLM few-shot 意图识别 → 生成执行计划 → 按依赖调度 SubAgent → 汇总结果
   │
-  ├── QA SubAgent (自治)
+  ├── QA SubAgent (被 Orchestrator 调度)
   │     自行判断问题复杂度:
   │     ├── 简单问题 → 单次 Retrieve + Rerank → Generate
   │     └── 复杂问题 → Decompose → 多轮 Retrieve + Rerank → Synthesize
   │     自行判断结果是否充分, 不充分则追加检索
   │
-  ├── Quiz SubAgent (自治)
-  │     Load Memory(含时间衰减) → 加权选题 → 等待作答 →
-  │     LLM判分 → 路由(答错同topic再出/答对继续/结束) → Update Memory
+  ├── Gap Analysis SubAgent (被 Orchestrator 调度)
+  │     读取 mastery 数据 → 检索知识库概念列表 →
+  │     交叉对比(有知识但mastery低/无记录 = 盲区) → 生成诊断报告
   │
-  └── Gap Analysis SubAgent (自治)
-        读取 mastery 数据 → 检索知识库概念列表 →
-        交叉对比(有知识但mastery低/无记录 = 盲区) → 生成诊断报告
+  └── Synthesizer (多 SubAgent 结果汇总, 单结果时跳过)
+
+独立调用 (不经过 Orchestrator, API 层直接调用):
+  └── Quiz SubAgent (多轮交互, 独立生命周期)
+        Load Memory(含时间衰减) → 加权选题 → 等待作答 →
+        LLM判分 → 路由(答错同topic再出/答对继续/结束) → Update Memory
 ```
 
 ## 3. LangGraph 图结构详细设计
@@ -93,10 +97,21 @@ Orchestrator (意图路由 + 结果汇总, 不参与具体执行)
 | `Cross Compare` | Gap | 处理 | 交叉对比，识别盲区 |
 | `Generate Report` | Gap | 处理 | 生成诊断报告 + 推荐复习顺序 |
 
-### 3.2 顶层流程
+### 3.2 顶层流程 (Plan & Execute)
 
 ```
-START → Orchestrator → (按意图分发) → SubAgent → Orchestrator → END
+START → plan_node (LLM few-shot 意图识别+计划生成)
+      → route_after_plan
+          ├── no_steps (quiz-only) → quiz_passthrough → END
+          └── has_steps → execute_node (按依赖顺序调用 SubAgent, 串行时 LLM 改写 params)
+                → route_after_execute
+                    ├── single → passthrough_node (直传结果) → END
+                    └── multi  → synthesize_node (LLM 汇总) → END
+
+多意图编排示例:
+  "分析NLP盲区然后讲讲最弱的" → plan: [gap(NLP), qa(depends_on gap结果)] → 串行执行 → synthesize
+  "Transformer自注意力是什么？看看掌握度" → plan: [qa, gap] 并行 → synthesize
+  "来几道NLP题" → plan: [] + suggested_followup: quiz → quiz_passthrough (不执行, 返回建议)
 ```
 
 ### 3.3 QA SubAgent 内部流程
@@ -521,7 +536,7 @@ Step 8: 评估 & 优化
 - [ ] Step 2: Ingestion Pipeline (milvus_client 已升级支持 hybrid search)
 - [x] Step 3: Tools 层 (rag_search + query_decompose + read_mastery + update_mastery + search_concepts)
 - [x] Step 4: SubAgents (state.py + qa_agent + quiz_agent + gap_agent)
-- [ ] Step 5: Orchestrator
+- [x] Step 5: Orchestrator (Plan & Execute, QA+Gap 编排, Quiz 独立)
 - [ ] Step 6: API 层
 - [ ] Step 7: Frontend
 - [ ] Step 8: 评估 & 优化

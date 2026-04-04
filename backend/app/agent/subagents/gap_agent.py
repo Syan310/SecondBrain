@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Gap Analysis SubAgent: knowledge gap detection and diagnosis.
 
 Flow (agent decides tool calls):

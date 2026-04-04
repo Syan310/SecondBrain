@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """RAG Search tool: hybrid retrieval (dense + sparse) + rerank.
 
 Flow:

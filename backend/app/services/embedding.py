@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Embedding service using BAAI/bge-m3 via FlagEmbedding.
 
 Supports both dense (1024-dim) and sparse (learned lexical weights) outputs.
