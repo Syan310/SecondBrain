@@ -4,19 +4,33 @@ OverallState: top-level shared state for Orchestrator routing.
 QAState / QuizState / GapState: independent SubAgent states.
 """
 
-from typing import TypedDict
+from __future__ import annotations
+
+from typing import Optional, TypedDict
 
 
 # ── Top-level Orchestrator State ─────────────────────────────
 
 
 class OverallState(TypedDict, total=False):
-    """Shared state for the Orchestrator graph."""
+    """Shared state for the Orchestrator graph.
 
-    messages: list[dict]      # full conversation history
+    Plan & Execute architecture:
+    - plan_node: LLM generates execution plan (steps + optional suggested_followup)
+    - execute_node: executes steps sequentially/parallel, calling QA/Gap SubAgents
+    - synthesize_node: merges multiple step results (skipped for single-step)
+    """
+
+    messages: list[dict]          # full conversation history
     user_id: str
-    intent: str               # "qa" | "quiz" | "gap_analysis"
-    final_answer: str         # result returned by the SubAgent
+    user_query: str               # original user input
+
+    # Plan & Execute fields
+    plan: list[dict]              # execution steps: [{step, intent, params, depends_on}]
+    suggested_followup: Optional[dict]  # e.g. {"intent": "quiz", "params": {...}}
+    step_results: list[dict]      # [{step, intent, result}]
+
+    final_answer: str             # final output to user
 
 
 # ── QA SubAgent State ────────────────────────────────────────
@@ -59,7 +73,7 @@ class GapState(TypedDict, total=False):
 
     messages: list[dict]      # agent message history
     user_id: str
-    scope: str | None         # optional source_doc filter
+    scope: Optional[str]      # optional source_doc filter
     mastery_records: list     # read_mastery results
     all_concepts: list        # search_concepts results
     gap_result: list[dict]    # [{topic, status, priority}]

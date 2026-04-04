@@ -39,8 +39,10 @@
 
 ## Step 5: Orchestrator
 
-- [ ] `orchestrator.py` — 意图识别 (qa / quiz / gap_analysis)
-- [ ] `graph.py` — LangGraph 主图, 路由到 SubAgent, 汇总结果返回
+- [x] `state.py` 扩展 — OverallState 增加 plan, step_results, suggested_followup 字段
+- [x] `orchestrator.py` — Plan & Execute 架构: plan_node (LLM few-shot 意图识别+计划生成) + execute_node (按依赖顺序调用 SubAgent, 串行时 LLM 改写 params) + synthesize_node (多结果汇总) + passthrough_node (单结果直传)
+- [x] `graph.py` — LangGraph StateGraph: plan → route(has_steps/no_steps) → execute → route(single/multi) → passthrough|synthesize → END; quiz-only → quiz_passthrough → END
+- [x] 测试 — 24 个单元测试 + 集成测试全部通过 (plan_node, execute_node, synthesize_node, routing, graph flow)
 
 ## Step 6: API 层
 

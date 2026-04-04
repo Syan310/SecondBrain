@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """CRUD operations for SQLite tables."""
 
 from datetime import datetime

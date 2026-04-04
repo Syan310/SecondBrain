@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Quiz SubAgent: agent-driven 10-question adaptive quiz.
 
 Flow (agent decides tool calls):

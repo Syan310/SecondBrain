@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Read Mastery tool: fetch user mastery with time-decay calculation.
 
 Formula:

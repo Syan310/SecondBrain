@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Search Concepts tool: query knowledge_concepts table.
 
 Supports filtering by:

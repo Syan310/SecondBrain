@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Milvus client: child_chunks collection CRUD operations.
 
 Collection schema:

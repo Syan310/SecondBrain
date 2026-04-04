@@ -181,3 +181,22 @@
 - QC JSON 解析失败 → default pass
 - Executor 每步 max 8 iterations, 整体 max 4 步 × 8 = 32 次 LLM 调用上限
 - 4 个独立 prompt: PLANNER / EXECUTOR / SYNTHESIZER / QC
+
+## 2026-04-04 Step 5 Orchestrator 设计迭代
+
+### 决策记录
+
+1. **Orchestrator 采用 Plan & Execute 架构**：LLM few-shot 识别意图并生成结构化执行计划（steps + depends_on），支持多意图编排（并行/串行）。
+
+2. **Quiz SubAgent 不经过 Orchestrator**：Quiz 是多轮交互，生命周期与单次问答不同，由 API 层直接调用。Orchestrator 识别到 quiz 意图时仅放入 `suggested_followup` 返回建议。
+
+3. **只编排 QA + Gap**：讨论了 Summarize、Explain、Flashcard 等候选 SubAgent，最终认为：
+   - Summarize/Explain 与 QA 意图边界模糊，更适合作为 QA 内部的生成策略
+   - Flashcard 也是独立功能，不适合混合编排
+   - QA + Gap 的组合最自然（诊断→讲解、问答+掌握度）
+
+4. **串行步骤的参数改写**：当 step 有 depends_on 时，execute_node 将前序结果 + 原始 plan 交给 LLM 动态改写当前 step 的 params。
+
+5. **Synthesizer 只在多结果时激活**：单 SubAgent 结果直接 passthrough，不浪费 LLM 调用。
+
+6. **Python 3.9 兼容性**：为所有使用 `X | None` 语法的文件添加 `from __future__ import annotations`，State 中使用 `Optional[dict]` 以兼容 LangGraph 的 `get_type_hints()`。
