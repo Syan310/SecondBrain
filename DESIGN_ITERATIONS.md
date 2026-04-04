@@ -105,3 +105,79 @@
 - `backend/app/services/milvus_client.py` — 新增 sparse_embedding 字段, hybrid_search 方法, insert 增加 sparse_embeddings 参数
 - `backend/app/agent/tools/rag_search.py` — 新建, 混合检索+rerank tool
 - `backend/tests/test_rag_search.py` — 新建, mock 测试
+
+## 2026-04-04: Step 3 Tools 层完成
+
+完成剩余 4 个 Tools 实现:
+
+1. **query_decompose.py** — 调用 LLM 将复杂问题拆解为 2-4 个独立子查询 (JSON 数组), temperature=0.3, 解析失败 fallback 原始 query
+2. **read_mastery.py** — 读取 UserMastery + 计算 effective_mastery = score × exp(-λ×Δt), 返回 MasteryRecord dataclass
+3. **update_mastery.py** — 基于 effective_mastery 应用 +0.1(答对)/-0.15(答错), 首次默认 0.3, 调用 crud.upsert_mastery 持久化
+4. **search_concepts.py** — 查询 knowledge_concepts 表, 支持 scope(source_doc精确匹配) + keyword(topic模糊匹配)
+
+同时扩展了 crud.py, 新增:
+- `get_mastery()` — 按 user_id + optional topics 查询
+- `upsert_mastery()` — 创建或更新 mastery 记录
+- `search_concepts()` — scope/keyword 过滤查询
+
+设计决策:
+- update_mastery 的 new_score 由 tool 层计算后传给 crud 层, crud 层不做业务逻辑
+- read_mastery 的 `_compute_effective_mastery` 抽为内部函数, update_mastery 复用
+
+## 2026-04-04: Step 4 SubAgents 实现
+
+### 设计决策
+
+1. **Agent 模式而非固定 Pipeline**: 三个 SubAgent 都采用 ReAct 循环（LLM 自行决定 tool 调用），而非 LangGraph 固定节点 DAG。原因是需要灵活处理边界情况。
+
+2. **Tool 绑定方式**: 不使用 LangGraph 的 create_react_agent，而是手写 ReAct 循环直接调用 llm_client.chat(tools=...)。原因:
+   - 我们的 LLM 是 Qwen3-Plus (OpenAI-compatible)，不是 langchain ChatModel
+   - DB 工具需要注入 AsyncSession，用工厂函数 `_build_tool_executor(session)` 闭包绑定
+   - QA agent 的 rag_search 是同步的（本地模型），其余是 async
+
+3. **Quiz 多轮设计**: `run_quiz_agent()` 处理单轮交互，caller 通过 `message_history` 参数维护跨轮上下文。每次调用 = 一次用户输入 → agent 处理（可能多次 tool call）→ 一次文本回复。
+
+4. **Quiz tool 分配更新**: 原设计只有 read_mastery + update_mastery，新增 rag_search（检索出题素材）+ search_concepts（无指定 topic 时获取全部 topic 列表）。
+
+5. **State 定义**: 各 SubAgent 独立 State (QAState/QuizState/GapState) + 顶层 OverallState。当前 State 主要用于类型文档化，实际 agent 通过 message_history 传递上下文。
+
+### 实现文件
+- `backend/app/agent/state.py` — 4 个 TypedDict State
+- `backend/app/agent/subagents/qa_agent.py` — run_qa_agent(), ReAct loop, max 15 iterations
+- `backend/app/agent/subagents/quiz_agent.py` — run_quiz_agent(), multi-turn, max 30 iterations
+- `backend/app/agent/subagents/gap_agent.py` — run_gap_agent(), max 10 iterations
+
+## 2026-04-04: Quiz 判分从二元改为三档质量评估
+
+### 变更
+- 原设计: is_correct (bool) → 答对 +0.1 / 答错 -0.15
+- 新设计: quality ("low"|"medium"|"high") → low -0.15 / medium +0.05 / high +0.1
+- medium + high 计入 correct_count，low 不计入
+
+### 影响文件
+- `crud.py` — upsert_mastery 参数 is_correct → quality
+- `update_mastery.py` — QUALITY_DELTA dict，三档 delta 逻辑
+- `quiz_agent.py` — tool schema (is_correct → quality enum)，system prompt 判分标准更新为三档
+- `ARCHITECTURE.md` §6 更新规则
+
+## 2026-04-04: QA SubAgent 重构为 Plan & Execute + ReAct 混合架构
+
+### 变更
+原设计: 纯 ReAct 循环，所有逻辑（decompose/RAG/QC）隐含在 system prompt 中由 LLM 自行推理
+新设计: 三阶段显式分离
+
+1. **Planner** (LLM, 无 tools): 分析问题 → 输出结构化 JSON plan `{needs_decompose, plan: [{step, query, needs_rag, purpose}], synthesis_needed}`
+2. **Executor** (ReAct loop, 有 tools): 按 plan 逐步执行, 每步独立 ReAct 循环 (max 8 iterations/step)
+3. **QC** (LLM, 无 tools): 评估 {passed, reason, suggestions}, 不通过带 feedback 回到 Planner 重规划 (max 2 retries)
+
+### 设计理由
+- Plan 显式化: plan 写入 state, 可观测可 log
+- Planner/Executor/QC 角色分离, 各自 system prompt 更聚焦
+- 宏观 Plan & Execute, 微观 ReAct, 项目同时体现两种 Agent 范式
+- Synthesizer 单独抽出, 多步时综合子答案
+
+### 实现细节
+- Planner JSON 解析失败 → fallback 单步 plan
+- QC JSON 解析失败 → default pass
+- Executor 每步 max 8 iterations, 整体 max 4 步 × 8 = 32 次 LLM 调用上限
+- 4 个独立 prompt: PLANNER / EXECUTOR / SYNTHESIZER / QC

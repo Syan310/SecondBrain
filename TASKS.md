@@ -25,17 +25,17 @@
 ## Step 3: Tools 层
 
 - [x] `rag_search.py` — dense+sparse 混合检索(RRF融合) + Rerank, 输入 query/top_k, 输出 ranked chunks + source info
-- [ ] `query_decompose.py` — LLM 拆解复杂问题为子查询列表
-- [ ] `read_mastery.py` — 读取用户掌握度, 含时间衰减计算 effective_mastery
-- [ ] `update_mastery.py` — 答对/答错更新 mastery_score + last_reviewed
-- [ ] `search_concepts.py` — 查询 knowledge_concepts 表, 按 scope/keyword 过滤
+- [x] `query_decompose.py` — LLM 拆解复杂问题为 2-4 个子查询列表, JSON 数组输出, 解析失败 fallback 原始 query
+- [x] `read_mastery.py` — 读取用户掌握度, 含时间衰减 effective = score × exp(-λ×Δt), 返回 MasteryRecord 列表
+- [x] `update_mastery.py` — 答对+0.1/答错-0.15 (基于 effective_mastery), 更新 score + last_reviewed, 首次默认 0.3
+- [x] `search_concepts.py` — 查询 knowledge_concepts 表, 支持 scope(source_doc) 和 keyword(topic LIKE) 过滤
 
 ## Step 4: SubAgents
 
-- [ ] `state.py` — LangGraph State 定义（等设计确认）
-- [ ] `qa_agent.py` — ReAct 风格, 绑定 rag_search + query_decompose, 自行判断复杂度/充分性
-- [ ] `quiz_agent.py` — 绑定 read_mastery + update_mastery, 选题→判分→路由→更新记忆
-- [ ] `gap_agent.py` — 绑定 read_mastery + search_concepts, 交叉对比+生成诊断报告
+- [x] `state.py` — OverallState + QAState + QuizState + GapState, 各 SubAgent 独立 State
+- [x] `qa_agent.py` — Plan & Execute + ReAct 混合架构: Planner(结构化JSON plan) → Executor(ReAct loop per step) → Synthesize → QC(max 2 retries, 不通过带反馈重规划)
+- [x] `quiz_agent.py` — Agent 驱动 10 题 Quiz, tool-calling (rag_search + read_mastery + update_mastery + search_concepts), 多轮对话 message_history 传递, 启发式判断 session 结束
+- [x] `gap_agent.py` — Agent 驱动诊断, tool-calling (read_mastery + search_concepts), LLM 执行 cross compare 规则 + 生成报告, 支持 scope 过滤
 
 ## Step 5: Orchestrator
 

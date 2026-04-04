@@ -226,7 +226,7 @@ START → Orchestrator → (按意图分发) → SubAgent → Orchestrator → E
 |------|------|------|------|
 | `rag_search` | Dense+Sparse混合检索(RRF融合) + Rerank，返回相关文档片段 | query, top_k, expr(可选) | list[RankedChunk] (text, rerank_score, source_doc, heading_path, child_id, parent_id, chunk_index) |
 | `read_mastery` | 读取用户掌握度（含时间衰减计算） | user_id, topics(可选) | topic + effective_mastery 列表 |
-| `update_mastery` | 更新 mastery_score + last_reviewed | user_id, topic, is_correct | 更新后的 mastery 记录 |
+| `update_mastery` | 三档质量评估更新 mastery_score + last_reviewed | user_id, topic, quality("low"\|"medium"\|"high") | 更新后的 mastery 记录 |
 | `search_concepts` | 查询知识库概念索引表 | scope/keyword(可选) | topic + heading_path 列表 |
 | `query_decompose` | 将复杂问题拆解为子查询 | original_query | 子查询列表 |
 
@@ -236,7 +236,7 @@ START → Orchestrator → (按意图分发) → SubAgent → Orchestrator → E
 |-------|-----------|------|
 | Orchestrator | 无 | 只做意图路由 + 结果汇总 |
 | QA SubAgent | `rag_search`, `query_decompose` | ReAct风格，自行决定是否需要拆解和多轮检索 |
-| Quiz SubAgent | `read_mastery`, `update_mastery` | 读写用户掌握度 |
+| Quiz SubAgent | `read_mastery`, `update_mastery`, `rag_search`, `search_concepts` | 读写掌握度 + 检索出题素材 + 获取 topic 列表 |
 | Gap Analysis SubAgent | `read_mastery`, `search_concepts` | 读取掌握度 + 知识库概念列表，交叉对比 |
 
 ### 4.3 设计说明
@@ -351,9 +351,12 @@ effective_mastery = mastery_score × exp(-λ × Δt)
   mastery=0.8, 10天未复习 → effective = 0.8 × e^(-0.5) ≈ 0.49 → weight=0.51
   mastery=0.8, 1天未复习  → effective = 0.8 × e^(-0.05) ≈ 0.76 → weight=0.24
 
-更新规则:
-  答对: mastery_score = min(1.0, effective_mastery + 0.1)
-  答错: mastery_score = max(0.0, effective_mastery - 0.15)
+更新规则 (三档质量评估):
+  高质量 (high):   mastery_score = min(1.0, effective_mastery + 0.1)
+  中等质量 (medium): mastery_score = min(1.0, effective_mastery + 0.05)
+  低质量 (low):    mastery_score = max(0.0, effective_mastery - 0.15)
+
+  medium/high 计入 correct_count, low 不计入
   每次更新后 last_reviewed = now, 重置衰减起点
 ```
 
@@ -515,9 +518,9 @@ Step 8: 评估 & 优化
 - [x] Milvus Standalone 部署 (docker-compose)
 - [x] SQLite 数据库初始化
 - [x] Step 1: Services 层 (embedding + reranker + llm_client)
-- [x] Step 2: Ingestion Pipeline (parse → embed → Milvus + knowledge_concepts 全流程完成)
-- [ ] Step 3: Tools 层 (rag_search ✅)
-- [ ] Step 4: SubAgents
+- [ ] Step 2: Ingestion Pipeline (milvus_client 已升级支持 hybrid search)
+- [x] Step 3: Tools 层 (rag_search + query_decompose + read_mastery + update_mastery + search_concepts)
+- [x] Step 4: SubAgents (state.py + qa_agent + quiz_agent + gap_agent)
 - [ ] Step 5: Orchestrator
 - [ ] Step 6: API 层
 - [ ] Step 7: Frontend
