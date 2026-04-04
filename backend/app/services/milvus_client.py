@@ -1,0 +1,224 @@
+"""Milvus client: child_chunks collection CRUD operations.
+
+Collection schema:
+  - child_id      (VARCHAR, PK)    — UUID
+  - parent_id     (VARCHAR)        — group identifier for sibling chunks
+  - source_doc    (VARCHAR)        — origin filename, for filtering & re-ingestion
+  - heading_path  (VARCHAR)        — e.g. "NLP/Transformer/Attention"
+  - chunk_index   (INT16)          — order within parent group
+  - text          (VARCHAR)        — raw text for reranker scoring
+  - embedding     (FLOAT_VECTOR)   — BGE-m3, 1024-dim
+
+Index: HNSW + IP (inner product on L2-normalized vectors ≡ cosine).
+"""
+
+import logging
+import uuid
+from dataclasses import dataclass
+
+from pymilvus import (
+    Collection,
+    CollectionSchema,
+    DataType,
+    FieldSchema,
+    MilvusClient,
+    connections,
+    utility,
+)
+
+from app.config import settings
+from app.services.embedding import EmbeddingService
+
+logger = logging.getLogger(__name__)
+
+_COLLECTION = settings.milvus_collection_name
+_DIM = EmbeddingService.DIMENSION
+_MAX_TEXT_LEN = 8192  # chars, enough for child chunks (≤750 chars typical)
+
+
+# ── Data structures ──────────────────────────────────────────
+
+
+@dataclass
+class SearchResult:
+    """A single search hit returned by MilvusService.search()."""
+
+    child_id: str
+    parent_id: str
+    source_doc: str
+    heading_path: str
+    chunk_index: int
+    text: str
+    score: float
+
+
+# ── Service ──────────────────────────────────────────────────
+
+
+class MilvusService:
+    """Encapsulates Milvus connection, collection init, insert, search, delete."""
+
+    def __init__(self) -> None:
+        self._collection: Collection | None = None
+
+    # ── Connection & collection ──────────────────────────────
+
+    def connect(self) -> None:
+        """Establish connection to Milvus server."""
+        connections.connect(
+            alias="default",
+            host=settings.milvus_host,
+            port=settings.milvus_port,
+        )
+        logger.info(
+            "Connected to Milvus at %s:%s", settings.milvus_host, settings.milvus_port
+        )
+
+    def init_collection(self) -> Collection:
+        """Create collection if not exists, create index, and load into memory."""
+        if self._collection is not None:
+            return self._collection
+
+        if utility.has_collection(_COLLECTION):
+            logger.info("Collection '%s' already exists, loading.", _COLLECTION)
+            self._collection = Collection(_COLLECTION)
+            self._collection.load()
+            return self._collection
+
+        # Define schema
+        fields = [
+            FieldSchema(name="child_id", dtype=DataType.VARCHAR, is_primary=True, max_length=36),
+            FieldSchema(name="parent_id", dtype=DataType.VARCHAR, max_length=36),
+            FieldSchema(name="source_doc", dtype=DataType.VARCHAR, max_length=512),
+            FieldSchema(name="heading_path", dtype=DataType.VARCHAR, max_length=512),
+            FieldSchema(name="chunk_index", dtype=DataType.INT16),
+            FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=_MAX_TEXT_LEN),
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=_DIM),
+        ]
+        schema = CollectionSchema(fields=fields, description="SecondBrain child chunks")
+
+        self._collection = Collection(name=_COLLECTION, schema=schema)
+        logger.info("Created collection '%s'.", _COLLECTION)
+
+        # Vector index: HNSW + IP
+        self._collection.create_index(
+            field_name="embedding",
+            index_params={
+                "index_type": "HNSW",
+                "metric_type": "IP",
+                "params": {"M": 16, "efConstruction": 256},
+            },
+        )
+
+        # Scalar index on source_doc for filtered search & delete
+        self._collection.create_index(
+            field_name="source_doc",
+            index_name="idx_source_doc",
+            index_params={"index_type": "INVERTED"},
+        )
+
+        self._collection.load()
+        logger.info("Collection '%s' indexed and loaded.", _COLLECTION)
+        return self._collection
+
+    @property
+    def collection(self) -> Collection:
+        if self._collection is None:
+            raise RuntimeError("Call connect() and init_collection() first.")
+        return self._collection
+
+    # ── Insert ───────────────────────────────────────────────
+
+    def insert(
+        self,
+        parent_ids: list[str],
+        source_docs: list[str],
+        heading_paths: list[str],
+        chunk_indices: list[int],
+        texts: list[str],
+        embeddings: list[list[float]],
+    ) -> int:
+        """Insert child chunks into Milvus.
+
+        All lists must have the same length. Returns the number of inserted rows.
+        """
+        n = len(texts)
+        child_ids = [str(uuid.uuid4()) for _ in range(n)]
+
+        data = [
+            child_ids,
+            parent_ids,
+            source_docs,
+            heading_paths,
+            chunk_indices,
+            texts,
+            embeddings,
+        ]
+
+        result = self.collection.insert(data)
+        self.collection.flush()
+        logger.info("Inserted %d chunks into '%s'.", result.insert_count, _COLLECTION)
+        return result.insert_count
+
+    # ── Search ───────────────────────────────────────────────
+
+    def search(
+        self,
+        query_vector: list[float],
+        top_k: int = 20,
+        expr: str | None = None,
+        ef: int = 128,
+    ) -> list[SearchResult]:
+        """Vector search with optional scalar filter.
+
+        Args:
+            query_vector: 1024-dim query embedding.
+            top_k: Number of results to return.
+            expr: Optional Milvus boolean expression, e.g. 'source_doc == "xxx.pdf"'.
+            ef: HNSW search ef parameter (higher = more accurate, slower).
+
+        Returns:
+            List of SearchResult ordered by descending score.
+        """
+        results = self.collection.search(
+            data=[query_vector],
+            anns_field="embedding",
+            param={"metric_type": "IP", "params": {"ef": ef}},
+            limit=top_k,
+            expr=expr,
+            output_fields=["parent_id", "source_doc", "heading_path", "chunk_index", "text"],
+        )
+
+        hits: list[SearchResult] = []
+        for hit in results[0]:
+            hits.append(
+                SearchResult(
+                    child_id=hit.id,
+                    parent_id=hit.entity.get("parent_id"),
+                    source_doc=hit.entity.get("source_doc"),
+                    heading_path=hit.entity.get("heading_path"),
+                    chunk_index=hit.entity.get("chunk_index"),
+                    text=hit.entity.get("text"),
+                    score=hit.score,
+                )
+            )
+        return hits
+
+    # ── Delete ───────────────────────────────────────────────
+
+    def delete_by_source(self, source_doc: str) -> None:
+        """Delete all chunks from a specific source document (for re-ingestion)."""
+        expr = f'source_doc == "{source_doc}"'
+        self.collection.delete(expr=expr)
+        self.collection.flush()
+        logger.info("Deleted chunks where %s.", expr)
+
+    # ── Stats ────────────────────────────────────────────────
+
+    def count(self) -> int:
+        """Return total number of entities in collection."""
+        return self.collection.num_entities
+
+
+# Module-level singleton
+milvus_service = MilvusService()

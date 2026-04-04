@@ -1,0 +1,45 @@
+from pydantic_settings import BaseSettings
+from pathlib import Path
+
+
+class Settings(BaseSettings):
+    # LLM
+    llm_api_key: str = ""
+    llm_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    llm_model: str = "qwen3.6-plus"
+
+    # Embedding (bge-m3: 1024-dim, multilingual Chinese/English)
+    embedding_model_path: str = "./models/bge-m3"
+
+    # Reranker
+    reranker_model_path: str = "./models/bge-reranker-v2-m3"
+
+    # Milvus
+    milvus_host: str = "milvus-standalone"
+    milvus_port: int = 19530
+    milvus_collection_name: str = "secondbrain_docs"
+
+    # SQLite
+    sqlite_db_path: str = "./data/secondbrain.db"
+
+    # Notion
+    notion_api_key: str = ""
+    notion_database_id: str = ""
+
+    # App
+    app_host: str = "0.0.0.0"
+    app_port: int = 8000
+    app_env: str = "development"
+    secret_key: str = "change_this_to_a_random_secret_key"
+
+    @property
+    def database_url(self) -> str:
+        return f"sqlite+aiosqlite:///{self.sqlite_db_path}"
+
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+    }
+
+
+settings = Settings()
