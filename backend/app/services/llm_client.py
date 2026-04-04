@@ -1,4 +1,4 @@
-"""LLM client for Qwen3-Plus via OpenAI-compatible DashScope API.
+"""LLM client for Qwen3.6-Plus via OpenAI-compatible DashScope API.
 
 Provides:
 - chat()        : non-streaming, for agent internal reasoning / tool-calling
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class LLMClient:
-    """Async wrapper around Qwen3-Plus via OpenAI-compatible API."""
+    """Async wrapper around Qwen3.6-Plus via OpenAI-compatible API."""
 
     def __init__(self) -> None:
         self._client: AsyncOpenAI | None = None

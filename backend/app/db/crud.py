@@ -1,10 +1,19 @@
 """CRUD operations for SQLite tables."""
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import KnowledgeConcept
 from app.services.doc_processor import ConceptInfo
+
+
+async def delete_concepts_by_source(session: AsyncSession, source_doc: str) -> int:
+    """Delete all knowledge_concepts belonging to a source document. Returns deleted count."""
+    result = await session.execute(
+        delete(KnowledgeConcept).where(KnowledgeConcept.source_doc == source_doc)
+    )
+    await session.commit()
+    return result.rowcount
 
 
 async def upsert_concepts(

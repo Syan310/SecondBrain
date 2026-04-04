@@ -515,7 +515,7 @@ Step 8: 评估 & 优化
 - [x] Milvus Standalone 部署 (docker-compose)
 - [x] SQLite 数据库初始化
 - [x] Step 1: Services 层 (embedding + reranker + llm_client)
-- [ ] Step 2: Ingestion Pipeline (milvus_client 已升级支持 hybrid search)
+- [x] Step 2: Ingestion Pipeline (parse → embed → Milvus + knowledge_concepts 全流程完成)
 - [ ] Step 3: Tools 层 (rag_search ✅)
 - [ ] Step 4: SubAgents
 - [ ] Step 5: Orchestrator

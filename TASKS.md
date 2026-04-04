@@ -10,7 +10,7 @@
 
 - [x] `embedding.py` — bge-m3, 1024维, 中英文多语言, 懒加载单例
 - [x] `reranker.py` — bge-reranker-v2-m3, cross-encoder, fp16
-- [x] `llm_client.py` — Qwen3-Plus, chat() 非流式 + stream_chat() 流式, 支持 tool-calling
+- [x] `llm_client.py` — Qwen3.6-Plus, chat() 非流式 + stream_chat() 流式, 支持 tool-calling
 - [x] `config.py` 更新 — embedding 模型路径改为 bge-m3
 - [x] `doc_processor.py` — MinerU(PDF) + python-docx(Word) + 直读(Markdown), 两刀切分块, 概念抽取
 

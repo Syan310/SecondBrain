@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile
 
-from app.db.crud import upsert_concepts
+from app.db.crud import delete_concepts_by_source, upsert_concepts
 from app.db.database import async_session_factory
 from app.services.doc_processor import doc_processor
 from app.services.embedding import embedding_service
@@ -46,12 +46,16 @@ async def upload_document(file: UploadFile):
         if not all_children:
             raise HTTPException(status_code=400, detail="No content extracted from document.")
 
-        # 2. Embed child chunks
+        # 2. Embed child chunks (dense + sparse)
         texts = [child.text for child in all_children]
-        embeddings = embedding_service.encode_documents(texts).tolist()
+        embed_out = embedding_service.encode_documents(texts)
+        embeddings = embed_out.dense.tolist()
+        sparse_embeddings = embed_out.sparse
 
         # 3. Delete old data for this source (re-ingestion)
         milvus_service.delete_by_source(file.filename)
+        async with async_session_factory() as session:
+            await delete_concepts_by_source(session, file.filename)
 
         # 4. Insert into Milvus
         count = milvus_service.insert(
@@ -61,6 +65,7 @@ async def upload_document(file: UploadFile):
             chunk_indices=[child.chunk_index for child in all_children],
             texts=texts,
             embeddings=embeddings,
+            sparse_embeddings=sparse_embeddings,
         )
 
         # 5. Upsert concepts into SQLite
