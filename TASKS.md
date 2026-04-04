@@ -16,7 +16,7 @@
 
 ## Step 2: Ingestion Pipeline
 
-- [x] `milvus_client.py` — child_chunks Collection(HNSW+IP), insert/search/delete_by_source 封装
+- [x] `milvus_client.py` — child_chunks Collection(HNSW+IP+SPARSE_INVERTED_INDEX), insert/search/hybrid_search/delete_by_source 封装
 - [ ] 向量化写入 Milvus — 调用 embedding_service 编码 child chunks, 写入 Milvus
 - [ ] 概念写入 knowledge_concepts 表 — Ingestion 时提取 topic, 写入 SQLite
 - [ ] `ingest.py` API 路由 — 串联解析→向量化→写入 Milvus + knowledge_concepts
@@ -24,7 +24,7 @@
 
 ## Step 3: Tools 层
 
-- [ ] `rag_search.py` — 向量检索 + Rerank, 输入 query/top_k, 输出 ranked chunks + source info
+- [x] `rag_search.py` — dense+sparse 混合检索(RRF融合) + Rerank, 输入 query/top_k, 输出 ranked chunks + source info
 - [ ] `query_decompose.py` — LLM 拆解复杂问题为子查询列表
 - [ ] `read_mastery.py` — 读取用户掌握度, 含时间衰减计算 effective_mastery
 - [ ] `update_mastery.py` — 答对/答错更新 mastery_score + last_reviewed

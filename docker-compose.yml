@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ==================== Milvus 依赖 ====================
   etcd:
@@ -42,6 +40,7 @@ services:
   milvus:
     image: milvusdb/milvus:v2.4.17
     container_name: secondbrain-milvus
+    command: ["milvus", "run", "standalone"]
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000

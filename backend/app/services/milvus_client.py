@@ -1,15 +1,19 @@
 """Milvus client: child_chunks collection CRUD operations.
 
 Collection schema:
-  - child_id      (VARCHAR, PK)    — UUID
-  - parent_id     (VARCHAR)        — group identifier for sibling chunks
-  - source_doc    (VARCHAR)        — origin filename, for filtering & re-ingestion
-  - heading_path  (VARCHAR)        — e.g. "NLP/Transformer/Attention"
-  - chunk_index   (INT16)          — order within parent group
-  - text          (VARCHAR)        — raw text for reranker scoring
-  - embedding     (FLOAT_VECTOR)   — BGE-m3, 1024-dim
+  - child_id        (VARCHAR, PK)           — UUID
+  - parent_id       (VARCHAR)               — group identifier for sibling chunks
+  - source_doc      (VARCHAR)               — origin filename, for filtering & re-ingestion
+  - heading_path    (VARCHAR)               — e.g. "NLP/Transformer/Attention"
+  - chunk_index     (INT16)                 — order within parent group
+  - text            (VARCHAR)               — raw text for reranker scoring
+  - embedding       (FLOAT_VECTOR, 1024)    — BGE-m3 dense vector
+  - sparse_embedding (SPARSE_FLOAT_VECTOR)  — BGE-m3 learned sparse vector
 
-Index: HNSW + IP (inner product on L2-normalized vectors ≡ cosine).
+Indexes:
+  - embedding:        HNSW + IP
+  - sparse_embedding: SPARSE_INVERTED_INDEX + IP
+  - source_doc:       INVERTED (scalar)
 """
 
 import logging
@@ -17,11 +21,12 @@ import uuid
 from dataclasses import dataclass
 
 from pymilvus import (
+    AnnSearchRequest,
     Collection,
     CollectionSchema,
     DataType,
     FieldSchema,
-    MilvusClient,
+    RRFRanker,
     connections,
     utility,
 )
@@ -34,6 +39,7 @@ logger = logging.getLogger(__name__)
 _COLLECTION = settings.milvus_collection_name
 _DIM = EmbeddingService.DIMENSION
 _MAX_TEXT_LEN = 8192  # chars, enough for child chunks (≤750 chars typical)
+_OUTPUT_FIELDS = ["parent_id", "source_doc", "heading_path", "chunk_index", "text"]
 
 
 # ── Data structures ──────────────────────────────────────────
@@ -41,7 +47,7 @@ _MAX_TEXT_LEN = 8192  # chars, enough for child chunks (≤750 chars typical)
 
 @dataclass
 class SearchResult:
-    """A single search hit returned by MilvusService.search()."""
+    """A single search hit returned by MilvusService."""
 
     child_id: str
     parent_id: str
@@ -75,15 +81,25 @@ class MilvusService:
         )
 
     def init_collection(self) -> Collection:
-        """Create collection if not exists, create index, and load into memory."""
+        """Create collection if not exists, create indexes, and load into memory."""
         if self._collection is not None:
             return self._collection
 
         if utility.has_collection(_COLLECTION):
-            logger.info("Collection '%s' already exists, loading.", _COLLECTION)
-            self._collection = Collection(_COLLECTION)
-            self._collection.load()
-            return self._collection
+            existing = Collection(_COLLECTION)
+            field_names = {f.name for f in existing.schema.fields}
+            if "sparse_embedding" not in field_names:
+                logger.warning(
+                    "Collection '%s' missing sparse_embedding field, "
+                    "dropping and recreating with new schema.",
+                    _COLLECTION,
+                )
+                utility.drop_collection(_COLLECTION)
+            else:
+                logger.info("Collection '%s' already exists, loading.", _COLLECTION)
+                self._collection = existing
+                self._collection.load()
+                return self._collection
 
         # Define schema
         fields = [
@@ -94,19 +110,29 @@ class MilvusService:
             FieldSchema(name="chunk_index", dtype=DataType.INT16),
             FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=_MAX_TEXT_LEN),
             FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=_DIM),
+            FieldSchema(name="sparse_embedding", dtype=DataType.SPARSE_FLOAT_VECTOR),
         ]
         schema = CollectionSchema(fields=fields, description="SecondBrain child chunks")
 
         self._collection = Collection(name=_COLLECTION, schema=schema)
         logger.info("Created collection '%s'.", _COLLECTION)
 
-        # Vector index: HNSW + IP
+        # Dense vector index: HNSW + IP
         self._collection.create_index(
             field_name="embedding",
             index_params={
                 "index_type": "HNSW",
                 "metric_type": "IP",
                 "params": {"M": 16, "efConstruction": 256},
+            },
+        )
+
+        # Sparse vector index: SPARSE_INVERTED_INDEX + IP
+        self._collection.create_index(
+            field_name="sparse_embedding",
+            index_params={
+                "index_type": "SPARSE_INVERTED_INDEX",
+                "metric_type": "IP",
             },
         )
 
@@ -137,6 +163,7 @@ class MilvusService:
         chunk_indices: list[int],
         texts: list[str],
         embeddings: list[list[float]],
+        sparse_embeddings: list[dict[int, float]],
     ) -> int:
         """Insert child chunks into Milvus.
 
@@ -153,6 +180,7 @@ class MilvusService:
             chunk_indices,
             texts,
             embeddings,
+            sparse_embeddings,
         ]
 
         result = self.collection.insert(data)
@@ -160,7 +188,7 @@ class MilvusService:
         logger.info("Inserted %d chunks into '%s'.", result.insert_count, _COLLECTION)
         return result.insert_count
 
-    # ── Search ───────────────────────────────────────────────
+    # ── Dense-only search ────────────────────────────────────
 
     def search(
         self,
@@ -169,7 +197,7 @@ class MilvusService:
         expr: str | None = None,
         ef: int = 128,
     ) -> list[SearchResult]:
-        """Vector search with optional scalar filter.
+        """Dense vector search with optional scalar filter.
 
         Args:
             query_vector: 1024-dim query embedding.
@@ -186,23 +214,60 @@ class MilvusService:
             param={"metric_type": "IP", "params": {"ef": ef}},
             limit=top_k,
             expr=expr,
-            output_fields=["parent_id", "source_doc", "heading_path", "chunk_index", "text"],
+            output_fields=_OUTPUT_FIELDS,
+        )
+        return self._parse_hits(results[0])
+
+    # ── Hybrid search (dense + sparse, RRF fusion) ──────────
+
+    def hybrid_search(
+        self,
+        query_vector: list[float],
+        sparse_vector: dict[int, float],
+        top_k: int = 20,
+        expr: str | None = None,
+        ef: int = 128,
+        rrf_k: int = 60,
+    ) -> list[SearchResult]:
+        """Dense + sparse hybrid search with RRF fusion.
+
+        Args:
+            query_vector: 1024-dim dense query embedding.
+            sparse_vector: Sparse query vector {token_id: weight}.
+            top_k: Number of final fused results to return.
+            expr: Optional Milvus boolean expression filter.
+            ef: HNSW search ef parameter.
+            rrf_k: RRF smoothing parameter (default 60).
+
+        Returns:
+            List of SearchResult ordered by fused RRF score descending.
+        """
+        # Dense search request
+        dense_req = AnnSearchRequest(
+            data=[query_vector],
+            anns_field="embedding",
+            param={"metric_type": "IP", "params": {"ef": ef}},
+            limit=top_k,
+            expr=expr,
         )
 
-        hits: list[SearchResult] = []
-        for hit in results[0]:
-            hits.append(
-                SearchResult(
-                    child_id=hit.id,
-                    parent_id=hit.entity.get("parent_id"),
-                    source_doc=hit.entity.get("source_doc"),
-                    heading_path=hit.entity.get("heading_path"),
-                    chunk_index=hit.entity.get("chunk_index"),
-                    text=hit.entity.get("text"),
-                    score=hit.score,
-                )
-            )
-        return hits
+        # Sparse search request
+        sparse_req = AnnSearchRequest(
+            data=[sparse_vector],
+            anns_field="sparse_embedding",
+            param={"metric_type": "IP"},
+            limit=top_k,
+            expr=expr,
+        )
+
+        # RRF fusion (pymilvus 2.4+: positional arg `rerank`, not `ranker`)
+        results = self.collection.hybrid_search(
+            [dense_req, sparse_req],
+            RRFRanker(k=rrf_k),
+            top_k,
+            output_fields=_OUTPUT_FIELDS,
+        )
+        return self._parse_hits(results[0])
 
     # ── Delete ───────────────────────────────────────────────
 
@@ -217,7 +282,26 @@ class MilvusService:
 
     def count(self) -> int:
         """Return total number of entities in collection."""
-        return self.collection.num_entities
+        result = self.collection.query(expr="child_id != ''", output_fields=["count(*)"])
+        return result[0]["count(*)"]
+
+    # ── Internal ─────────────────────────────────────────────
+
+    @staticmethod
+    def _parse_hits(hits) -> list[SearchResult]:
+        """Convert Milvus hit objects to SearchResult list."""
+        return [
+            SearchResult(
+                child_id=hit.id,
+                parent_id=hit.entity.get("parent_id"),
+                source_doc=hit.entity.get("source_doc"),
+                heading_path=hit.entity.get("heading_path"),
+                chunk_index=hit.entity.get("chunk_index"),
+                text=hit.entity.get("text"),
+                score=hit.score,
+            )
+            for hit in hits
+        ]
 
 
 # Module-level singleton

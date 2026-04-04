@@ -224,7 +224,7 @@ START → Orchestrator → (按意图分发) → SubAgent → Orchestrator → E
 
 | Tool | 功能 | 输入 | 输出 |
 |------|------|------|------|
-| `rag_search` | 向量检索 + Rerank，返回相关文档片段 | query, top_k | ranked chunks + source info |
+| `rag_search` | Dense+Sparse混合检索(RRF融合) + Rerank，返回相关文档片段 | query, top_k, expr(可选) | list[RankedChunk] (text, rerank_score, source_doc, heading_path, child_id, parent_id, chunk_index) |
 | `read_mastery` | 读取用户掌握度（含时间衰减计算） | user_id, topics(可选) | topic + effective_mastery 列表 |
 | `update_mastery` | 更新 mastery_score + last_reviewed | user_id, topic, is_correct | 更新后的 mastery 记录 |
 | `search_concepts` | 查询知识库概念索引表 | scope/keyword(可选) | topic + heading_path 列表 |
@@ -241,7 +241,7 @@ START → Orchestrator → (按意图分发) → SubAgent → Orchestrator → E
 
 ### 4.3 设计说明
 
-- **Reranker 不作为独立 Tool**：内嵌在 `rag_search` 中，对外暴露完整的"检索+重排"能力
+- **Reranker 不作为独立 Tool**：内嵌在 `rag_search` 中，对外暴露完整的"混合检索+RRF融合+重排"能力
 - **LLM Generate / LLM Judge 不作为 Tool**：这是 Agent 自身的推理能力，通过 prompt 控制
 - **Sufficiency Check / Complexity Judge 不作为 Tool**：属于 Agent 的推理判断，用 prompt 引导
 - **Gap Analysis 的 Cross Compare 不作为 Tool**：纯规则逻辑，写在 Agent prompt 或 node 代码中
@@ -296,13 +296,22 @@ Generate Report 时将结构化结果交给 LLM，生成自然语言诊断报告
   检索链路 (被 QA SubAgent / Gap Analysis SubAgent 调用)
 ═══════════════════════════════════════════════════════════════
 
-  用户Query ──▶ Query Embedding ──▶ Milvus (Top-K child chunks)
-                                        │
-                                        ▼
-                                   Reranker (bge-reranker-v2-m3)
-                                        │
-                                        ▼
-                                   Top-N reranked chunks (含原文)
+  用户Query ──▶ BGE-m3 Encode (dense + sparse)
+                    │                    │
+                    ▼                    ▼
+              Milvus Dense          Milvus Sparse
+              ANN Search            Inverted Search
+                    │                    │
+                    └───── RRF 融合 ─────┘
+                             │
+                             ▼
+                    Top-K×3 candidates
+                             │
+                             ▼
+                    Reranker (bge-reranker-v2-m3)
+                             │
+                             ▼
+                    Top-K reranked chunks (含原文)
                                         │
                                         ▼
                                    Qwen3-Plus 生成答案
@@ -506,8 +515,8 @@ Step 8: 评估 & 优化
 - [x] Milvus Standalone 部署 (docker-compose)
 - [x] SQLite 数据库初始化
 - [x] Step 1: Services 层 (embedding + reranker + llm_client)
-- [ ] Step 2: Ingestion Pipeline
-- [ ] Step 3: Tools 层
+- [ ] Step 2: Ingestion Pipeline (milvus_client 已升级支持 hybrid search)
+- [ ] Step 3: Tools 层 (rag_search ✅)
 - [ ] Step 4: SubAgents
 - [ ] Step 5: Orchestrator
 - [ ] Step 6: API 层
