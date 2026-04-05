@@ -1,8 +1,10 @@
 import axios from "axios";
 import type {
   ChatResponse,
+  ChatHistoryResponse,
   QuizAnswerResponse,
-  IngestResponse,
+  MultiUploadResponse,
+  DocumentListResponse,
 } from "../types";
 
 const api = axios.create({
@@ -10,6 +12,8 @@ const api = axios.create({
   timeout: 120_000,
   headers: { "Content-Type": "application/json" },
 });
+
+// ── Chat ────────────────────────────────────────────────────
 
 export async function sendChat(
   userQuery: string,
@@ -23,6 +27,18 @@ export async function sendChat(
   });
   return data;
 }
+
+export async function getChatHistory(
+  userId = "default",
+  limit = 50,
+): Promise<ChatHistoryResponse> {
+  const { data } = await api.get<ChatHistoryResponse>("/chat/history", {
+    params: { user_id: userId, limit },
+  });
+  return data;
+}
+
+// ── Quiz ────────────────────────────────────────────────────
 
 export async function submitQuizAnswer(
   topic: string,
@@ -39,14 +55,27 @@ export async function submitQuizAnswer(
   return data;
 }
 
-export async function uploadFile(file: File): Promise<IngestResponse> {
+// ── Ingest / Documents ──────────────────────────────────────
+
+export async function uploadFiles(files: File[]): Promise<MultiUploadResponse> {
   const form = new FormData();
-  form.append("file", file);
-  const { data } = await api.post<IngestResponse>("/ingest/upload", form, {
+  for (const file of files) {
+    form.append("files", file);
+  }
+  const { data } = await api.post<MultiUploadResponse>("/ingest/upload", form, {
     headers: { "Content-Type": "multipart/form-data" },
     timeout: 300_000,
   });
   return data;
+}
+
+export async function getDocuments(): Promise<DocumentListResponse> {
+  const { data } = await api.get<DocumentListResponse>("/ingest/documents");
+  return data;
+}
+
+export async function deleteDocument(filename: string): Promise<void> {
+  await api.delete(`/ingest/documents/${encodeURIComponent(filename)}`);
 }
 
 export default api;

@@ -204,6 +204,30 @@ async def upsert_concepts(
     return inserted
 
 
+async def list_documents(
+    session: AsyncSession,
+) -> list[dict]:
+    """List all uploaded documents with concept counts.
+
+    Returns:
+        List of dicts with keys: source_doc, concept_count.
+    """
+    from sqlalchemy import func
+    stmt = (
+        select(
+            KnowledgeConcept.source_doc,
+            func.count().label("concept_count"),
+        )
+        .group_by(KnowledgeConcept.source_doc)
+        .order_by(KnowledgeConcept.source_doc)
+    )
+    result = await session.execute(stmt)
+    return [
+        {"source_doc": row.source_doc, "concept_count": row.concept_count}
+        for row in result.fetchall()
+    ]
+
+
 async def search_concepts(
     session: AsyncSession,
     scope: str | None = None,

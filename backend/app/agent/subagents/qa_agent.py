@@ -30,6 +30,7 @@ import logging
 from app.agent.tools.rag_search import rag_search as _rag_search_sync
 from app.agent.tools.query_decompose import query_decompose as _query_decompose
 from app.services.llm_client import llm_client
+from app.services.milvus_client import milvus_service
 
 logger = logging.getLogger(__name__)
 
@@ -512,6 +513,33 @@ async def run_qa_agent(query: str, user_id: str = "default") -> dict:
           - plan (dict): The execution plan used.
           - sources (list[str]): Source documents referenced.
     """
+    # Check if knowledge base has documents — if empty, use plain LLM
+    try:
+        doc_count = milvus_service.count()
+    except Exception:
+        doc_count = 0
+
+    if doc_count == 0:
+        logger.info("QA agent: knowledge base is empty, falling back to plain LLM.")
+        response = await llm_client.chat(
+            messages=[
+                {"role": "system", "content": (
+                    "你是一个知识问答助手。当前知识库为空，用户尚未上传任何文档。"
+                    "请基于你的通用知识回答用户问题，并在回答开头提示用户：\n"
+                    "「📚 当前知识库为空，以下回答基于通用知识。上传文档后可获得更精准的回答。」"
+                )},
+                {"role": "user", "content": query},
+            ],
+            temperature=0.3,
+            max_tokens=4096,
+        )
+        return {
+            "answer": response["content"] or "",
+            "confidence": "low",
+            "plan": {"note": "knowledge_base_empty", "plan": []},
+            "sources": [],
+        }
+
     feedback = None
     all_sources = []
 

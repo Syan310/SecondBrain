@@ -63,9 +63,13 @@
 ## Step 6: API 层
 
 - [x] `chat.py` — 统一对话 API, POST → orchestrator → JSON 响应 (QA/Gap/Quiz 全走此入口)
+- [x] `chat.py` — GET /chat/history 历史对话加载 API
 - [x] `quiz.py` — Quiz 判分 API (不走 orchestrator): 接收用户答案 → 规则比对字母 → update_mastery → 返回结果
-- [x] `schemas.py` — Pydantic request/response models (ChatRequest/Response, QuizAnswerRequest/Response)
+- [x] `schemas.py` — Pydantic request/response models (ChatRequest/Response, QuizAnswerRequest/Response, ChatHistoryResponse, DocumentListResponse, MultiUploadResponse)
+- [x] `ingest.py` — 多文件上传 (并行解析, 串行 embedding+写入) + GET /documents 文档列表 + DELETE /documents/{filename}
+- [x] `crud.py` — 新增 list_documents() 按 source_doc 聚合概念数量
 - [x] 二元判分改造 — update_mastery + crud 从三档 quality(high/medium/low) 改为 is_correct: bool, 答对+0.1/答错-0.15
+- [x] QA Agent 无文档 fallback — Milvus 为空时跳过 RAG, 纯 LLM 通用问答 + 提示"知识库为空"
 
 ## ~~Step 9: 对话记忆模块~~ (已由 Step 5.5 + Step 6 覆盖)
 
@@ -76,10 +80,10 @@
 
 - [x] React + Vite + TypeScript 项目搭建, Tailwind CSS v4
 - [x] `Layout.tsx` — 左侧 sidebar (聊天问答 + 文档上传) + 右侧内容区
-- [x] `ChatPanel.tsx` — 统一对话界面 (QA/Quiz/Gap 三合一), 首屏能力卡片, quiz 意图自动弹窗
+- [x] `ChatPanel.tsx` — 统一对话界面 (QA/Quiz/Gap 三合一), 首屏能力卡片, quiz 意图自动弹窗, 初始化加载历史消息
 - [x] `QuizModal.tsx` — Quiz MCQ 弹窗: 选项卡片 + 判分 + mastery 变化 + 完成总结
-- [x] `FileUpload.tsx` — 文档拖拽/点击上传, 解析结果展示
-- [x] `api.ts` + `types.ts` — API 客户端 + TypeScript 类型定义
+- [x] `FileUpload.tsx` — 多文件拖拽/点击上传, 已上传文档列表持久化显示, 文档删除
+- [x] `api.ts` + `types.ts` — API 客户端 (sendChat/getChatHistory/uploadFiles/getDocuments/deleteDocument) + TypeScript 类型定义
 - [x] `App.tsx` — 两面板切换 (chat / upload)
 
 ## Step 8: 评估 & 优化

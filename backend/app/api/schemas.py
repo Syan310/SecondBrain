@@ -49,3 +49,41 @@ class QuizAnswerResponse(BaseModel):
     is_correct: bool
     correct_answer: str
     mastery_update: MasteryUpdate
+
+
+# ── Chat History ─────────────────────────────────────────────
+
+
+class HistoryMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatHistoryResponse(BaseModel):
+    messages: list[HistoryMessage] = []
+
+
+# ── Document Management ──────────────────────────────────────
+
+
+class DocumentInfo(BaseModel):
+    source_doc: str
+    concept_count: int
+
+
+class DocumentListResponse(BaseModel):
+    documents: list[DocumentInfo] = []
+
+
+class MultiUploadResult(BaseModel):
+    filename: str
+    success: bool
+    parents: int = 0
+    chunks_inserted: int = 0
+    concepts_total: int = 0
+    concepts_new: int = 0
+    error: str | None = None
+
+
+class MultiUploadResponse(BaseModel):
+    results: list[MultiUploadResult]

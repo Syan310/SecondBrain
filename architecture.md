@@ -27,9 +27,10 @@
 │  └──────────────────────────────────────────────────────────┘   │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │         Ingestion Pipeline (非Agent, 固定流程)            │   │
-│  │  文档解析 → 层级分块 → 向量化 → Milvus                    │   │
+│  │     Ingestion Pipeline (非Agent, 固定流程, 支持多文件)     │   │
+│  │  多文件并行解析 → 串行向量化+写入 → Milvus                 │   │
 │  │         └→ 概念抽取(从Heading提取topic) → knowledge_concepts│   │
+│  │  文档管理: 列表(按概念聚合) + 删除(Milvus+SQLite)          │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                                                                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
@@ -56,10 +57,12 @@ Orchestrator (Plan & Execute with Replan, LangGraph StateGraph)
   │  LLM few-shot 意图识别 → 生成执行计划 → 单步执行 → Replan(continue/revise/finish) → 汇总结果
   │
   ├── QA SubAgent (被 Orchestrator 调度)
-  │     自行判断问题复杂度:
-  │     ├── 简单问题 → 单次 Retrieve + Rerank → Generate
-  │     └── 复杂问题 → Decompose → 多轮 Retrieve + Rerank → Synthesize
-  │     自行判断结果是否充分, 不充分则追加检索
+  │     入口检查 Milvus 文档数:
+  │     ├── 知识库为空 → 跳过 RAG, 纯 LLM 通用问答 + 提示"知识库为空"
+  │     └── 有文档 → 自行判断问题复杂度:
+  │           ├── 简单问题 → 单次 Retrieve + Rerank → Generate
+  │           └── 复杂问题 → Decompose → 多轮 Retrieve + Rerank → Synthesize
+  │           自行判断结果是否充分, 不充分则追加检索
   │
   ├── Gap Analysis SubAgent (被 Orchestrator 调度)
   │     读取 mastery 数据 → 检索知识库概念列表 →
@@ -127,11 +130,13 @@ Replan 安全机制: max_replan_count=3, 超过强制 finish
 ### 3.3 QA SubAgent 内部流程
 
 ```
-入口 → Complexity Judge
-  ├── 简单 → RAG Search → Reranker → Generate Answer → Sufficiency Check
-  │                                                       ├── 充分 → 返回 Orchestrator
-  │                                                       └── 不充分 → RAG Search (追加检索)
-  └── 复杂 → Decompose Query → [对每个子查询: RAG Search → Reranker] → Synthesize → 返回 Orchestrator
+入口 → 检查 Milvus 文档数
+  ├── 知识库为空 → 纯 LLM 通用问答 (提示知识库为空) → 返回 Orchestrator
+  └── 有文档 → Complexity Judge
+        ├── 简单 → RAG Search → Reranker → Generate Answer → Sufficiency Check
+        │                                                       ├── 充分 → 返回 Orchestrator
+        │                                                       └── 不充分 → RAG Search (追加检索)
+        └── 复杂 → Decompose Query → [对每个子查询: RAG Search → Reranker] → Synthesize → 返回 Orchestrator
 ```
 
 ### 3.4 Quiz SubAgent 内部流程
@@ -533,8 +538,8 @@ SecondBrain/
 │   │   │   ├── Layout.tsx          # sidebar导航 + 内容区布局
 │   │   │   ├── ChatPanel.tsx       # 统一对话 (QA/Quiz/Gap 三合一)
 │   │   │   ├── QuizModal.tsx       # Quiz MCQ 弹窗
-│   │   │   └── FileUpload.tsx      # 文档上传
-│   │   ├── services/api.ts         # API客户端 (sendChat/submitQuizAnswer/uploadFile)
+│   │   │   └── FileUpload.tsx      # 文档管理 (多文件上传 + 已上传列表 + 删除)
+│   │   ├── services/api.ts         # API客户端 (sendChat/getChatHistory/submitQuizAnswer/uploadFiles/getDocuments/deleteDocument)
 │   │   ├── types.ts                # TypeScript类型定义
 │   │   └── App.tsx                 # 两面板切换 (chat/upload)
 │   ├── package.json
@@ -579,10 +584,10 @@ Step 5: Orchestrator（意图路由 + 分发 + 汇总）
         │
         ▼
 Step 6: API 层
-├── chat.py               ← 对接 Orchestrator (QA)
+├── chat.py               ← 对接 Orchestrator (QA) + GET /history 历史对话
 ├── quiz.py               ← 对接 Orchestrator (Quiz)
 ├── gap.py                ← 对接 Orchestrator (Gap)
-└── ingest.py             ← 对接 Ingestion Pipeline
+└── ingest.py             ← 多文件上传 + GET /documents 列表 + DELETE /documents/{name}
         │
         ▼
 Step 7: Frontend
