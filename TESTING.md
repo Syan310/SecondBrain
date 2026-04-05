@@ -21,6 +21,21 @@ MILVUS_HOST=localhost pytest tests/ -v
 
 ---
 
+### `test_orchestrator.py` — Orchestrator Plan & Execute with Replan（纯 mock）
+
+✅ 39 个测试全部通过
+
+- `TestParseJson` (4): JSON 解析
+- `TestPlanNode` (7): 意图识别（单 QA / Gap / 多意图 / Quiz in steps / 纯 Quiz / fallback / 无效 intent 过滤）
+- `TestExecuteStep` (4): 单步执行（QA / Quiz dispatch / 依赖参数改写 / 越界 noop）
+- `TestReplanNode` (8): Replan 决策（LLM finish / max count / continue / revise 替换 plan / finish / 无效 action / 解析失败 / 无效 revised_steps fallback）
+- `TestSynthesizeNode` (1): 多结果汇总
+- `TestPassthroughNode` (2): 单结果直传 / 空结果
+- `TestRouting` (7): 路由函数（plan / replan / output 三层路由）
+- `TestGraphIntegration` (6): 端到端（单 QA / 纯 Quiz / 多意图 gap+qa / gap+quiz / replan-revise / replan-finish-early）
+
+---
+
 ## 测试中发现的问题与修复
 
 | 问题 | 原因 | 修复 |

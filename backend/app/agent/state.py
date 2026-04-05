@@ -15,9 +15,10 @@ from typing import Optional, TypedDict
 class OverallState(TypedDict, total=False):
     """Shared state for the Orchestrator graph.
 
-    Plan & Execute architecture:
-    - plan_node: LLM generates execution plan (steps + optional suggested_followup)
-    - execute_node: executes steps sequentially/parallel, calling QA/Gap SubAgents
+    Plan & Execute with Replan loop:
+    - plan_node: LLM generates execution plan (steps with depends_on)
+    - execute_step: executes ONE step per iteration, calling QA/Gap/Quiz SubAgents
+    - replan_node: reviews step result, decides continue/revise/finish
     - synthesize_node: merges multiple step results (skipped for single-step)
     """
 
@@ -28,6 +29,11 @@ class OverallState(TypedDict, total=False):
     # Plan & Execute fields
     plan: list[dict]              # execution steps: [{step, intent, params, depends_on}]
     step_results: list[dict]      # [{step, intent, result}]
+
+    # Replan loop fields
+    current_step_index: int       # index into plan[] for next step to execute, starts at 0
+    replan_action: str            # "continue" | "revise" | "finish"
+    replan_count: int             # number of replan iterations (max 3)
 
     final_answer: str             # final output to user
 

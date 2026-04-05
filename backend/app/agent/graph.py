@@ -1,11 +1,14 @@
-"""LangGraph main graph: Orchestrator Plan & Execute.
+"""LangGraph main graph: Orchestrator Plan & Execute with Replan loop.
 
 Graph structure:
   START → plan_node → route_after_plan
     ├── no_steps → empty_response → END
-    └── has_steps → execute_node → route_after_execute
-                      ├── single → passthrough_node → END
-                      └── multi  → synthesize_node → END
+    └── has_steps → execute_step → replan_node → route
+                        ▲                          ├── execute → ──┘
+                        └──────────────────────────
+                                                   └── finish → route_to_output
+                                                                  ├── single → passthrough → END
+                                                                  └── multi  → synthesize → END
 
 Usage:
     from app.agent.graph import build_graph
@@ -25,11 +28,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.state import OverallState
 from app.agent.nodes.orchestrator import (
     plan_node,
-    execute_node,
+    execute_step,
+    replan_node,
     synthesize_node,
     passthrough_node,
     route_after_plan,
-    route_after_execute,
+    route_after_replan,
+    route_to_output,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,9 +46,7 @@ def _empty_response(state: OverallState) -> dict:
 
 
 def build_graph(session: AsyncSession) -> StateGraph:
-    """Build the Orchestrator LangGraph, binding the DB session.
-
-    The session is needed by execute_node to pass to SubAgents.
+    """Build the Orchestrator LangGraph with Replan loop.
 
     Args:
         session: Async SQLAlchemy session for DB-dependent SubAgents.
@@ -52,38 +55,49 @@ def build_graph(session: AsyncSession) -> StateGraph:
         Compiled LangGraph ready for ainvoke().
     """
 
-    # Wrap execute_node to bind session
-    async def _execute_node(state: OverallState) -> dict:
-        return await execute_node(state, session)
+    # Wrap execute_step to bind session
+    async def _execute_step(state: OverallState) -> dict:
+        return await execute_step(state, session)
 
-    # Build graph
     graph = StateGraph(OverallState)
 
     # Add nodes
     graph.add_node("plan", plan_node)
-    graph.add_node("execute", _execute_node)
+    graph.add_node("execute_step", _execute_step)
+    graph.add_node("replan", replan_node)
     graph.add_node("synthesize", synthesize_node)
     graph.add_node("passthrough", passthrough_node)
     graph.add_node("empty_response", _empty_response)
 
-    # Set entry point
+    # Entry point
     graph.set_entry_point("plan")
 
-    # Conditional edge after plan
+    # plan → route
     graph.add_conditional_edges(
         "plan",
         route_after_plan,
         {
             "no_steps": "empty_response",
-            "has_steps": "execute",
+            "has_steps": "execute_step",
         },
     )
 
-    # Conditional edge after execute
+    # execute_step → replan (always)
+    graph.add_edge("execute_step", "replan")
+
+    # replan → route (3-way: execute / single / multi)
+    def _replan_routing(state: OverallState) -> str:
+        replan_result = route_after_replan(state)
+        if replan_result == "execute":
+            return "execute"
+        # finish → decide passthrough or synthesize
+        return route_to_output(state)
+
     graph.add_conditional_edges(
-        "execute",
-        route_after_execute,
+        "replan",
+        _replan_routing,
         {
+            "execute": "execute_step",
             "single": "passthrough",
             "multi": "synthesize",
         },

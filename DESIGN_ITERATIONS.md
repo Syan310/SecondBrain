@@ -227,3 +227,22 @@
 - `suggested_followup` 字段从 OverallState 中移除
 - `quiz_passthrough` 节点从 graph 中移除
 - Quiz SubAgent 的 10 题 session 循环、message_history、_check_quiz_complete 等逻辑全部移除
+
+## 2026-04-04: Orchestrator 增加 Replan 循环
+
+### 背景
+原架构中 execute_node 一口气执行所有 plan steps，缺少标准 Plan & Execute 的 replan 环节。作为简历项目需要展示完整的 adaptive planning loop。
+
+### 设计决策
+- `execute_node` → `execute_step`: 改为每次只执行 1 个 step
+- 新增 `replan_node`: 每个 step 执行后 LLM 审视结果，决定 continue/revise/finish
+- `revise` 时 `revised_steps` 替换 `plan[current_step_index:]` 剩余部分，保留已完成步骤
+- `max_replan_count=3` 防止无限循环
+- 不做 `idx >= len(plan)` 的自动 finish，始终让 LLM 判断（确保 revise 可以追加新步骤）
+- 支持 qa/gap_analysis/quiz 三种意图的 replan
+
+### Graph 结构变化
+```
+旧: plan → execute_node(批量) → passthrough/synthesize → END
+新: plan → execute_step → replan → route(execute/single/multi) → execute_step|passthrough|synthesize → END
+```
