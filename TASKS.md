@@ -58,7 +58,7 @@
 - [x] `graph.py` — memory_node 加入 LangGraph + run_orchestrator 保存对话
 - [x] `main.py` — 启动时初始化 memory_milvus_service
 - [x] 测试 — 15 CRUD 单元测试 + 13 memory_manager 测试 (含 consolidation) + 33 orchestrator 测试 (含 Replan loop), 61 总测试全过
-- [ ] 重新验证 memory 相关测试 — 当前环境缺少 `aiosqlite` 且 `pip` 因 SSL 不可用无法补装，待修复环境后重跑
+- [x] 重新验证 memory 相关测试 — 已修复测试隔离问题 (sys.modules mock 泄漏 + _COLLECTION 常量), 81/81 测试全过
 
 ## Step 6: API 层
 

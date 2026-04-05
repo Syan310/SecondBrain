@@ -9,7 +9,10 @@ import pytest
 # Mock heavy third-party libs that are not installed in the test environment
 for _mod in ["FlagEmbedding", "pymilvus"]:
     if _mod not in sys.modules:
-        sys.modules[_mod] = MagicMock()
+        try:
+            __import__(_mod)
+        except ImportError:
+            sys.modules[_mod] = MagicMock()
 
 from app.services.embedding import EmbeddingOutput  # noqa: E402
 from app.services.milvus_client import SearchResult  # noqa: E402

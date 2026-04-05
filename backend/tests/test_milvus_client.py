@@ -16,10 +16,14 @@ from app.services.milvus_client import MilvusService, _DIM  # noqa: E402
 @pytest.fixture(scope="module")
 def svc():
     """Create a MilvusService connected to a test collection."""
+    import app.services.milvus_client as mc
+
     # Use a throwaway collection name to avoid polluting real data
     original_name = settings.milvus_collection_name
+    original_const = mc._COLLECTION
     test_collection = f"test_{uuid.uuid4().hex[:8]}"
     settings.milvus_collection_name = test_collection
+    mc._COLLECTION = test_collection
 
     service = MilvusService()
     service.connect()
@@ -30,6 +34,7 @@ def svc():
     from pymilvus import utility
     utility.drop_collection(test_collection)
     settings.milvus_collection_name = original_name
+    mc._COLLECTION = original_const
 
 
 def _fake_embedding(seed: float = 0.0) -> list[float]:

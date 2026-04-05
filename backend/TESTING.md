@@ -89,3 +89,43 @@
 
 ### 结果
 - 13 passed。
+
+## 全面可用性测试 (2026-04-05)
+
+### 单元测试 (Docker 内执行, 81/81 passed)
+
+| 测试文件 | 测试数 | 状态 |
+|---------|-------|------|
+| test_memory_crud.py | 15 | ALL PASSED |
+| test_memory_manager.py | 13 | ALL PASSED |
+| test_milvus_client.py | 8 | ALL PASSED |
+| test_orchestrator.py | 33 (含 graph integration) | ALL PASSED |
+| test_rag_search.py | 5 | ALL PASSED |
+
+### 修复的测试问题
+
+1. **sys.modules mock 泄漏** — `test_memory_manager.py` 和 `test_rag_search.py` 在模块级别无条件注入 `sys.modules["pymilvus"] = MagicMock()`，导致后续 `test_milvus_client.py` 拿到 mock 而非真实 pymilvus。修复：改为 `try: __import__(mod)` 先尝试导入，仅在 `ImportError` 时注入 mock。
+
+2. **_COLLECTION 模块常量未被测试 fixture 覆盖** — `milvus_client.py` 的 `_COLLECTION = settings.milvus_collection_name` 在 import 时捕获，fixture 修改 `settings` 不影响已捕获的常量，导致测试操作生产 collection。修复：fixture 中同时 patch `mc._COLLECTION = test_collection`。
+
+### API 端点测试 (全部 200 OK)
+
+| 端点 | 方法 | 状态 |
+|------|------|------|
+| /health | GET | 200 OK |
+| /api/chat/ (QA) | POST | 200 OK — RAG 检索+生成正常 |
+| /api/chat/ (Quiz) | POST | 200 OK — 返回 quiz JSON, 含 2 道选择题 |
+| /api/chat/ (Gap) | POST | 200 OK — 返回知识盲区诊断报告 |
+| /api/chat/history | GET | 200 OK — 返回历史消息 |
+| /api/quiz/answer | POST | 200 OK — 判分+mastery 更新正常 |
+| /api/ingest/documents | GET | 200 OK — 4 篇文档, 概念数正确 |
+
+### 前端测试
+
+- TypeScript 编译: 零错误
+- Vite 生产构建: 成功 (106ms)
+- 聊天面板: 历史加载正常, 新消息发送+接收正常
+- 文档上传面板: 文档列表加载正常 (4 篇, 含概念数和删除按钮)
+- 面板切换: 正常
+- 能力卡片点击: 触发对话正常
+- Vite proxy → Backend: 所有 API 调用通过代理正常转发

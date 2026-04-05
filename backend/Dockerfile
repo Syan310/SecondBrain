@@ -1,9 +1,11 @@
+# syntax=docker/dockerfile:1
 FROM python:3.11-slim
 
 WORKDIR /app
 
 # 系统依赖（MinerU PDF解析需要 libgl + libglib）
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     zlib1g-dev \
     libgl1 \
@@ -13,7 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Python 依赖
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
 
 # 项目代码
 COPY . .

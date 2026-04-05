@@ -20,7 +20,10 @@ for _mod in [
     "magic_pdf.pipe", "magic_pdf.pipe.UNIPipe",
 ]:
     if _mod not in sys.modules:
-        sys.modules[_mod] = MagicMock()
+        try:
+            __import__(_mod)
+        except ImportError:
+            sys.modules[_mod] = MagicMock()
 
 
 # ── Fixtures ────────────────────────────────────────────────
