@@ -26,6 +26,9 @@ class OverallState(TypedDict, total=False):
     user_id: str
     user_query: str               # original user input
 
+    # Memory context (injected by memory_manager before plan_node)
+    memory_context: str           # formatted string: short-term + long-term memories
+
     # Plan & Execute fields
     plan: list[dict]              # execution steps: [{step, intent, params, depends_on}]
     step_results: list[dict]      # [{step, intent, result}]

@@ -289,9 +289,18 @@ async def plan_node(state: OverallState) -> dict:
     Writes: plan, suggested_followup
     """
     user_query = state["user_query"]
+    memory_context = state.get("memory_context", "")
+
+    system_content = PLAN_SYSTEM_PROMPT
+    if memory_context:
+        system_content += (
+            "\n\n## 用户记忆上下文\n\n"
+            "以下是该用户的对话记忆，供你理解上下文（如指代消解、追问等）：\n\n"
+            f"{memory_context}"
+        )
 
     messages = [
-        {"role": "system", "content": PLAN_SYSTEM_PROMPT},
+        {"role": "system", "content": system_content},
         {"role": "user", "content": user_query},
     ]
 

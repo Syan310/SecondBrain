@@ -45,6 +45,19 @@
 - [x] `quiz_agent.py` 重构 — 从 10 题多轮 session 改为单次出 2 道选择题（RAG 检索出题）, 作为 orchestrator plan 的普通 step
 - [x] 测试 — 39 个单元测试 + 集成测试全部通过 (含 replan continue/revise/finish、quiz dispatch、graph flow)
 
+## Step 5.5: Agent 记忆机制
+
+- [x] `config.py` — 记忆相关配置 (短期容量/整合数量/长期 Top-K/相似度阈值)
+- [x] `models.py` — ConversationHistory 模型 (短期对话记录表)
+- [x] `crud.py` — 对话历史 CRUD (add_round/get_recent/get_oldest/delete/count)
+- [x] `milvus_client.py` — MemoryMilvusService (conversation_memory Collection, hybrid search)
+- [x] `state.py` — OverallState 新增 memory_context 字段
+- [x] `memory_manager.py` — 记忆管理核心 (load_memory_context + save_conversation + consolidate)
+- [x] `orchestrator.py` — plan_node 注入记忆上下文
+- [x] `graph.py` — memory_node 加入 LangGraph + run_orchestrator 保存对话
+- [x] `main.py` — 启动时初始化 memory_milvus_service
+- [x] 测试 — 15 CRUD 单元测试 + 13 memory_manager 测试 (含 consolidation) + 33 orchestrator 测试 (含 Replan loop), 61 总测试全过
+
 ## Step 6: API 层
 
 - [ ] `chat.py` — 统一对话 API, SSE 流式输出, 走 orchestrator

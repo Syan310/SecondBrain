@@ -2,9 +2,9 @@ from datetime import datetime
 
 from sqlalchemy import (
     Column,
+    Float,
     Integer,
     Text,
-    Real,
     DateTime,
     UniqueConstraint,
 )
@@ -23,8 +23,8 @@ class UserMastery(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Text, nullable=False)
     topic = Column(Text, nullable=False)
-    mastery_score = Column(Real, default=0.3)       # 原始掌握度 [0, 1]
-    decay_rate = Column(Real, default=0.05)          # 衰减系数 λ
+    mastery_score = Column(Float, default=0.3)       # 原始掌握度 [0, 1]
+    decay_rate = Column(Float, default=0.05)          # 衰减系数 λ
     total_attempts = Column(Integer, default=0)
     correct_count = Column(Integer, default=0)
     last_reviewed = Column(DateTime)
@@ -45,6 +45,20 @@ class KnowledgeConcept(Base):
     source_doc = Column(Text)
     heading_path = Column(Text)
     chunk_count = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ConversationHistory(Base):
+    """短期对话记录（最近 N 轮，FIFO 淘汰）"""
+
+    __tablename__ = "conversation_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Text, nullable=False)
+    session_id = Column(Text, nullable=False)
+    role = Column(Text, nullable=False)           # "user" | "assistant"
+    content = Column(Text, nullable=False)
+    round_number = Column(Integer, nullable=False)  # 对话轮次，同一轮 user+assistant 共享
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

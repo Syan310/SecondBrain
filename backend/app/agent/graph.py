@@ -1,7 +1,7 @@
 """LangGraph main graph: Orchestrator Plan & Execute with Replan loop.
 
 Graph structure:
-  START → plan_node → route_after_plan
+  START → memory → plan → route_after_plan
     ├── no_steps → empty_response → END
     └── has_steps → execute_step → replan_node → route
                         ▲                          ├── execute → ──┘
@@ -36,6 +36,7 @@ from app.agent.nodes.orchestrator import (
     route_after_replan,
     route_to_output,
 )
+from app.agent.nodes.memory_manager import load_memory_context, save_conversation
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,17 @@ def build_graph(session: AsyncSession) -> StateGraph:
         Compiled LangGraph ready for ainvoke().
     """
 
+    # Wrap memory_node to bind session
+    async def _memory_node(state: OverallState) -> dict:
+        user_id = state.get("user_id", "default")
+        user_query = state.get("user_query", "")
+        memory_context = await load_memory_context(
+            session=session,
+            user_id=user_id,
+            current_query=user_query,
+        )
+        return {"memory_context": memory_context}
+
     # Wrap execute_step to bind session
     async def _execute_step(state: OverallState) -> dict:
         return await execute_step(state, session)
@@ -62,6 +74,7 @@ def build_graph(session: AsyncSession) -> StateGraph:
     graph = StateGraph(OverallState)
 
     # Add nodes
+    graph.add_node("memory", _memory_node)
     graph.add_node("plan", plan_node)
     graph.add_node("execute_step", _execute_step)
     graph.add_node("replan", replan_node)
@@ -69,8 +82,9 @@ def build_graph(session: AsyncSession) -> StateGraph:
     graph.add_node("passthrough", passthrough_node)
     graph.add_node("empty_response", _empty_response)
 
-    # Entry point
-    graph.set_entry_point("plan")
+    # Entry point: memory → plan
+    graph.set_entry_point("memory")
+    graph.add_edge("memory", "plan")
 
     # plan → route
     graph.add_conditional_edges(
@@ -115,6 +129,7 @@ async def run_orchestrator(
     user_query: str,
     user_id: str,
     session: AsyncSession,
+    session_id: str = "default",
 ) -> dict:
     """Convenience function to run the orchestrator graph.
 
@@ -122,6 +137,7 @@ async def run_orchestrator(
         user_query: The user's input text.
         user_id: User identifier.
         session: Async DB session.
+        session_id: Conversation session identifier.
 
     Returns:
         dict with keys:
@@ -136,7 +152,18 @@ async def run_orchestrator(
         "messages": [],
     })
 
+    final_answer = result.get("final_answer", "")
+
+    # Save conversation round (user query + assistant answer) to short-term memory
+    await save_conversation(
+        session=session,
+        user_id=user_id,
+        session_id=session_id,
+        user_message=user_query,
+        assistant_message=final_answer,
+    )
+
     return {
-        "final_answer": result.get("final_answer", ""),
+        "final_answer": final_answer,
         "step_results": result.get("step_results", []),
     }

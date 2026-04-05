@@ -19,6 +19,11 @@ _mock_gap.run_gap_agent = AsyncMock()
 _mock_quiz = MagicMock()
 _mock_quiz.run_quiz_agent = AsyncMock()
 
+# Create mock for memory_manager (graph.py now imports it)
+_mock_memory = MagicMock()
+_mock_memory.load_memory_context = AsyncMock(return_value="")
+_mock_memory.save_conversation = AsyncMock()
+
 for mod_name in [
     "FlagEmbedding", "pymilvus", "transformers", "docx", "torch",
     "magic_pdf", "magic_pdf.data", "magic_pdf.data.data_reader_writer",
@@ -37,6 +42,7 @@ for mod_name in [
 sys.modules["app.agent.subagents.qa_agent"] = _mock_qa
 sys.modules["app.agent.subagents.gap_agent"] = _mock_gap
 sys.modules["app.agent.subagents.quiz_agent"] = _mock_quiz
+sys.modules["app.agent.nodes.memory_manager"] = _mock_memory
 
 from app.agent.state import OverallState  # noqa: E402
 from app.agent.nodes.orchestrator import (  # noqa: E402
@@ -202,6 +208,32 @@ class TestPlanNode:
 
             intents = [s["intent"] for s in result["plan"]]
             assert "unknown_intent" not in intents
+
+    @pytest.mark.asyncio
+    async def test_memory_context_injected(self):
+        """Test that memory_context is appended to the system prompt."""
+        plan_response = json.dumps({
+            "steps": [
+                {"step": 1, "intent": "qa", "params": {"query": "继续讲讲"}, "depends_on": []}
+            ],
+        })
+
+        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
+            mock_llm.chat = AsyncMock(return_value=_make_llm_response(plan_response))
+
+            state: OverallState = {
+                "user_query": "继续讲讲",
+                "user_id": "test",
+                "memory_context": "【短期记忆】用户之前问了Transformer的原理",
+            }
+            result = await plan_node(state)
+
+            # Verify memory was included in the system prompt
+            call_args = mock_llm.chat.call_args
+            messages = call_args.kwargs.get("messages", call_args.args[0] if call_args.args else [])
+            system_msg = messages[0]["content"]
+            assert "用户记忆上下文" in system_msg
+            assert "Transformer" in system_msg
 
 
 # ── execute_step tests ──────────────────────────────────────
@@ -577,7 +609,9 @@ class TestGraphIntegration:
                 return _make_llm_response(replan_finish)
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
-             patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa:
+             patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
+             patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
             mock_llm.chat = mock_chat
             mock_qa.return_value = {"answer": "Transformer是一种基于自注意力的模型", "confidence": "high", "plan": {}, "sources": []}
@@ -617,7 +651,9 @@ class TestGraphIntegration:
                 return _make_llm_response(replan_finish)
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
-             patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz:
+             patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz, \
+             patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
+             patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
             mock_llm.chat = mock_chat
             mock_quiz.return_value = quiz_result
@@ -666,7 +702,9 @@ class TestGraphIntegration:
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
-             patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa:
+             patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
+             patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
             mock_llm.chat = mock_chat
             mock_gap.return_value = {"report": "盲区: Attention"}
@@ -716,7 +754,9 @@ class TestGraphIntegration:
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
-             patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz:
+             patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz, \
+             patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
+             patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
             mock_llm.chat = mock_chat
             mock_gap.return_value = {"report": "盲区: Attention"}
@@ -783,7 +823,9 @@ class TestGraphIntegration:
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
-             patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa:
+             patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
+             patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
             mock_llm.chat = mock_chat
             mock_gap.return_value = {"report": "盲区: Attention, LSTM"}
@@ -827,7 +869,9 @@ class TestGraphIntegration:
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
-             patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap:
+             patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
+             patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
+             patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
             mock_llm.chat = mock_chat
             mock_qa.return_value = {"answer": "Transformer是...", "confidence": "high", "plan": {}, "sources": []}
