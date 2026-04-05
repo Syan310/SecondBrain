@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Orchestrator: Plan & Execute intent routing for QA + Gap + Quiz SubAgents.
+"""Orchestrator: Plan & Execute with Replan loop for QA + Gap + Quiz SubAgents.
 
 Architecture:
   ┌─────────────────────────────────────────────────────────────────┐
@@ -10,12 +10,19 @@ Architecture:
   │    - Multi intent: N steps with depends_on for ordering        │
   │    - Quiz always last step, depends_on prior steps             │
   ├─────────────────────────────────────────────────────────────────┤
-  │  execute_node                                                   │
-  │    For each step (respecting depends_on):                      │
+  │  execute_step                                                   │
+  │    Execute ONE step at plan[current_step_index]:               │
   │      - If has dependencies, LLM rewrites params using prior    │
   │        step results                                            │
   │      - Dispatch to SubAgent (QA / Gap / Quiz)                  │
-  │      - Collect results                                         │
+  │      - Append result, increment current_step_index             │
+  ├─────────────────────────────────────────────────────────────────┤
+  │  replan_node                                                    │
+  │    Review latest step result, decide next action:              │
+  │      - continue: proceed to next planned step                  │
+  │      - revise: replace remaining plan steps, then continue     │
+  │      - finish: skip remaining steps, go to output              │
+  │    Max 3 replan iterations to prevent infinite loops.           │
   ├─────────────────────────────────────────────────────────────────┤
   │  synthesize_node (only when multiple step results)              │
   │    Merge results into a coherent final answer                  │
@@ -86,7 +93,7 @@ PLAN_SYSTEM_PROMPT = """\
 
 ## 示例
 
-### 示例 1: 简单问答
+### 示例 1: 单意图问答
 用户: "什么是 Transformer?"
 ```json
 {
@@ -96,17 +103,7 @@ PLAN_SYSTEM_PROMPT = """\
 }
 ```
 
-### 示例 2: 知识盲区诊断
-用户: "帮我看看 NLP 这块哪里比较薄弱"
-```json
-{
-  "steps": [
-    {"step": 1, "intent": "gap_analysis", "params": {"scope": null, "keyword": "NLP"}, "depends_on": []}
-  ]
-}
-```
-
-### 示例 3: 复杂多意图 — 诊断 + 讲解
+### 示例 2: 串行多意图（诊断 → 讲解）
 用户: "帮我分析 NLP 的薄弱点，然后给我讲讲最弱的那个概念"
 ```json
 {
@@ -117,29 +114,7 @@ PLAN_SYSTEM_PROMPT = """\
 }
 ```
 
-### 示例 4: 问答 + 掌握度查看（并行）
-用户: "Transformer 的自注意力是什么？顺便看看我这块掌握怎么样"
-```json
-{
-  "steps": [
-    {"step": 1, "intent": "qa", "params": {"query": "Transformer 自注意力机制是什么"}, "depends_on": []},
-    {"step": 2, "intent": "gap_analysis", "params": {"scope": null, "keyword": "Transformer"}, "depends_on": []}
-  ]
-}
-```
-
-### 示例 5: 诊断 + quiz
-用户: "帮我分析一下 NLP 的盲区，然后出几道题考考我"
-```json
-{
-  "steps": [
-    {"step": 1, "intent": "gap_analysis", "params": {"scope": null, "keyword": "NLP"}, "depends_on": []},
-    {"step": 2, "intent": "quiz", "params": {"topics": []}, "depends_on": [1]}
-  ]
-}
-```
-
-### 示例 6: 纯 quiz（指定主题）
+### 示例 3: 纯 quiz
 用户: "来几道 NLP 的题目"
 ```json
 {
@@ -149,28 +124,7 @@ PLAN_SYSTEM_PROMPT = """\
 }
 ```
 
-### 示例 7: 纯 quiz（不指定主题）
-用户: "考考我"
-```json
-{
-  "steps": [
-    {"step": 1, "intent": "quiz", "params": {"topics": []}, "depends_on": []}
-  ]
-}
-```
-
-### 示例 8: QA + quiz（讲完就考）
-用户: "给我讲讲 Attention 机制，然后出题考我"
-```json
-{
-  "steps": [
-    {"step": 1, "intent": "qa", "params": {"query": "Attention 机制是什么"}, "depends_on": []},
-    {"step": 2, "intent": "quiz", "params": {"topics": ["Attention"]}, "depends_on": [1]}
-  ]
-}
-```
-
-### 示例 9: 诊断 + 讲解 + quiz
+### 示例 4: 三步复合（诊断 → 讲解 → quiz）
 用户: "看看我深度学习哪里不行，给我讲讲，然后出题考我"
 ```json
 {
@@ -206,6 +160,94 @@ REWRITE_SYSTEM_PROMPT = """\
 或
 ```json
 {"scope": "文档名或null", "keyword": "具体关键词或null"}
+```
+"""
+
+# ── Replan Prompt ────────────────────────────────────────────
+
+REPLAN_SYSTEM_PROMPT = """\
+你是一个执行计划审查器。你需要根据已完成步骤的结果，决定下一步行动。
+
+## 输入信息
+
+你会收到：
+- 用户的原始输入
+- 已完成的步骤及其结果
+- 剩余未执行的步骤
+
+## 决策选项
+
+你必须从以下三个动作中选择一个：
+
+1. **continue** — 按原计划执行下一步。选择此项当：
+   - 上一步正常返回了有效结果
+   - 剩余步骤不需要调整
+
+2. **revise** — 修改剩余计划后继续执行。选择此项当：
+   - 上一步结果揭示了新信息，需要调整后续步骤
+   - 需要追加新的步骤（如诊断发现多个盲区，需要分别讲解）
+   - 需要删除不再必要的步骤
+
+3. **finish** — 跳过剩余步骤，直接输出最终结果。选择此项当：
+   - 已完成的步骤已经充分回答了用户的问题
+   - 剩余步骤不再有意义（如上一步失败导致后续无法执行）
+   - 所有计划步骤已执行完毕
+
+## 输出格式
+
+你必须输出一个 JSON 对象（不要输出其他内容）：
+
+```json
+{
+  "action": "continue" 或 "revise" 或 "finish",
+  "revised_steps": [...],
+  "reason": "简短理由"
+}
+```
+
+### revised_steps 说明
+- 仅当 action 为 "revise" 时需要提供，替换剩余未执行的步骤
+- 格式与原 plan 步骤相同: {"step": N, "intent": "qa" 或 "gap_analysis" 或 "quiz", "params": {...}, "depends_on": [...]}
+- step 编号从已完成步骤的下一个编号开始
+- quiz 如果出现，必须是最后一步
+- action 为 "continue" 或 "finish" 时，revised_steps 为空数组 []
+
+## 示例
+
+### 示例 1: 正常继续
+已完成: step 1 (gap_analysis) 返回了诊断报告
+剩余: step 2 (qa) 讲解盲区概念
+```json
+{"action": "continue", "revised_steps": [], "reason": "诊断正常完成，按计划继续讲解盲区概念"}
+```
+
+### 示例 2: 修改计划
+已完成: step 1 (gap_analysis) 发现了 3 个盲区: Attention, LSTM, Transformer
+剩余: step 2 (qa) 只讲解一个概念
+```json
+{
+  "action": "revise",
+  "revised_steps": [
+    {"step": 2, "intent": "qa", "params": {"query": "讲解 Attention 机制"}, "depends_on": [1]},
+    {"step": 3, "intent": "qa", "params": {"query": "讲解 LSTM"}, "depends_on": [1]},
+    {"step": 4, "intent": "qa", "params": {"query": "讲解 Transformer"}, "depends_on": [1]}
+  ],
+  "reason": "诊断发现3个盲区，追加讲解步骤以覆盖所有盲区"
+}
+```
+
+### 示例 3: 提前结束
+已完成: step 1 (qa) 完整回答了用户问题
+剩余: step 2 (gap_analysis)
+```json
+{"action": "finish", "revised_steps": [], "reason": "QA已充分回答用户问题，无需继续诊断"}
+```
+
+### 示例 4: 所有步骤已执行完毕
+已完成: step 1 (gap_analysis), step 2 (qa)
+剩余: 无
+```json
+{"action": "finish", "revised_steps": [], "reason": "所有步骤已执行完毕"}
 ```
 """
 
@@ -283,6 +325,9 @@ async def plan_node(state: OverallState) -> dict:
 
         return {
             "plan": steps,
+            "current_step_index": 0,
+            "step_results": [],
+            "replan_count": 0,
         }
 
     except (json.JSONDecodeError, ValueError, KeyError) as e:
@@ -296,6 +341,9 @@ async def plan_node(state: OverallState) -> dict:
                     "depends_on": [],
                 }
             ],
+            "current_step_index": 0,
+            "step_results": [],
+            "replan_count": 0,
         }
 
 
@@ -382,51 +430,55 @@ async def _dispatch_subagent(
         return f"未知意图: {intent}"
 
 
-async def execute_node(state: OverallState, session: AsyncSession) -> dict:
-    """Execute plan steps, dispatching to SubAgents.
+async def execute_step(state: OverallState, session: AsyncSession) -> dict:
+    """Execute ONE step at plan[current_step_index].
 
-    Reads: plan, user_query, user_id
-    Writes: step_results
+    Reads: plan, current_step_index, step_results, user_query, user_id
+    Writes: step_results (append), current_step_index (+1)
     """
     plan = state.get("plan", [])
+    idx = state.get("current_step_index", 0)
+    step_results = list(state.get("step_results", []))
     user_query = state["user_query"]
     user_id = state.get("user_id", "default")
 
-    if not plan:
-        return {"step_results": []}
+    if idx >= len(plan):
+        return {"step_results": step_results, "current_step_index": idx}
 
-    step_results: list[dict] = []
-    results_by_step: dict[int, dict] = {}
+    step = plan[idx]
+    step_num = step["step"]
+    intent = step["intent"]
+    params = step["params"]
+    depends_on = step.get("depends_on", [])
 
-    for step in plan:
-        step_num = step["step"]
-        intent = step["intent"]
-        params = step["params"]
-        depends_on = step.get("depends_on", [])
+    # Build lookup from prior results
+    results_by_step = {r["step"]: r for r in step_results}
 
-        # If step has dependencies, rewrite params using prior results
-        if depends_on:
-            prior_results = [results_by_step[d] for d in depends_on if d in results_by_step]
-            if prior_results:
-                params = await _rewrite_params(step, prior_results, user_query)
-                logger.info("Step %d params rewritten: %s", step_num, params)
+    # If step has dependencies, rewrite params using prior results
+    if depends_on and step_results:
+        prior_results = [results_by_step[d] for d in depends_on if d in results_by_step]
+        if prior_results:
+            params = await _rewrite_params(step, prior_results, user_query)
+            logger.info("Step %d params rewritten: %s", step_num, params)
 
-        # Collect prior results for dispatch (quiz uses them as context)
-        dep_results = [results_by_step[d] for d in depends_on if d in results_by_step] if depends_on else None
+    # Collect prior results for dispatch (quiz uses them as context)
+    dep_results = [results_by_step[d] for d in depends_on if d in results_by_step] if depends_on else None
 
-        # Dispatch to SubAgent
-        logger.info("Executing step %d: intent=%s, params=%s", step_num, intent, params)
-        result_text = await _dispatch_subagent(intent, params, user_id, session, dep_results)
+    # Dispatch to SubAgent
+    logger.info("Executing step %d: intent=%s, params=%s", step_num, intent, params)
+    result_text = await _dispatch_subagent(intent, params, user_id, session, dep_results)
 
-        step_result = {
-            "step": step_num,
-            "intent": intent,
-            "result": result_text,
-        }
-        step_results.append(step_result)
-        results_by_step[step_num] = step_result
+    step_result = {
+        "step": step_num,
+        "intent": intent,
+        "result": result_text,
+    }
+    step_results.append(step_result)
 
-    return {"step_results": step_results}
+    return {
+        "step_results": step_results,
+        "current_step_index": idx + 1,
+    }
 
 
 # ── Synthesize Node ──────────────────────────────────────────
@@ -479,19 +531,127 @@ async def passthrough_node(state: OverallState) -> dict:
     return {"final_answer": "没有生成任何结果。"}
 
 
+# ── Replan Node ──────────────────────────────────────────────
+
+MAX_REPLAN_COUNT = 3
+
+
+async def replan_node(state: OverallState) -> dict:
+    """Review latest step result and decide: continue / revise / finish.
+
+    If max replans reached, auto-finish.
+
+    Reads: plan, current_step_index, step_results, user_query, replan_count
+    Writes: replan_action, plan (if revise), replan_count
+    """
+    plan = state.get("plan", [])
+    idx = state.get("current_step_index", 0)
+    step_results = state.get("step_results", [])
+    user_query = state["user_query"]
+    replan_count = state.get("replan_count", 0)
+
+    # Auto-finish: max replans reached (safety valve)
+    # Note: we do NOT auto-finish when idx >= len(plan), because the LLM
+    # may want to revise and add new steps. Let the LLM decide.
+    if replan_count >= MAX_REPLAN_COUNT:
+        logger.warning("Max replan count (%d) reached, forcing finish", MAX_REPLAN_COUNT)
+        return {"replan_action": "finish", "replan_count": replan_count}
+
+    # Build context for LLM
+    completed_text = "\n\n".join(
+        f"### Step {r['step']} ({r['intent']}) 结果:\n{r['result'][:500]}"
+        for r in step_results
+    )
+    remaining_steps = plan[idx:] if idx < len(plan) else []
+    remaining_text = json.dumps(remaining_steps, ensure_ascii=False, indent=2) if remaining_steps else "无剩余步骤"
+
+    messages = [
+        {"role": "system", "content": REPLAN_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                f"## 用户原始输入\n{user_query}\n\n"
+                f"## 已完成的步骤\n{completed_text}\n\n"
+                f"## 剩余未执行的步骤\n{remaining_text}"
+            ),
+        },
+    ]
+
+    response = await llm_client.chat(
+        messages=messages,
+        temperature=0.1,
+        max_tokens=1024,
+    )
+
+    try:
+        result = _parse_json(response["content"])
+        action = result.get("action", "continue")
+        reason = result.get("reason", "")
+
+        if action not in ("continue", "revise", "finish"):
+            logger.warning("Invalid replan action '%s', defaulting to continue", action)
+            action = "continue"
+
+        logger.info("Replan decision: action=%s, reason=%s", action, reason)
+
+        update: dict = {
+            "replan_action": action,
+            "replan_count": replan_count + 1,
+        }
+
+        # If revise, replace remaining plan steps
+        if action == "revise":
+            revised_steps = result.get("revised_steps", [])
+            # Validate revised steps
+            valid_intents = ("qa", "gap_analysis", "quiz")
+            revised_steps = [
+                s for s in revised_steps
+                if s.get("intent") in valid_intents
+            ]
+            if revised_steps:
+                # Keep completed portion, replace remainder
+                new_plan = plan[:idx] + revised_steps
+                update["plan"] = new_plan
+                logger.info(
+                    "Plan revised: %d completed + %d new steps",
+                    idx, len(revised_steps),
+                )
+            else:
+                # No valid revised steps → finish instead
+                logger.warning("Revise returned no valid steps, switching to finish")
+                update["replan_action"] = "finish"
+
+        return update
+
+    except (json.JSONDecodeError, ValueError, KeyError) as e:
+        logger.warning("Replan parse failed: %s, defaulting to continue", e)
+        return {
+            "replan_action": "continue",
+            "replan_count": replan_count + 1,
+        }
+
+
 # ── Routing logic ────────────────────────────────────────────
 
 
 def route_after_plan(state: OverallState) -> str:
-    """Route after plan_node: skip execution if no steps (quiz-only)."""
+    """Route after plan_node: skip execution if no steps."""
     plan = state.get("plan", [])
     if not plan:
         return "no_steps"
     return "has_steps"
 
 
-def route_after_execute(state: OverallState) -> str:
-    """Route after execute_node: synthesize if multiple results."""
+def route_after_replan(state: OverallState) -> str:
+    """Route after replan_node: continue/revise → execute, finish → output."""
+    action = state.get("replan_action", "finish")
+    if action in ("continue", "revise"):
+        return "execute"
+    return "finish"
+
+
+def route_to_output(state: OverallState) -> str:
+    """Route to passthrough (single result) or synthesize (multiple)."""
     step_results = state.get("step_results", [])
     if len(step_results) > 1:
         return "multi"

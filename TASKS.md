@@ -39,11 +39,11 @@
 
 ## Step 5: Orchestrator
 
-- [x] `state.py` 扩展 — OverallState 增加 plan, step_results 字段
-- [x] `orchestrator.py` — Plan & Execute 架构: plan_node (LLM few-shot 意图识别+计划生成, 支持 qa/gap_analysis/quiz 三种意图) + execute_node (按依赖顺序调用 SubAgent, 串行时 LLM 改写 params) + synthesize_node (多结果汇总) + passthrough_node (单结果直传)
-- [x] `graph.py` — LangGraph StateGraph: plan → route(has_steps/no_steps) → execute → route(single/multi) → passthrough|synthesize → END
+- [x] `state.py` 扩展 — OverallState 增加 plan, step_results, current_step_index, replan_action, replan_count 字段
+- [x] `orchestrator.py` — Plan & Execute with Replan 架构: plan_node (LLM few-shot 意图识别+计划生成, 支持 qa/gap_analysis/quiz 三种意图) + execute_step (单步执行) + replan_node (LLM 审视结果, continue/revise/finish) + synthesize_node (多结果汇总) + passthrough_node (单结果直传)
+- [x] `graph.py` — LangGraph StateGraph: plan → route → execute_step → replan → route(execute/single/multi) → execute_step|passthrough|synthesize → END
 - [x] `quiz_agent.py` 重构 — 从 10 题多轮 session 改为单次出 2 道选择题（RAG 检索出题）, 作为 orchestrator plan 的普通 step
-- [x] 测试 — 28 个单元测试 + 集成测试全部通过 (含 quiz dispatch、quiz with prior context、graph flow)
+- [x] 测试 — 39 个单元测试 + 集成测试全部通过 (含 replan continue/revise/finish、quiz dispatch、graph flow)
 
 ## Step 6: API 层
 
