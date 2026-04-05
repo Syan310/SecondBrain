@@ -74,11 +74,14 @@
 
 ## Step 7: Frontend
 
-- [ ] React + Vite 项目搭建
-- [ ] `ChatPanel.tsx` — QA 问答界面, SSE 流式接收
-- [ ] `QuizPanel.tsx` — Quiz 复习界面, 多轮交互
-- [ ] `GapAnalysis.tsx` — 知识盲区诊断界面
-- [ ] `FileUpload.tsx` — 文档上传功能
+- [x] React + Vite + TypeScript 项目搭建, Tailwind CSS v4
+- [x] `Layout.tsx` — 左侧 sidebar 导航 + 右侧内容区
+- [x] `ChatPanel.tsx` — QA 问答界面, POST → JSON (检测 quiz 意图自动切换)
+- [x] `QuizPanel.tsx` — Quiz MCQ 渲染 + 规则判分 + mastery 展示 + 完成总结
+- [x] `GapAnalysis.tsx` — 知识盲区诊断 (scope 输入 + 报告展示)
+- [x] `FileUpload.tsx` — 文档拖拽/点击上传, 解析结果展示
+- [x] `api.ts` + `types.ts` — API 客户端 + TypeScript 类型定义
+- [x] `App.tsx` — 面板切换 + quiz 数据传递
 
 ## Step 8: 评估 & 优化
 

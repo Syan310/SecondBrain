@@ -287,3 +287,21 @@ config.py, models.py, crud.py, milvus_client.py, state.py, memory_manager.py, or
 - `quiz.py` — POST /api/quiz/answer → 字母比对 → update_mastery → JSON
 - `update_mastery.py` — QUALITY_DELTA dict 改为 CORRECT_DELTA/INCORRECT_DELTA 常量
 - `crud.py` — upsert_mastery 参数 quality:str → is_correct:bool
+
+## 2026-04-05: Step 7 Frontend
+
+### 决策
+1. **Tailwind CSS v4** + @tailwindcss/vite 插件，零配置文件
+2. **左侧 sidebar + 右侧内容区** 布局，4 面板：聊天/Quiz/盲区诊断/文档上传
+3. **Quiz 自动切换**：ChatPanel 检测 step_results 中 intent=quiz → 解析 JSON → 传递 QuizData → 自动切到 QuizPanel
+4. **Vite proxy**：开发环境 /api 请求代理到 localhost:8000，避免 CORS
+5. **无 SSE**：与 Step 6 一致，普通 POST → JSON
+
+### 实现
+- Layout.tsx — sidebar 导航组件，高亮当前面板，quiz badge
+- ChatPanel.tsx — 聊天气泡 UI，发送/接收/loading 状态，quiz 意图检测
+- QuizPanel.tsx — MCQ 选项卡片，提交判分，正误反馈+掌握度变化，完成总结页
+- GapAnalysis.tsx — scope 输入框 + 诊断按钮 + 报告展示
+- FileUpload.tsx — 拖拽/点击上传 + 解析结果展示
+- api.ts — sendChat / submitQuizAnswer / uploadFile 三个 typed 函数
+- types.ts — 前后端共享类型定义

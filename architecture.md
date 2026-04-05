@@ -604,7 +604,7 @@ Step 8: 评估 & 优化
 - [x] Step 4: SubAgents (state.py + qa_agent + quiz_agent + gap_agent)
 - [x] Step 5: Orchestrator (Plan & Execute, QA+Gap 编排, Quiz 独立)
 - [x] Step 6: API 层 (chat.py 统一对话 + quiz.py 规则判分 + schemas.py)
-- [ ] Step 7: Frontend
+- [x] Step 7: Frontend (React + Vite + Tailwind, 4 面板 + sidebar 布局)
 - [ ] Step 8: 评估 & 优化
 
 ## 10. 评估指标体系
