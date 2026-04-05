@@ -15,9 +15,10 @@ from typing import Optional, TypedDict
 class OverallState(TypedDict, total=False):
     """Shared state for the Orchestrator graph.
 
-    Plan & Execute architecture:
-    - plan_node: LLM generates execution plan (steps + optional suggested_followup)
-    - execute_node: executes steps sequentially/parallel, calling QA/Gap SubAgents
+    Plan & Execute with Replan loop:
+    - plan_node: LLM generates execution plan (steps with depends_on)
+    - execute_step: executes ONE step per iteration, calling QA/Gap/Quiz SubAgents
+    - replan_node: reviews step result, decides continue/revise/finish
     - synthesize_node: merges multiple step results (skipped for single-step)
     """
 
@@ -25,10 +26,17 @@ class OverallState(TypedDict, total=False):
     user_id: str
     user_query: str               # original user input
 
+    # Memory context (injected by memory_manager before plan_node)
+    memory_context: str           # formatted string: short-term + long-term memories
+
     # Plan & Execute fields
     plan: list[dict]              # execution steps: [{step, intent, params, depends_on}]
-    suggested_followup: Optional[dict]  # e.g. {"intent": "quiz", "params": {...}}
     step_results: list[dict]      # [{step, intent, result}]
+
+    # Replan loop fields
+    current_step_index: int       # index into plan[] for next step to execute, starts at 0
+    replan_action: str            # "continue" | "revise" | "finish"
+    replan_count: int             # number of replan iterations (max 3)
 
     final_answer: str             # final output to user
 
@@ -54,15 +62,15 @@ class QAState(TypedDict, total=False):
 
 
 class QuizState(TypedDict, total=False):
-    """State for the Quiz SubAgent (10-question agent-driven quiz)."""
+    """State for the Quiz SubAgent (2-question generation as orchestrator step).
 
-    messages: list[dict]      # agent message history
+    Quiz agent generates questions only; grading happens in API layer.
+    """
+
     user_id: str
-    session_id: str
-    target_topics: list[str]  # user-specified or weighted-random topics
-    current_round: int        # current question number (1-10)
-    quiz_history: list[dict]  # [{topic, question, user_answer, is_correct, score_change}]
-    final_summary: str
+    topics: list[str]          # topics to quiz on (from prior step or mastery-based)
+    prior_context: Optional[str]  # context from prior QA/Gap step
+    questions: list[dict]      # generated questions: [{topic, question, choices, correct_answer, explanation}]
 
 
 # ── Gap Analysis SubAgent State ──────────────────────────────

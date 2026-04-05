@@ -306,5 +306,169 @@ class MilvusService:
         ]
 
 
-# Module-level singleton
+# ── Memory Collection Service ───────────────────────────────
+
+
+_MEMORY_COLLECTION = settings.milvus_memory_collection
+_MEMORY_MAX_TEXT_LEN = 4096
+_MEMORY_OUTPUT_FIELDS = ["user_id", "summary", "topics", "session_id", "created_at"]
+
+
+@dataclass
+class MemorySearchResult:
+    """A single long-term memory hit."""
+
+    memory_id: str
+    user_id: str
+    summary: str
+    topics: str          # JSON string of topic list
+    session_id: str
+    created_at: float    # unix timestamp
+    score: float
+
+
+class MemoryMilvusService:
+    """Milvus operations for conversation_memory collection."""
+
+    def __init__(self) -> None:
+        self._collection: Collection | None = None
+
+    def init_collection(self) -> Collection:
+        """Create conversation_memory collection if not exists."""
+        if self._collection is not None:
+            return self._collection
+
+        if utility.has_collection(_MEMORY_COLLECTION):
+            existing = Collection(_MEMORY_COLLECTION)
+            logger.info("Memory collection '%s' already exists, loading.", _MEMORY_COLLECTION)
+            self._collection = existing
+            self._collection.load()
+            return self._collection
+
+        fields = [
+            FieldSchema(name="memory_id", dtype=DataType.VARCHAR, is_primary=True, max_length=36),
+            FieldSchema(name="user_id", dtype=DataType.VARCHAR, max_length=128),
+            FieldSchema(name="summary", dtype=DataType.VARCHAR, max_length=_MEMORY_MAX_TEXT_LEN),
+            FieldSchema(name="topics", dtype=DataType.VARCHAR, max_length=1024),     # JSON array string
+            FieldSchema(name="session_id", dtype=DataType.VARCHAR, max_length=64),
+            FieldSchema(name="created_at", dtype=DataType.DOUBLE),                   # unix timestamp
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=_DIM),
+            FieldSchema(name="sparse_embedding", dtype=DataType.SPARSE_FLOAT_VECTOR),
+        ]
+        schema = CollectionSchema(fields=fields, description="Long-term conversation memory")
+
+        self._collection = Collection(name=_MEMORY_COLLECTION, schema=schema)
+        logger.info("Created memory collection '%s'.", _MEMORY_COLLECTION)
+
+        # Dense index
+        self._collection.create_index(
+            field_name="embedding",
+            index_params={
+                "index_type": "HNSW",
+                "metric_type": "IP",
+                "params": {"M": 16, "efConstruction": 256},
+            },
+        )
+
+        # Sparse index
+        self._collection.create_index(
+            field_name="sparse_embedding",
+            index_params={
+                "index_type": "SPARSE_INVERTED_INDEX",
+                "metric_type": "IP",
+            },
+        )
+
+        # Scalar index on user_id for filtered search
+        self._collection.create_index(
+            field_name="user_id",
+            index_name="idx_memory_user_id",
+            index_params={"index_type": "INVERTED"},
+        )
+
+        self._collection.load()
+        logger.info("Memory collection '%s' indexed and loaded.", _MEMORY_COLLECTION)
+        return self._collection
+
+    @property
+    def collection(self) -> Collection:
+        if self._collection is None:
+            raise RuntimeError("Call init_collection() first.")
+        return self._collection
+
+    def insert(
+        self,
+        user_id: str,
+        summary: str,
+        topics: str,
+        session_id: str,
+        created_at: float,
+        embedding: list[float],
+        sparse_embedding: dict[int, float],
+    ) -> str:
+        """Insert one long-term memory entry. Returns the memory_id."""
+        memory_id = str(uuid.uuid4())
+        data = [
+            [memory_id],
+            [user_id],
+            [summary],
+            [topics],
+            [session_id],
+            [created_at],
+            [embedding],
+            [sparse_embedding],
+        ]
+        self.collection.insert(data)
+        self.collection.flush()
+        logger.info("Inserted memory '%s' for user '%s'.", memory_id, user_id)
+        return memory_id
+
+    def hybrid_search(
+        self,
+        query_vector: list[float],
+        sparse_vector: dict[int, float],
+        user_id: str,
+        top_k: int = 3,
+        rrf_k: int = 60,
+    ) -> list[MemorySearchResult]:
+        """Search long-term memory for a specific user."""
+        expr = f'user_id == "{user_id}"'
+
+        dense_req = AnnSearchRequest(
+            data=[query_vector],
+            anns_field="embedding",
+            param={"metric_type": "IP", "params": {"ef": 64}},
+            limit=top_k,
+            expr=expr,
+        )
+        sparse_req = AnnSearchRequest(
+            data=[sparse_vector],
+            anns_field="sparse_embedding",
+            param={"metric_type": "IP"},
+            limit=top_k,
+            expr=expr,
+        )
+
+        results = self.collection.hybrid_search(
+            [dense_req, sparse_req],
+            RRFRanker(k=rrf_k),
+            top_k,
+            output_fields=_MEMORY_OUTPUT_FIELDS,
+        )
+        return [
+            MemorySearchResult(
+                memory_id=hit.id,
+                user_id=hit.entity.get("user_id"),
+                summary=hit.entity.get("summary"),
+                topics=hit.entity.get("topics"),
+                session_id=hit.entity.get("session_id"),
+                created_at=hit.entity.get("created_at"),
+                score=hit.score,
+            )
+            for hit in results[0]
+        ]
+
+
+# Module-level singletons
 milvus_service = MilvusService()
+memory_milvus_service = MemoryMilvusService()

@@ -200,3 +200,30 @@
 5. **Synthesizer 只在多结果时激活**：单 SubAgent 结果直接 passthrough，不浪费 LLM 调用。
 
 6. **Python 3.9 兼容性**：为所有使用 `X | None` 语法的文件添加 `from __future__ import annotations`，State 中使用 `Optional[dict]` 以兼容 LangGraph 的 `get_type_hints()`。
+
+## 2026-04-04: Agent 记忆机制设计与实现
+
+### 决策
+
+为 Agent 添加短期记忆 + 长期记忆机制：
+- **短期记忆**: SQLite `conversation_history` 表，存最近 20 轮对话原文 (user + assistant 最终回答)，全量注入 Orchestrator prompt
+- **长期记忆**: Milvus `conversation_memory` Collection，存 LLM 结构化摘要 (100-200字自然语言 + topics)，按需 hybrid search Top-3
+
+### 整合策略
+
+短期超过 20 轮时，取最早 10 轮 → LLM 摘要压缩 → 向量化存入 Milvus → 删除已整合旧轮次。Queue 式 FIFO。
+
+### 作用范围
+
+仅在 Orchestrator 层统一管理（memory_node 读取 → plan_node 注入），SubAgent 透传。Quiz 不使用（已有 mastery）。
+
+### 关键设计选择
+
+1. 长期记忆存 LLM 摘要而非原始对话 — 信噪比高，向量检索效果好
+2. 按需检索而非全量注入 — 长期记忆持续积累，全量注入会爆 context + 噪音干扰
+3. 新建独立 Milvus Collection — 不与 child_chunks 混用，schema 和检索逻辑完全不同
+4. 短期用 SQLite 而非内存 — 服务重启后不丢失，学习场景用户可能隔天继续
+
+### 涉及文件
+
+config.py, models.py, crud.py, milvus_client.py, state.py, memory_manager.py, orchestrator.py, graph.py, main.py

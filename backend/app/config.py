@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     milvus_host: str = "milvus"
     milvus_port: int = 19530
     milvus_collection_name: str = "secondbrain_docs"
+    milvus_memory_collection: str = "conversation_memory"
+
+    # Memory
+    memory_short_term_limit: int = 20       # max conversation rounds in short-term
+    memory_consolidate_count: int = 10      # rounds to consolidate when limit reached
+    memory_long_term_top_k: int = 3         # top-K long-term memories to retrieve
+    memory_similarity_threshold: float = 0.3  # min similarity to include long-term memory
 
     # SQLite
     sqlite_db_path: str = "./data/secondbrain.db"
