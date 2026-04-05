@@ -45,6 +45,38 @@ export interface IngestResponse {
   concepts_new: number;
 }
 
+export interface MultiUploadResult {
+  filename: string;
+  success: boolean;
+  parents: number;
+  chunks_inserted: number;
+  concepts_total: number;
+  concepts_new: number;
+  error: string | null;
+}
+
+export interface MultiUploadResponse {
+  results: MultiUploadResult[];
+}
+
+export interface DocumentInfo {
+  source_doc: string;
+  concept_count: number;
+}
+
+export interface DocumentListResponse {
+  documents: DocumentInfo[];
+}
+
+export interface HistoryMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatHistoryResponse {
+  messages: HistoryMessage[];
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;

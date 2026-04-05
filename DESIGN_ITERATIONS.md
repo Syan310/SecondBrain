@@ -305,3 +305,17 @@ config.py, models.py, crud.py, milvus_client.py, state.py, memory_manager.py, or
 - FileUpload.tsx — 拖拽/点击上传 + 解析结果展示
 - api.ts — sendChat / submitQuizAnswer / uploadFile 三个 typed 函数
 - types.ts — 前后端共享类型定义
+
+## 2026-04-05: 多文件上传 + 文档管理 + 聊天持久化 + 无文档 fallback
+
+### 决策
+
+1. **多文件上传**: 前端支持多选/多拖拽, 后端 `POST /ingest/upload` 接收 `List[UploadFile]`, 并行解析(asyncio.gather + to_thread), 串行 embedding+写入(避免 OOM)
+2. **文档管理**: 新增 `GET /ingest/documents`(从 knowledge_concepts 按 source_doc 聚合) + `DELETE /ingest/documents/{filename}`(Milvus chunks + SQLite concepts 同时删除), 前端 FileUpload 页面持久化显示已上传文档列表, 每个文档可删除
+3. **聊天历史持久化**: 新增 `GET /chat/history`(复用已有 get_recent_conversations CRUD), 前端 ChatPanel mount 时加载历史消息, 刷新后不丢失
+4. **无文档 fallback**: QA Agent 入口检查 `milvus_service.count()`, 为 0 时跳过整个 Plan/Execute/QC 流程, 直接纯 LLM chat 回答 + 提示"知识库为空, 以下为通用回答"
+5. **不做 session 分离**: 用户只在一个对话框里对话, 短期记忆按 user_id 全量管理, 不按 session 隔离
+
+### 取消
+
+- Session 分离方案: 最初计划对 CRUD 全部加 session_id 过滤, 后决定不做, 保持单对话框模式

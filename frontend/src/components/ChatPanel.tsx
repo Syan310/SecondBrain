@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { sendChat } from "../services/api";
+import { sendChat, getChatHistory } from "../services/api";
 import QuizModal from "./QuizModal";
 import type { ChatMessage, QuizData } from "../types";
 
@@ -30,6 +30,19 @@ export default function ChatPanel() {
   const [loading, setLoading] = useState(false);
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Load chat history on mount
+  useEffect(() => {
+    getChatHistory()
+      .then((res) => {
+        if (res.messages.length > 0) {
+          setMessages(
+            res.messages.map((m) => ({ role: m.role, content: m.content })),
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
