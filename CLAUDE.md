@@ -1,11 +1,18 @@
 # 协作规则
 
+## 项目快照
+
+SecondBrain：基于个人笔记的 RAG + Quiz + 知识盲区诊断系统。FastAPI + LangGraph + Milvus + React/Vite。
+Step 1-7 已完成（Services → Ingestion → Tools → SubAgents → Orchestrator → Memory → API → Frontend），当前在 Step 8 评估 & 优化阶段。
+
 ## 文档参考
 
-`ARCHITECTURE.md` 项目的总体框架和设计
-`DESIGN_ITERATIONS.md` 包含对项目细节想法的迭代过程（**只追加，不读取**，纯存档用）
-`TASKS.md` 包含待处理的任务和已完成的任务
-**如果当前是开启的新对话，务必先将 `ARCHITECTURE.md`、`TASKS.md` 看一遍来了解项目当前状态。不要读取 `DESIGN_ITERATIONS.md`。**
+- `ARCHITECTURE.md` — 系统架构总览 + 文档索引（**新对话必读**）
+- `TASKS.md` — 任务清单（**新对话必读**）
+- `docs/*.md` — 各模块详细设计（**按需查阅**，见 ARCHITECTURE.md 索引表）
+- `DESIGN_ITERATIONS.md` — 设计迭代存档（**只追加，不读取**）
+
+**新对话启动时：读 `ARCHITECTURE.md` 和 `TASKS.md`，不要读 `docs/` 下的文件，除非任务涉及对应模块。**
 
 ## 核心原则
 
@@ -49,7 +56,7 @@
 
 每轮对话结束前，满足以下任一条件时必须更新文档：
 
-- **完成代码实现** → 更新 `ARCHITECTURE.md` 对应模块的接口说明或实现状态
+- **完成代码实现** → 更新 `ARCHITECTURE.md` 或 `docs/` 对应模块文档
 - **确定设计决策** → 更新 `ARCHITECTURE.md` 和 `TASKS.md`；向 `DESIGN_ITERATIONS.md` **追加**条目（用 bash append，不要先读取）
 
 `ARCHITECTURE.md` 和 `TASKS.md` 需要检查并按需更新；`DESIGN_ITERATIONS.md` 只追加不读取。

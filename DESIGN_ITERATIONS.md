@@ -319,3 +319,29 @@ config.py, models.py, crud.py, milvus_client.py, state.py, memory_manager.py, or
 ### 取消
 
 - Session 分离方案: 最初计划对 CRUD 全部加 session_id 过滤, 后决定不做, 保持单对话框模式
+
+## 2026-04-05: 文档渐进式披露重构
+
+### 背景
+ARCHITECTURE.md 膨胀到 668 行，每次新对话冷启动需读取全文消耗大量 token。
+
+### 决策
+采用三层渐进式披露架构：
+1. **CLAUDE.md** — 项目快照（10行以内）+ 文档索引表，新对话只读这个 + TASKS.md
+2. **ARCHITECTURE.md** — 精简为系统架构图 + 技术栈 + 文档索引，~60行
+3. **docs/*.md** — 7 个模块文档，每个含"概要"（1-2句）+"详细设计"，按需加载
+
+### 拆分结果
+| 文件 | 内容 |
+|------|------|
+| docs/agents.md | Agent 分层架构 |
+| docs/langgraph.md | LangGraph 图结构设计 |
+| docs/tools.md | Tool 定义与分配 |
+| docs/data-storage.md | 数据流、存储、SQLite 表结构、Mastery 公式 |
+| docs/memory.md | 短期/长期记忆机制 |
+| docs/evaluation.md | 评估指标体系 |
+| docs/directory.md | 项目目录结构 |
+
+### 效果
+- 冷启动 token 消耗: ~668行 → ~60行 (ARCHITECTURE.md) + ~100行 (TASKS.md)
+- 按需加载: 修改特定模块时才读对应 docs/*.md
