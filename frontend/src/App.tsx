@@ -1,23 +1,16 @@
+import { useState } from "react";
+import Layout from "./components/Layout";
 import ChatPanel from "./components/ChatPanel";
-import GapAnalysis from "./components/GapAnalysis";
-import QuizPanel from "./components/QuizPanel";
 import FileUpload from "./components/FileUpload";
-import "./App.css";
+import type { Panel } from "./types";
 
-function App() {
+export default function App() {
+  const [activePanel, setActivePanel] = useState<Panel>("chat");
+
   return (
-    <div className="app">
-      <header>
-        <h1>SecondBrain</h1>
-      </header>
-      <main>
-        <ChatPanel />
-        <GapAnalysis />
-        <QuizPanel />
-        <FileUpload />
-      </main>
-    </div>
+    <Layout activePanel={activePanel} onNavigate={setActivePanel}>
+      {activePanel === "chat" && <ChatPanel />}
+      {activePanel === "upload" && <FileUpload />}
+    </Layout>
   );
 }
-
-export default App;

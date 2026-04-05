@@ -530,16 +530,15 @@ SecondBrain/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── ChatPanel.tsx       # QA问答
-│   │   │   ├── QuizPanel.tsx       # Quiz复习
-│   │   │   ├── GapAnalysis.tsx     # 知识盲区诊断
+│   │   │   ├── Layout.tsx          # sidebar导航 + 内容区布局
+│   │   │   ├── ChatPanel.tsx       # 统一对话 (QA/Quiz/Gap 三合一)
+│   │   │   ├── QuizModal.tsx       # Quiz MCQ 弹窗
 │   │   │   └── FileUpload.tsx      # 文档上传
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   ├── services/api.ts
-│   │   └── App.tsx
+│   │   ├── services/api.ts         # API客户端 (sendChat/submitQuizAnswer/uploadFile)
+│   │   ├── types.ts                # TypeScript类型定义
+│   │   └── App.tsx                 # 两面板切换 (chat/upload)
 │   ├── package.json
-│   └── vite.config.ts
+│   └── vite.config.ts              # Tailwind v4 + dev proxy
 ├── docker-compose.yml              # Milvus + Backend
 └── README.md
 ```
@@ -604,7 +603,7 @@ Step 8: 评估 & 优化
 - [x] Step 4: SubAgents (state.py + qa_agent + quiz_agent + gap_agent)
 - [x] Step 5: Orchestrator (Plan & Execute, QA+Gap 编排, Quiz 独立)
 - [x] Step 6: API 层 (chat.py 统一对话 + quiz.py 规则判分 + schemas.py)
-- [ ] Step 7: Frontend
+- [x] Step 7: Frontend (React + Vite + Tailwind, 4 面板 + sidebar 布局)
 - [ ] Step 8: 评估 & 优化
 
 ## 10. 评估指标体系
