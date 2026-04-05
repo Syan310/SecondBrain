@@ -35,6 +35,7 @@ export default function ChatPanel() {
   const [loading, setLoading] = useState(false);
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Load chat history on mount
   useEffect(() => {
@@ -86,9 +87,17 @@ export default function ChatPanel() {
     });
   };
 
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+  };
+
   const handleSend = async (override?: string) => {
     const query = (override ?? input).trim();
     if (!query || loading) return;
+
+    const abortController = new AbortController();
+    abortRef.current = abortController;
 
     setMessages((prev) => [
       ...prev,
@@ -104,13 +113,19 @@ export default function ChatPanel() {
         step_results: { intent: string; result: string }[];
       } | null = null;
 
-      await sendChatStream(query, "default", "default", {
-        onStatus: (event) => appendStage(event.message),
-        onToken: (text) => appendAssistantToken(text),
-        onFinal: (response) => {
-          finalResponse = response;
+      await sendChatStream(
+        query,
+        "default",
+        "default",
+        {
+          onStatus: (event) => appendStage(event.message),
+          onToken: (text) => appendAssistantToken(text),
+          onFinal: (response) => {
+            finalResponse = response;
+          },
         },
-      });
+        abortController.signal,
+      );
 
       const res = finalResponse;
       if (!res) {
@@ -128,10 +143,9 @@ export default function ChatPanel() {
         }
       }
 
-      const answerText =
-        parsedQuiz && res.answer.trim().startsWith("{")
-          ? "已为你生成测验，请在弹窗中作答。"
-          : res.answer;
+      const answerText = parsedQuiz
+        ? "已为您生成测验，请在弹窗中作答。"
+        : res.answer;
 
       setMessages((prev) => {
         const next = [...prev];
@@ -146,21 +160,36 @@ export default function ChatPanel() {
         return next;
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "请求失败";
-      setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (!last || last.role !== "assistant") {
-          return [...prev, { role: "assistant", content: `错误: ${msg}` }];
-        }
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (!last || last.role !== "assistant") return prev;
+          next[next.length - 1] = {
+            ...last,
+            content: last.content || "已取消生成。",
+            stages: [...(last.stages ?? []), "已取消"],
+          };
+          return next;
+        });
+      } else {
+        const msg = err instanceof Error ? err.message : "请求失败";
+        setMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (!last || last.role !== "assistant") {
+            return [...prev, { role: "assistant", content: `错误: ${msg}` }];
+          }
 
-        next[next.length - 1] = {
-          ...last,
-          content: `错误: ${msg}`,
-        };
-        return next;
-      });
+          next[next.length - 1] = {
+            ...last,
+            content: `错误: ${msg}`,
+          };
+          return next;
+        });
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
     }
   };
@@ -256,13 +285,22 @@ export default function ChatPanel() {
               disabled={loading}
               className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
             />
-            <button
-              onClick={() => handleSend()}
-              disabled={loading || !input.trim()}
-              className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              发送
-            </button>
+            {loading ? (
+              <button
+                onClick={handleCancel}
+                className="px-5 py-2.5 bg-red-500 text-white text-sm font-medium rounded-xl hover:bg-red-600 transition-colors"
+              >
+                取消
+              </button>
+            ) : (
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim()}
+                className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                发送
+              </button>
+            )}
           </div>
         </div>
       </div>

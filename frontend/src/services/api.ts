@@ -85,6 +85,7 @@ export async function sendChatStream(
   userId = "default",
   sessionId = "default",
   handlers: SendChatStreamHandlers = {},
+  signal?: AbortSignal,
 ): Promise<void> {
   const baseUrl = import.meta.env.VITE_API_BASE_URL || "/api";
   const response = await fetch(`${baseUrl}/chat/stream`, {
@@ -95,6 +96,7 @@ export async function sendChatStream(
       user_id: userId,
       session_id: sessionId,
     }),
+    signal,
   });
 
   if (!response.ok) {
