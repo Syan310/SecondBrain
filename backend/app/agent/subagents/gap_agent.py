@@ -154,14 +154,7 @@ def _build_tool_executor(session: AsyncSession, user_id: str):
                     keyword=args.get("keyword"),
                 )
                 return json.dumps(
-                    [
-                        {
-                            "topic": r.topic,
-                            "source_doc": r.source_doc,
-                            "heading_path": r.heading_path,
-                        }
-                        for r in records
-                    ],
+                    [{"topic": r.topic} for r in records],
                     ensure_ascii=False,
                 )
 
