@@ -38,6 +38,11 @@ from app.services.embedding import EmbeddingService
 
 logger = logging.getLogger(__name__)
 
+
+def _escape_milvus_str(value: str) -> str:
+    """Escape a string value for safe use in Milvus filter expressions."""
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
 _COLLECTION = settings.milvus_collection_name
 _DIM = EmbeddingService.DIMENSION
 _MAX_TEXT_LEN = 8192  # chars, enough for child chunks (≤750 chars typical)
@@ -275,7 +280,7 @@ class MilvusService:
 
     def delete_by_source(self, source_doc: str) -> None:
         """Delete all chunks from a specific source document (for re-ingestion)."""
-        expr = f'source_doc == "{source_doc}"'
+        expr = f'source_doc == "{_escape_milvus_str(source_doc)}"'
         self.collection.delete(expr=expr)
         self.collection.flush()
         logger.info("Deleted chunks where %s.", expr)
@@ -432,7 +437,7 @@ class MemoryMilvusService:
         rrf_k: int = 60,
     ) -> list[MemorySearchResult]:
         """Search long-term memory for a specific user."""
-        expr = f'user_id == "{user_id}"'
+        expr = f'user_id == "{_escape_milvus_str(user_id)}"'
 
         dense_req = AnnSearchRequest(
             data=[query_vector],

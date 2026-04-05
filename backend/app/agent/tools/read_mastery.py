@@ -11,7 +11,7 @@ Used by Quiz SubAgent and Gap Analysis SubAgent.
 import logging
 import math
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,7 +46,11 @@ def _compute_effective_mastery(
     if last_reviewed is None:
         return mastery_score, 0.0
 
-    delta_days = (datetime.utcnow() - last_reviewed).total_seconds() / 86400.0
+    now = datetime.now(timezone.utc)
+    # Ensure last_reviewed is timezone-aware for safe subtraction
+    if last_reviewed.tzinfo is None:
+        last_reviewed = last_reviewed.replace(tzinfo=timezone.utc)
+    delta_days = (now - last_reviewed).total_seconds() / 86400.0
     effective = mastery_score * math.exp(-decay_rate * delta_days)
     return effective, delta_days
 

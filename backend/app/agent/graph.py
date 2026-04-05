@@ -63,7 +63,7 @@ def build_graph(session: AsyncSession) -> StateGraph:
         memory_context = await load_memory_context(
             session=session,
             user_id=user_id,
-            current_query=user_query,
+            user_query=user_query,
         )
         return {"memory_context": memory_context}
 

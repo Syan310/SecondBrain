@@ -11,6 +11,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 # ── Pre-mock the entire subagent + service chain ────────────
+# We inject mocks into sys.modules so that importing orchestrator.py succeeds
+# without heavy ML/DB dependencies. After importing, we CLEAN UP to avoid
+# polluting other test files in the same pytest session.
 
 _mock_qa = MagicMock()
 _mock_qa.run_qa_agent = AsyncMock()
@@ -19,12 +22,11 @@ _mock_gap.run_gap_agent = AsyncMock()
 _mock_quiz = MagicMock()
 _mock_quiz.run_quiz_agent = AsyncMock()
 
-# Create mock for memory_manager (graph.py now imports it)
 _mock_memory = MagicMock()
 _mock_memory.load_memory_context = AsyncMock(return_value="")
 _mock_memory.save_conversation = AsyncMock()
 
-for mod_name in [
+_MOCKED_MODULE_NAMES = [
     "FlagEmbedding", "pymilvus", "transformers", "docx", "torch",
     "magic_pdf", "magic_pdf.data", "magic_pdf.data.data_reader_writer",
     "magic_pdf.pipe", "magic_pdf.pipe.UNIPipe",
@@ -36,9 +38,19 @@ for mod_name in [
     "app.agent.tools.query_decompose", "app.agent.tools.read_mastery",
     "app.agent.tools.update_mastery", "app.agent.tools.search_concepts",
     "app.agent.subagents",
-]:
+    "app.agent.subagents.qa_agent",
+    "app.agent.subagents.gap_agent",
+    "app.agent.subagents.quiz_agent",
+    "app.agent.nodes.memory_manager",
+]
+
+# Save original state so we can restore after importing
+_originals = {k: sys.modules[k] for k in _MOCKED_MODULE_NAMES if k in sys.modules}
+
+for mod_name in _MOCKED_MODULE_NAMES:
     sys.modules[mod_name] = MagicMock()
 
+# Override specific subagent mocks with controlled instances
 sys.modules["app.agent.subagents.qa_agent"] = _mock_qa
 sys.modules["app.agent.subagents.gap_agent"] = _mock_gap
 sys.modules["app.agent.subagents.quiz_agent"] = _mock_quiz
@@ -57,6 +69,13 @@ from app.agent.nodes.orchestrator import (  # noqa: E402
     MAX_REPLAN_COUNT,
     _parse_json,
 )
+
+# ── Cleanup: restore sys.modules so other test files see real modules ──
+for mod_name in _MOCKED_MODULE_NAMES:
+    if mod_name in _originals:
+        sys.modules[mod_name] = _originals[mod_name]
+    else:
+        sys.modules.pop(mod_name, None)
 
 
 # ── Helper ──────────────────────────────────────────────────

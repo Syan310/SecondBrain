@@ -13,13 +13,14 @@ New architecture (Plan & Execute step):
 Tools used: rag_search, read_mastery, search_concepts
 """
 
+import asyncio
 import json
 import logging
 from dataclasses import dataclass, asdict
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.tools.rag_search import rag_search as _rag_search
+from app.agent.tools.rag_search import rag_search as _rag_search_sync
 from app.agent.tools.read_mastery import read_mastery as _read_mastery
 from app.agent.tools.search_concepts import search_concepts as _search_concepts
 from app.services.llm_client import llm_client
@@ -94,10 +95,17 @@ async def _select_topics_by_mastery(
         logger.info("Selected weakest topics from mastery: %s", topics)
         return topics
 
-    # No mastery records — pick from knowledge_concepts
+    # No mastery records — pick from knowledge_concepts (deduplicate by topic)
     concepts = await _search_concepts(session=session, scope=None, keyword=None)
     if concepts:
-        topics = [c.topic for c in concepts[:num_topics]]
+        seen: set[str] = set()
+        topics: list[str] = []
+        for c in concepts:
+            if c.topic not in seen:
+                seen.add(c.topic)
+                topics.append(c.topic)
+                if len(topics) >= num_topics:
+                    break
         logger.info("Selected topics from concepts (no mastery data): %s", topics)
         return topics
 
@@ -116,7 +124,7 @@ async def _retrieve_question_material(topics: list[str]) -> dict[str, str]:
     materials: dict[str, str] = {}
 
     for topic in topics:
-        results = _rag_search(query=topic, top_k=3)
+        results = await asyncio.to_thread(_rag_search_sync, query=topic, top_k=3)
         if results:
             chunks_text = "\n\n".join(
                 f"[来源: {r.source_doc} | {r.heading_path}]\n{r.text}"
@@ -208,7 +216,7 @@ async def run_quiz_agent(
     user_id: str,
     topics: list[str] | None = None,
     prior_context: str | None = None,
-    num_questions: int = 3,
+    num_questions: int = 2,
 ) -> dict:
     """Generate quiz questions as an orchestrator step.
 

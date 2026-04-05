@@ -10,7 +10,7 @@ Provides:
 import logging
 from typing import AsyncGenerator
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, APIConnectionError, APIStatusError, RateLimitError
 
 from app.config import settings
 
@@ -66,7 +66,12 @@ class LLMClient:
         if tool_choice:
             kwargs["tool_choice"] = tool_choice
 
-        response = await client.chat.completions.create(**kwargs)
+        try:
+            response = await client.chat.completions.create(**kwargs)
+        except (APIConnectionError, APIStatusError, RateLimitError) as e:
+            logger.error("LLM API call failed: %s", e)
+            raise
+
         message = response.choices[0].message
 
         return {
@@ -99,13 +104,17 @@ class LLMClient:
         """
         client = self._get_client()
 
-        stream = await client.chat.completions.create(
-            model=settings.llm_model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            stream=True,
-        )
+        try:
+            stream = await client.chat.completions.create(
+                model=settings.llm_model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stream=True,
+            )
+        except (APIConnectionError, APIStatusError, RateLimitError) as e:
+            logger.error("LLM stream API call failed: %s", e)
+            raise
 
         async for chunk in stream:
             delta = chunk.choices[0].delta

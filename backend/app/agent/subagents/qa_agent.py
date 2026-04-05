@@ -23,10 +23,11 @@ Architecture:
 Tools: rag_search, query_decompose
 """
 
+import asyncio
 import json
 import logging
 
-from app.agent.tools.rag_search import rag_search as _rag_search
+from app.agent.tools.rag_search import rag_search as _rag_search_sync
 from app.agent.tools.query_decompose import query_decompose as _query_decompose
 from app.services.llm_client import llm_client
 
@@ -208,7 +209,9 @@ async def _execute_tool_call(tool_call: dict) -> str:
 
     try:
         if name == "rag_search":
-            results = _rag_search(query=args["query"], top_k=args.get("top_k", 5))
+            results = await asyncio.to_thread(
+                _rag_search_sync, query=args["query"], top_k=args.get("top_k", 5)
+            )
             return json.dumps(
                 [
                     {

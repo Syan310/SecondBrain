@@ -285,8 +285,8 @@ def _parse_json(text: str) -> dict:
 async def plan_node(state: OverallState) -> dict:
     """Classify intents and generate execution plan.
 
-    Reads: user_query
-    Writes: plan, suggested_followup
+    Reads: user_query, memory_context
+    Writes: plan, current_step_index, step_results, replan_count
     """
     user_query = state["user_query"]
     memory_context = state.get("memory_context", "")
@@ -316,7 +316,6 @@ async def plan_node(state: OverallState) -> dict:
         result = _parse_json(content)
 
         steps = result.get("steps", [])
-        suggested_followup = result.get("suggested_followup")
 
         # Validate steps
         valid_intents = ("qa", "gap_analysis", "quiz")
@@ -413,6 +412,7 @@ async def _dispatch_subagent(
             session=session,
             user_id=user_id,
             scope=params.get("scope"),
+            keyword=params.get("keyword"),
         )
         return result["report"]
 

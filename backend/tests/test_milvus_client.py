@@ -7,8 +7,10 @@ import uuid
 
 import pytest
 
-from app.config import settings
-from app.services.milvus_client import MilvusService, _DIM
+pymilvus = pytest.importorskip("pymilvus", reason="pymilvus not installed")
+
+from app.config import settings  # noqa: E402
+from app.services.milvus_client import MilvusService, _DIM  # noqa: E402
 
 
 @pytest.fixture(scope="module")

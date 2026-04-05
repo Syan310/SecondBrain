@@ -99,7 +99,7 @@ class EmbeddingService:
     # ── Convenience: single query ───────────────────────────────
 
     def encode_query(self, query: str) -> EmbeddingOutput:
-        """Encode a single query. Dense shape (1024,), sparse is one dict."""
+        """Encode a single query. Dense shape (1024,), sparse is list with one dict."""
         out = self.encode(query, return_sparse=True)
         return EmbeddingOutput(dense=out.dense[0], sparse=out.sparse)
 

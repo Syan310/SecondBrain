@@ -2,14 +2,9 @@
 
 Mocks: LLM, embedding_service, memory_milvus_service (Milvus).
 Real:  SQLite in-memory database for short-term memory.
-
-Strategy: test_orchestrator.py pollutes sys.modules at collection time.
-We use a session-scoped fixture to restore real modules at TEST EXECUTION
-time, then use monkeypatch to swap dependencies on the real module object.
 """
 
 import json
-import importlib
 import sys
 from unittest.mock import AsyncMock, MagicMock
 
@@ -17,43 +12,17 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# Pre-mock heavy third-party deps at collection time (safe, these are never real).
-for mod_name in [
+# Mock heavy third-party libs that are not installed in the test environment
+for _mod in [
     "FlagEmbedding", "pymilvus", "transformers", "docx", "torch",
     "magic_pdf", "magic_pdf.data", "magic_pdf.data.data_reader_writer",
     "magic_pdf.pipe", "magic_pdf.pipe.UNIPipe",
 ]:
-    if mod_name not in sys.modules:
-        sys.modules[mod_name] = MagicMock()
+    if _mod not in sys.modules:
+        sys.modules[_mod] = MagicMock()
 
 
 # ── Fixtures ────────────────────────────────────────────────
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _restore_real_modules():
-    """Restore real app modules that test_orchestrator may have mocked.
-
-    Runs once at the start of this test file's session (after collection).
-    """
-    modules_to_restore = [
-        "aiosqlite",
-        "app.db", "app.db.models", "app.db.crud", "app.db.database",
-        "app.services.embedding", "app.services.milvus_client",
-        "app.services.llm_client",
-        "app.agent.nodes.memory_manager",
-    ]
-    for mod_name in modules_to_restore:
-        if mod_name in sys.modules and isinstance(sys.modules[mod_name], MagicMock):
-            del sys.modules[mod_name]
-
-    # Re-import in dependency order: db layer → services → memory_manager
-    for mod_name in modules_to_restore:
-        try:
-            mod = importlib.import_module(mod_name)
-            importlib.reload(mod)
-        except Exception:
-            pass
 
 
 @pytest_asyncio.fixture
@@ -86,12 +55,10 @@ def _make_llm_response(content: str) -> dict:
 
 
 def _fake_encode_result():
-    """Return a mock EmbeddingOutput-like object."""
+    """Return a mock EmbeddingOutput-like object with .dense and .sparse attrs."""
     mock_output = MagicMock()
-    mock_output.__getitem__ = lambda self, key: {
-        "dense": [[0.1] * 1024],
-        "sparse": [{1: 0.5, 2: 0.3}],
-    }[key]
+    mock_output.dense = [[0.1] * 1024]
+    mock_output.sparse = [{1: 0.5, 2: 0.3}]
     return mock_output
 
 
