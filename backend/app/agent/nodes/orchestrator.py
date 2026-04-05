@@ -1,4 +1,6 @@
-"""Orchestrator: Plan & Execute intent routing for QA + Gap SubAgents.
+from __future__ import annotations
+
+"""Orchestrator: Plan & Execute intent routing for QA + Gap + Quiz SubAgents.
 
 Architecture:
   ┌─────────────────────────────────────────────────────────────────┐
@@ -6,13 +8,13 @@ Architecture:
   │    Classify intent(s) from user query → structured plan (JSON) │
   │    - Single intent: 1 step                                     │
   │    - Multi intent: N steps with depends_on for ordering        │
-  │    - Quiz intent → suggested_followup (not executed)           │
+  │    - Quiz always last step, depends_on prior steps             │
   ├─────────────────────────────────────────────────────────────────┤
   │  execute_node                                                   │
   │    For each step (respecting depends_on):                      │
   │      - If has dependencies, LLM rewrites params using prior    │
   │        step results                                            │
-  │      - Dispatch to SubAgent (QA / Gap)                         │
+  │      - Dispatch to SubAgent (QA / Gap / Quiz)                  │
   │      - Collect results                                         │
   ├─────────────────────────────────────────────────────────────────┤
   │  synthesize_node (only when multiple step results)              │
@@ -22,9 +24,7 @@ Architecture:
 SubAgents managed:
   - QA SubAgent: run_qa_agent(query, user_id)
   - Gap SubAgent: run_gap_agent(session, user_id, scope)
-
-Not managed (API-layer direct call):
-  - Quiz SubAgent
+  - Quiz SubAgent: run_quiz_agent(session, user_id, topics, prior_context)
 """
 
 import json
@@ -35,6 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.state import OverallState
 from app.agent.subagents.qa_agent import run_qa_agent
 from app.agent.subagents.gap_agent import run_gap_agent
+from app.agent.subagents.quiz_agent import run_quiz_agent
 from app.services.llm_client import llm_client
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ PLAN_SYSTEM_PROMPT = """\
 
 1. **qa** — 知识问答。用户想了解某个概念、原理、区别等。
 2. **gap_analysis** — 知识盲区诊断。用户想了解自己的掌握薄弱点。
-3. **quiz** — 做题/测验。用户想通过做题来复习（注意：此意图不会被执行，仅作为后续建议）。
+3. **quiz** — 做题/测验。用户想通过做题来复习。
 
 ## 输出格式
 
@@ -59,23 +60,29 @@ PLAN_SYSTEM_PROMPT = """\
   "steps": [
     {
       "step": 1,
-      "intent": "qa" 或 "gap_analysis",
+      "intent": "qa" 或 "gap_analysis" 或 "quiz",
       "params": { ... },
       "depends_on": []
     }
-  ],
-  "suggested_followup": null 或 {"intent": "quiz", "params": {...}}
+  ]
 }
 ```
 
 ### params 说明
 - qa 的 params: `{"query": "用户的问题"}`
 - gap_analysis 的 params: `{"scope": "文档名或null", "keyword": "关键词或null"}`
-- quiz 的 params: `{"topics": ["相关主题"]}`
+- quiz 的 params: `{"topics": ["相关主题"]}`（如果没有明确主题，传空数组 `[]`，系统会根据掌握度自动选题）
 
 ### depends_on 说明
 - 空数组 `[]` 表示可以独立执行
 - `[1]` 表示依赖 step 1 的结果（串行执行）
+
+## quiz 规则
+
+- quiz 永远是 plan 的**最后一步**
+- 如果用户在讨论某个主题时要求出题，quiz 的 topics 应该是该主题
+- 如果有前序 qa 或 gap_analysis 步骤，quiz 必须设置 `depends_on` 依赖前序步骤
+- 纯 quiz 请求（无前序步骤）：topics 可以填用户指定的主题，或空数组（按掌握度选题）
 
 ## 示例
 
@@ -85,8 +92,7 @@ PLAN_SYSTEM_PROMPT = """\
 {
   "steps": [
     {"step": 1, "intent": "qa", "params": {"query": "什么是 Transformer?"}, "depends_on": []}
-  ],
-  "suggested_followup": null
+  ]
 }
 ```
 
@@ -96,8 +102,7 @@ PLAN_SYSTEM_PROMPT = """\
 {
   "steps": [
     {"step": 1, "intent": "gap_analysis", "params": {"scope": null, "keyword": "NLP"}, "depends_on": []}
-  ],
-  "suggested_followup": null
+  ]
 }
 ```
 
@@ -108,8 +113,7 @@ PLAN_SYSTEM_PROMPT = """\
   "steps": [
     {"step": 1, "intent": "gap_analysis", "params": {"scope": null, "keyword": "NLP"}, "depends_on": []},
     {"step": 2, "intent": "qa", "params": {"query": "讲解 step 1 中优先级最高的盲区概念"}, "depends_on": [1]}
-  ],
-  "suggested_followup": null
+  ]
 }
 ```
 
@@ -120,49 +124,71 @@ PLAN_SYSTEM_PROMPT = """\
   "steps": [
     {"step": 1, "intent": "qa", "params": {"query": "Transformer 自注意力机制是什么"}, "depends_on": []},
     {"step": 2, "intent": "gap_analysis", "params": {"scope": null, "keyword": "Transformer"}, "depends_on": []}
-  ],
-  "suggested_followup": null
+  ]
 }
 ```
 
-### 示例 5: 包含 quiz 意图
+### 示例 5: 诊断 + quiz
 用户: "帮我分析一下 NLP 的盲区，然后出几道题考考我"
 ```json
 {
   "steps": [
-    {"step": 1, "intent": "gap_analysis", "params": {"scope": null, "keyword": "NLP"}, "depends_on": []}
-  ],
-  "suggested_followup": {"intent": "quiz", "params": {"topics": ["NLP相关盲区主题"]}}
+    {"step": 1, "intent": "gap_analysis", "params": {"scope": null, "keyword": "NLP"}, "depends_on": []},
+    {"step": 2, "intent": "quiz", "params": {"topics": []}, "depends_on": [1]}
+  ]
 }
 ```
 
-### 示例 6: 纯 quiz
+### 示例 6: 纯 quiz（指定主题）
 用户: "来几道 NLP 的题目"
 ```json
 {
-  "steps": [],
-  "suggested_followup": {"intent": "quiz", "params": {"topics": ["NLP"]}}
+  "steps": [
+    {"step": 1, "intent": "quiz", "params": {"topics": ["NLP"]}, "depends_on": []}
+  ]
 }
 ```
 
-### 示例 7: 诊断 + 讲解 + quiz
+### 示例 7: 纯 quiz（不指定主题）
+用户: "考考我"
+```json
+{
+  "steps": [
+    {"step": 1, "intent": "quiz", "params": {"topics": []}, "depends_on": []}
+  ]
+}
+```
+
+### 示例 8: QA + quiz（讲完就考）
+用户: "给我讲讲 Attention 机制，然后出题考我"
+```json
+{
+  "steps": [
+    {"step": 1, "intent": "qa", "params": {"query": "Attention 机制是什么"}, "depends_on": []},
+    {"step": 2, "intent": "quiz", "params": {"topics": ["Attention"]}, "depends_on": [1]}
+  ]
+}
+```
+
+### 示例 9: 诊断 + 讲解 + quiz
 用户: "看看我深度学习哪里不行，给我讲讲，然后出题考我"
 ```json
 {
   "steps": [
     {"step": 1, "intent": "gap_analysis", "params": {"scope": null, "keyword": "深度学习"}, "depends_on": []},
-    {"step": 2, "intent": "qa", "params": {"query": "讲解 step 1 中优先级最高的盲区概念"}, "depends_on": [1]}
-  ],
-  "suggested_followup": {"intent": "quiz", "params": {"topics": ["深度学习相关盲区主题"]}}
+    {"step": 2, "intent": "qa", "params": {"query": "讲解 step 1 中优先级最高的盲区概念"}, "depends_on": [1]},
+    {"step": 3, "intent": "quiz", "params": {"topics": []}, "depends_on": [1, 2]}
+  ]
 }
 ```
 
 ## 注意事项
 
-- quiz 意图永远只能放在 suggested_followup 中，不能放在 steps 里
-- steps 中只能包含 qa 和 gap_analysis
-- 如果用户只想做 quiz，steps 为空数组，quiz 放在 suggested_followup
+- quiz 如果出现，必须是最后一步
+- steps 中可以包含 qa、gap_analysis、quiz
 - 仔细分析依赖关系：后续步骤需要前序结果时才设置 depends_on
+- quiz 依赖 gap_analysis 时，会自动根据诊断结果选择薄弱主题出题
+- quiz 依赖 qa 时，会根据 QA 讲解的内容出题
 """
 
 # ── Rewrite Prompt ───────────────────────────────────────────
@@ -242,22 +268,21 @@ async def plan_node(state: OverallState) -> dict:
         suggested_followup = result.get("suggested_followup")
 
         # Validate steps
+        valid_intents = ("qa", "gap_analysis", "quiz")
         for s in steps:
-            if s.get("intent") not in ("qa", "gap_analysis"):
+            if s.get("intent") not in valid_intents:
                 logger.warning("Invalid intent in plan step: %s, removing", s.get("intent"))
-                steps = [x for x in steps if x.get("intent") in ("qa", "gap_analysis")]
+                steps = [x for x in steps if x.get("intent") in valid_intents]
                 break
 
         logger.info(
-            "Plan: %d steps, followup=%s, query='%s'",
+            "Plan: %d steps, query='%s'",
             len(steps),
-            suggested_followup.get("intent") if suggested_followup else None,
             user_query[:60],
         )
 
         return {
             "plan": steps,
-            "suggested_followup": suggested_followup,
         }
 
     except (json.JSONDecodeError, ValueError, KeyError) as e:
@@ -271,7 +296,6 @@ async def plan_node(state: OverallState) -> dict:
                     "depends_on": [],
                 }
             ],
-            "suggested_followup": None,
         }
 
 
@@ -317,6 +341,7 @@ async def _dispatch_subagent(
     params: dict,
     user_id: str,
     session: AsyncSession,
+    prior_results: list[dict] | None = None,
 ) -> str:
     """Dispatch to the appropriate SubAgent and return result string."""
     if intent == "qa":
@@ -333,6 +358,25 @@ async def _dispatch_subagent(
             scope=params.get("scope"),
         )
         return result["report"]
+
+    elif intent == "quiz":
+        # Build prior context from dependent step results
+        prior_context = None
+        if prior_results:
+            prior_context = "\n\n".join(
+                f"[{r['intent']}] {r['result']}" for r in prior_results
+            )
+
+        topics = params.get("topics", [])
+
+        result = await run_quiz_agent(
+            session=session,
+            user_id=user_id,
+            topics=topics if topics else None,
+            prior_context=prior_context,
+        )
+        # Return quiz questions as JSON string for synthesize/passthrough
+        return json.dumps(result, ensure_ascii=False)
 
     else:
         return f"未知意图: {intent}"
@@ -367,9 +411,12 @@ async def execute_node(state: OverallState, session: AsyncSession) -> dict:
                 params = await _rewrite_params(step, prior_results, user_query)
                 logger.info("Step %d params rewritten: %s", step_num, params)
 
+        # Collect prior results for dispatch (quiz uses them as context)
+        dep_results = [results_by_step[d] for d in depends_on if d in results_by_step] if depends_on else None
+
         # Dispatch to SubAgent
         logger.info("Executing step %d: intent=%s, params=%s", step_num, intent, params)
-        result_text = await _dispatch_subagent(intent, params, user_id, session)
+        result_text = await _dispatch_subagent(intent, params, user_id, session, dep_results)
 
         step_result = {
             "step": step_num,

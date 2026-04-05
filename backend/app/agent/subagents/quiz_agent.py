@@ -1,379 +1,271 @@
 from __future__ import annotations
 
-"""Quiz SubAgent: agent-driven 10-question adaptive quiz.
+"""Quiz SubAgent: generate 2 multiple-choice questions based on RAG retrieval.
 
-Flow (agent decides tool calls):
-  1. read_mastery → get user's current mastery levels
-  2. If no target topics → search_concepts → weighted random select by (1 - effective_mastery)
-  3. Loop 10 rounds:
-     a. rag_search(topic) → get content as question material
-     b. LLM generates question based on retrieved content
-     c. Wait for user answer (via message)
-     d. LLM evaluates answer quality (high/medium/low)
-     e. update_mastery(topic, quality) → high: +0.1, medium: +0.05, low: -0.15
-  4. Return session summary
+New architecture (Plan & Execute step):
+  1. Determine topics:
+     - If prior QA context provided → quiz on that topic
+     - If no specific topic → read_mastery + search_concepts → pick weakest topics
+  2. rag_search per topic → retrieve content as question material
+  3. LLM generates 2 multiple-choice questions (4 choices each)
+  4. Return questions (grading happens separately in API layer)
 
-Tools: rag_search, read_mastery, update_mastery, search_concepts
+Tools used: rag_search, read_mastery, search_concepts
 """
 
 import json
 import logging
+from dataclasses import dataclass, asdict
 
-from langchain_core.tools import tool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.tools.rag_search import rag_search as _rag_search
 from app.agent.tools.read_mastery import read_mastery as _read_mastery
-from app.agent.tools.update_mastery import update_mastery as _update_mastery
 from app.agent.tools.search_concepts import search_concepts as _search_concepts
 from app.services.llm_client import llm_client
 
 logger = logging.getLogger(__name__)
 
-# ── System prompt ────────────────────────────────────────────
 
-QUIZ_SYSTEM_PROMPT = """\
-你是一个自适应复习助手（Quiz Agent）。你的任务是根据用户的知识掌握情况出题测试，帮助用户巩固知识。
+# ── Data structures ─────────────────────────────────────────
 
-## 可用工具
 
-1. **rag_search(query, top_k)** — 从知识库检索相关文档片段，作为出题素材。
-2. **read_mastery(user_id, topics)** — 读取用户的知识掌握度（含时间衰减）。topics 为可选的 topic 列表过滤。
-3. **update_mastery(user_id, topic, is_correct)** — 更新用户掌握度。答对 +0.1，答错 -0.15。
-4. **search_concepts(scope, keyword)** — 查询知识库中的概念列表。scope 按来源文档过滤，keyword 按主题关键词过滤。均为可选参数。
+@dataclass
+class QuizQuestion:
+    """A single multiple-choice question."""
 
-## 工作流程
+    topic: str
+    question: str
+    choices: list[str]  # 4 choices: ["A. ...", "B. ...", "C. ...", "D. ..."]
+    correct_answer: str  # "A", "B", "C", or "D"
+    explanation: str  # brief explanation of correct answer
+    source_chunks: list[str]  # source texts used to generate this question
 
-1. **准备阶段**：
-   - 调用 `read_mastery` 获取用户当前掌握度
-   - 如果用户指定了复习主题，使用该主题
-   - 如果没有指定主题，调用 `search_concepts` 获取知识库全部主题，优先选择 effective_mastery 低的主题
 
-2. **出题阶段**（共 10 题）：
-   - 选择一个主题，调用 `rag_search` 获取该主题的内容
-   - 基于检索内容出一道问答题（简答题或概念解释题）
-   - 题目应该考察理解而非死记硬背
-   - 明确标注这是第几题（如"第 3/10 题"）
+# ── Question generation prompt ──────────────────────────────
 
-3. **判分阶段**：
-   - 收到用户回答后，根据检索到的知识内容评估回答质量
-   - 将回答分为三个质量等级，并调用 `update_mastery` 更新掌握度：
-     - **高质量 (high)**：核心要点准确且表述完整 → mastery +0.1
-     - **中等质量 (medium)**：方向正确但不完整，或部分准确 → mastery +0.05
-     - **低质量 (low)**：完全答错、答非所问、严重偏差 → mastery -0.15
+GENERATE_QUESTIONS_PROMPT = """\
+你是一个出题助手。根据提供的知识库内容，生成 {num_questions} 道选择题（每题 4 个选项）。
 
-4. **结束阶段**：
-   - 10 题答完后，给出总结：各质量等级分布、薄弱主题、进步建议
+## 要求
 
-## 出题要求
+- 每道题考察对核心概念的理解，而非死记硬背
+- 4 个选项中只有 1 个正确，其余 3 个应该具有一定迷惑性
+- 题目应基于提供的知识内容，不要超出范围
+- 难度适中
 
-- 题目类型：简答题、概念解释、对比分析
-- 难度适中，聚焦核心概念
-- 每题必须基于知识库中的实际内容
-- 不同题目尽量覆盖不同主题
+## 输出格式
 
-## 判分要求
+你必须输出一个 JSON 数组（不要输出其他内容）：
 
-- 语义判分：用户不必逐字匹配，考察理解程度
-- 按三档评估，给出明确判定和质量标签：
-  - 🟢 **高质量 (high)** — 核心要点准确，表述完整清晰
-  - 🟡 **中等质量 (medium)** — 理解方向正确，但有遗漏或不够精确
-  - 🔴 **低质量 (low)** — 答错、答非所问、或存在严重理解偏差
-- 附上简短解析（指出回答的优缺点 + 正确答案要点）
+```json
+[
+  {{
+    "topic": "该题考察的主题",
+    "question": "题目内容",
+    "choices": ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"],
+    "correct_answer": "A",
+    "explanation": "简短解析：为什么正确答案是 A"
+  }}
+]
+```
 """
 
-# ── Tool schema for LLM function calling ─────────────────────
 
-QUIZ_TOOL_SCHEMAS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "rag_search",
-            "description": "Search the knowledge base for relevant document chunks as question material.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The search query string.",
-                    },
-                    "top_k": {
-                        "type": "integer",
-                        "description": "Number of results to return (default 5).",
-                        "default": 5,
-                    },
-                },
-                "required": ["query"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "read_mastery",
-            "description": "Read user's knowledge mastery levels with time decay applied.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "user_id": {
-                        "type": "string",
-                        "description": "User identifier.",
-                    },
-                    "topics": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "Optional list of topics to filter. Omit to get all topics.",
-                    },
-                },
-                "required": ["user_id"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "update_mastery",
-            "description": "Update mastery score after quiz answer. high: +0.1, medium: +0.05, low: -0.15.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "user_id": {
-                        "type": "string",
-                        "description": "User identifier.",
-                    },
-                    "topic": {
-                        "type": "string",
-                        "description": "The topic being tested.",
-                    },
-                    "quality": {
-                        "type": "string",
-                        "enum": ["low", "medium", "high"],
-                        "description": "Answer quality: 'high' (accurate & complete), 'medium' (partially correct), 'low' (wrong or off-topic).",
-                    },
-                },
-                "required": ["user_id", "topic", "quality"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "search_concepts",
-            "description": "Query knowledge base concept index. Use to discover available topics.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "scope": {
-                        "type": "string",
-                        "description": "Filter by source document name (exact match). Optional.",
-                    },
-                    "keyword": {
-                        "type": "string",
-                        "description": "Filter by topic keyword (case-insensitive substring match). Optional.",
-                    },
-                },
-                "required": [],
-            },
-        },
-    },
-]
+# ── Topic selection ─────────────────────────────────────────
 
 
-# ── Tool execution ───────────────────────────────────────────
+async def _select_topics_by_mastery(
+    session: AsyncSession,
+    user_id: str,
+    num_topics: int = 3,
+) -> list[str]:
+    """Select weakest topics based on mastery scores.
 
-
-def _build_tool_executor(session: AsyncSession, user_id: str):
-    """Build a tool executor closure with bound DB session.
-
-    Returns an async function that takes a tool_call dict and returns result string.
+    Falls back to search_concepts if no mastery records exist.
     """
+    # Get all mastery records
+    mastery_records = await _read_mastery(session=session, user_id=user_id, topics=None)
 
-    async def execute(tool_call: dict) -> str:
-        name = tool_call["function"]["name"]
-        args = json.loads(tool_call["function"]["arguments"])
+    if mastery_records:
+        # Sort by effective_mastery ascending (weakest first)
+        sorted_records = sorted(mastery_records, key=lambda r: r.effective_mastery)
+        topics = [r.topic for r in sorted_records[:num_topics]]
+        logger.info("Selected weakest topics from mastery: %s", topics)
+        return topics
 
-        try:
-            if name == "rag_search":
-                results = _rag_search(
-                    query=args["query"],
-                    top_k=args.get("top_k", 5),
-                )
-                return json.dumps(
-                    [
-                        {
-                            "text": r.text,
-                            "source_doc": r.source_doc,
-                            "heading_path": r.heading_path,
-                            "rerank_score": round(r.rerank_score, 4),
-                        }
-                        for r in results
-                    ],
-                    ensure_ascii=False,
-                )
+    # No mastery records — pick from knowledge_concepts
+    concepts = await _search_concepts(session=session, scope=None, keyword=None)
+    if concepts:
+        topics = [c.topic for c in concepts[:num_topics]]
+        logger.info("Selected topics from concepts (no mastery data): %s", topics)
+        return topics
 
-            elif name == "read_mastery":
-                records = await _read_mastery(
-                    session=session,
-                    user_id=args.get("user_id", user_id),
-                    topics=args.get("topics"),
-                )
-                return json.dumps(
-                    [
-                        {
-                            "topic": r.topic,
-                            "effective_mastery": r.effective_mastery,
-                            "mastery_score": r.mastery_score,
-                            "days_since_review": r.days_since_review,
-                            "total_attempts": r.total_attempts,
-                        }
-                        for r in records
-                    ],
-                    ensure_ascii=False,
-                )
-
-            elif name == "update_mastery":
-                result = await _update_mastery(
-                    session=session,
-                    user_id=args.get("user_id", user_id),
-                    topic=args["topic"],
-                    quality=args["quality"],
-                )
-                return json.dumps(
-                    {
-                        "topic": result.topic,
-                        "old_effective_mastery": result.old_effective_mastery,
-                        "new_mastery_score": result.new_mastery_score,
-                        "quality": result.quality,
-                    },
-                    ensure_ascii=False,
-                )
-
-            elif name == "search_concepts":
-                records = await _search_concepts(
-                    session=session,
-                    scope=args.get("scope"),
-                    keyword=args.get("keyword"),
-                )
-                return json.dumps(
-                    [
-                        {
-                            "topic": r.topic,
-                            "source_doc": r.source_doc,
-                            "heading_path": r.heading_path,
-                        }
-                        for r in records
-                    ],
-                    ensure_ascii=False,
-                )
-
-            else:
-                return json.dumps({"error": f"Unknown tool: {name}"})
-
-        except Exception as e:
-            logger.error("Quiz tool %s execution failed: %s", name, e)
-            return json.dumps({"error": str(e)})
-
-    return execute
+    return []
 
 
-# ── Agent execution ──────────────────────────────────────────
+# ── RAG retrieval for question material ─────────────────────
 
-MAX_ITERATIONS = 30  # quiz has more back-and-forth (10 questions × tool calls)
+
+async def _retrieve_question_material(topics: list[str]) -> dict[str, str]:
+    """Retrieve knowledge content for each topic via RAG search.
+
+    Returns:
+        dict mapping topic → concatenated chunk texts.
+    """
+    materials: dict[str, str] = {}
+
+    for topic in topics:
+        results = _rag_search(query=topic, top_k=3)
+        if results:
+            chunks_text = "\n\n".join(
+                f"[来源: {r.source_doc} | {r.heading_path}]\n{r.text}"
+                for r in results
+            )
+            materials[topic] = chunks_text
+        else:
+            logger.warning("No RAG results for topic: %s", topic)
+
+    return materials
+
+
+# ── Question generation ─────────────────────────────────────
+
+
+def _parse_json(text: str) -> list | dict:
+    """Extract and parse JSON from LLM response."""
+    text = text.strip()
+    if "```json" in text:
+        text = text.split("```json")[1].split("```")[0].strip()
+    elif "```" in text:
+        text = text.split("```")[1].split("```")[0].strip()
+    return json.loads(text)
+
+
+async def _generate_questions(
+    materials: dict[str, str],
+    num_questions: int = 2,
+) -> list[QuizQuestion]:
+    """Use LLM to generate multiple-choice questions from retrieved materials."""
+    # Build material context
+    material_text = "\n\n".join(
+        f"### 主题: {topic}\n{content}"
+        for topic, content in materials.items()
+    )
+
+    messages = [
+        {
+            "role": "system",
+            "content": GENERATE_QUESTIONS_PROMPT.format(num_questions=num_questions),
+        },
+        {
+            "role": "user",
+            "content": f"请根据以下知识内容出 {num_questions} 道选择题：\n\n{material_text}",
+        },
+    ]
+
+    response = await llm_client.chat(
+        messages=messages,
+        temperature=0.7,
+        max_tokens=2048,
+    )
+
+    try:
+        raw_questions = _parse_json(response["content"])
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.error("Failed to parse quiz questions: %s", e)
+        return []
+
+    questions = []
+    for q in raw_questions:
+        topic = q.get("topic", "")
+        # Find source chunks for this topic
+        source_chunks = []
+        for t, content in materials.items():
+            if t == topic or topic in content:
+                source_chunks.append(content)
+                break
+
+        questions.append(
+            QuizQuestion(
+                topic=q.get("topic", ""),
+                question=q.get("question", ""),
+                choices=q.get("choices", []),
+                correct_answer=q.get("correct_answer", ""),
+                explanation=q.get("explanation", ""),
+                source_chunks=source_chunks,
+            )
+        )
+
+    return questions
+
+
+# ── Main entry point ────────────────────────────────────────
 
 
 async def run_quiz_agent(
     session: AsyncSession,
     user_id: str,
-    user_message: str,
-    message_history: list[dict] | None = None,
+    topics: list[str] | None = None,
+    prior_context: str | None = None,
+    num_questions: int = 3,
 ) -> dict:
-    """Run the Quiz SubAgent for one turn of interaction.
-
-    This function handles a single turn: the agent may call tools and produce
-    a response (either a question or evaluation). For multi-turn quiz sessions,
-    the caller should maintain message_history across calls.
+    """Generate quiz questions as an orchestrator step.
 
     Args:
-        session: Async DB session for mastery read/write.
+        session: Async DB session.
         user_id: User identifier.
-        user_message: The user's current message (e.g., "开始复习" or an answer).
-        message_history: Previous conversation messages. If None, starts a new session.
+        topics: Explicit topics to quiz on (from QA step or user request).
+                If None, selects weakest topics from mastery.
+        prior_context: Context from prior steps (e.g., QA answer) to inform question generation.
+        num_questions: Number of questions to generate (default 3).
 
     Returns:
         dict with keys:
-          - response (str): The agent's response text.
-          - message_history (list): Updated message history for next turn.
-          - is_complete (bool): Whether the quiz session is finished.
+          - questions: list of QuizQuestion dicts
+          - topics: list of topics covered
     """
-    execute_tool = _build_tool_executor(session, user_id)
-
-    if message_history is None:
-        messages = [
-            {"role": "system", "content": QUIZ_SYSTEM_PROMPT},
-            {
-                "role": "system",
-                "content": f"当前用户 ID: {user_id}。请开始 10 题复习流程。",
-            },
-        ]
+    # Step 1: Determine topics
+    if topics:
+        selected_topics = topics[:num_questions]
+        logger.info("Using provided topics: %s", selected_topics)
     else:
-        messages = list(message_history)
-
-    # Add user message
-    messages.append({"role": "user", "content": user_message})
-
-    # ReAct loop: LLM reasons, calls tools, until it produces a text response
-    for iteration in range(MAX_ITERATIONS):
-        response = await llm_client.chat(
-            messages=messages,
-            tools=QUIZ_TOOL_SCHEMAS,
-            tool_choice="auto",
-            temperature=0.5,
-            max_tokens=4096,
+        selected_topics = await _select_topics_by_mastery(
+            session, user_id, num_topics=num_questions
         )
 
-        tool_calls = response.get("tool_calls")
+    if not selected_topics:
+        logger.warning("No topics available for quiz generation")
+        return {
+            "questions": [],
+            "topics": [],
+        }
 
-        if not tool_calls:
-            # LLM produced a text response (question or evaluation)
-            agent_response = response["content"] or ""
-            messages.append({"role": "assistant", "content": agent_response})
+    # Step 2: Retrieve question material via RAG
+    materials = await _retrieve_question_material(selected_topics)
 
-            # Heuristic: check if quiz is complete
-            is_complete = _check_quiz_complete(agent_response)
+    if not materials:
+        logger.warning("No materials retrieved for topics: %s", selected_topics)
+        return {
+            "questions": [],
+            "topics": selected_topics,
+        }
 
-            logger.info(
-                "Quiz agent responded in %d iterations, complete=%s",
-                iteration + 1,
-                is_complete,
-            )
-            return {
-                "response": agent_response,
-                "message_history": messages,
-                "is_complete": is_complete,
-            }
+    # If prior context provided, append it to materials for richer question generation
+    if prior_context:
+        for topic in materials:
+            materials[topic] += f"\n\n### 补充上下文（来自前序步骤）\n{prior_context}"
 
-        # Execute tool calls
-        messages.append(response)
-        for tc in tool_calls:
-            result_str = await execute_tool(tc)
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": result_str,
-                }
-            )
+    # Step 3: Generate questions
+    questions = await _generate_questions(materials, num_questions=num_questions)
 
-    # Safety limit
-    logger.warning("Quiz agent hit max iterations (%d)", MAX_ITERATIONS)
+    logger.info(
+        "Quiz agent generated %d questions for topics: %s",
+        len(questions),
+        selected_topics,
+    )
+
     return {
-        "response": "抱歉，出题流程出现异常，请重新开始。",
-        "message_history": messages,
-        "is_complete": True,
+        "questions": [asdict(q) for q in questions],
+        "topics": selected_topics,
     }
-
-
-def _check_quiz_complete(response: str) -> bool:
-    """Heuristic check if the quiz session is complete."""
-    completion_signals = ["10/10", "总结", "复习结束", "本次测试", "答题结束", "总成绩"]
-    return any(signal in response for signal in completion_signals)
