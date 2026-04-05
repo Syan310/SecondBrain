@@ -173,6 +173,24 @@ export async function uploadFiles(files: File[]): Promise<MultiUploadResponse> {
   return data;
 }
 
+export async function uploadSingleFile(
+  file: File,
+  onProgress?: (percent: number) => void,
+): Promise<MultiUploadResponse> {
+  const form = new FormData();
+  form.append("files", file);
+  const { data } = await api.post<MultiUploadResponse>("/ingest/upload", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 300_000,
+    onUploadProgress: (e) => {
+      if (e.total && onProgress) {
+        onProgress(Math.round((e.loaded * 100) / e.total));
+      }
+    },
+  });
+  return data;
+}
+
 export async function getDocuments(): Promise<DocumentListResponse> {
   const { data } = await api.get<DocumentListResponse>("/ingest/documents");
   return data;
