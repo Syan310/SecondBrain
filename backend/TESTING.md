@@ -57,3 +57,35 @@
    - `test_orchestrator.py` 的 graph 集成测试增加 `patch("app.agent.graph.load_memory_context")` 和 `save_conversation` mock。
 
 3. **greenlet 依赖**：SQLAlchemy async 引擎需要 `greenlet` 包，本地未预装。`pip3 install greenlet` 解决。
+
+## Memory Manager 修复回归 (2026-04-04)
+
+### 变更
+- 修复 `memory_manager.py` 中对 `EmbeddingService.encode()` 返回值的错误访问。
+- 从字典式 `encoded["dense"] / encoded["sparse"]` 改为真实 `EmbeddingOutput` 属性访问 `encoded.dense / encoded.sparse`。
+- 同步修正 `tests/test_memory_manager.py`，测试假数据改为真实 `EmbeddingOutput` 对象，避免接口失配被 MagicMock 掩盖。
+
+### 执行的测试
+- `pytest -q tests/test_memory_manager.py`
+
+### 结果
+- 未能完成用例执行，环境报错：`ModuleNotFoundError: No module named 'aiosqlite'`
+- 已确认 `backend/requirements.txt` 声明了 `aiosqlite>=0.20.0`，但当前 Python 环境缺少可用 SSL 模块，`pip` 无法从 PyPI 下载依赖，因此无法在本轮完成端到端验证。
+
+### 遇到的问题
+
+1. **测试环境缺少 `aiosqlite`**：memory_manager 测试依赖 async SQLite 引擎，当前环境未安装该包。
+2. **`pip` 无法补装依赖**：执行 `python -m pip install 'aiosqlite>=0.20.0'` 时，由于 Python 缺少 SSL 支持，无法连接 `https://pypi.org` 下载包。
+
+## Stash 合并冲突处理：`memory_manager` dense 向量 (2026-04-04)
+
+### 决策
+- `MemoryMilvusService.hybrid_search` / `insert` 的 `query_vector` / `embedding` 类型为 `list[float]`（与 `rag_search` 中 `dense.tolist()` 一致）。
+- 生产代码：`dense = encoded.dense[0].tolist()`。
+- 测试：`_fake_encode_result()` 返回真实 `EmbeddingOutput`，`dense` 为 `np.ndarray`，以便 `.tolist()` 与生产路径一致。
+
+### 执行的测试
+- `PYTHONPATH=. python3 -m pytest tests/test_memory_manager.py -q`
+
+### 结果
+- 13 passed。

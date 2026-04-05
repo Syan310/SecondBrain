@@ -414,6 +414,7 @@ effective_mastery = mastery_score × exp(-λ × Δt)
 - 内容: LLM 结构化摘要 (100-200字自然语言 + topics 列表)
 - 检索: 按需检索 Top-3, 相似度阈值过滤, 按 user_id 隔离
 - 写入: 短期 > 20 轮时, 取最早 10 轮 → LLM 摘要 → 向量化 → 写入
+- 实现状态: `memory_manager` 直接消费 `EmbeddingOutput.dense` / `EmbeddingOutput.sparse`，与 embedding service 返回契约保持一致
 
 ### 7.4 作用范围
 

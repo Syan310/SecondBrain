@@ -53,10 +53,12 @@
 - [x] `milvus_client.py` — MemoryMilvusService (conversation_memory Collection, hybrid search)
 - [x] `state.py` — OverallState 新增 memory_context 字段
 - [x] `memory_manager.py` — 记忆管理核心 (load_memory_context + save_conversation + consolidate)
+- [x] `memory_manager.py` 回归修复 — 长期记忆检索/写入改为使用 `EmbeddingOutput.dense/sparse`，修正实现与测试接口不一致问题
 - [x] `orchestrator.py` — plan_node 注入记忆上下文
 - [x] `graph.py` — memory_node 加入 LangGraph + run_orchestrator 保存对话
 - [x] `main.py` — 启动时初始化 memory_milvus_service
 - [x] 测试 — 15 CRUD 单元测试 + 13 memory_manager 测试 (含 consolidation) + 33 orchestrator 测试 (含 Replan loop), 61 总测试全过
+- [ ] 重新验证 memory 相关测试 — 当前环境缺少 `aiosqlite` 且 `pip` 因 SSL 不可用无法补装，待修复环境后重跑
 
 ## Step 6: API 层
 

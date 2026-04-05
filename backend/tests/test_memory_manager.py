@@ -8,6 +8,7 @@ import json
 import sys
 from unittest.mock import AsyncMock, MagicMock
 
+import numpy as np
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -55,11 +56,13 @@ def _make_llm_response(content: str) -> dict:
 
 
 def _fake_encode_result():
-    """Return a mock EmbeddingOutput-like object with .dense and .sparse attrs."""
-    mock_output = MagicMock()
-    mock_output.dense = [[0.1] * 1024]
-    mock_output.sparse = [{1: 0.5, 2: 0.3}]
-    return mock_output
+    """Return a real EmbeddingOutput object (dense row is ndarray for .tolist())."""
+    from app.services.embedding import EmbeddingOutput
+
+    return EmbeddingOutput(
+        dense=np.array([[0.1] * 1024], dtype=np.float32),
+        sparse=[{1: 0.5, 2: 0.3}],
+    )
 
 
 async def _populate_rounds(session: AsyncSession, count: int) -> None:

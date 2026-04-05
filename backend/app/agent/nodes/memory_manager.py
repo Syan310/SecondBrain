@@ -91,7 +91,7 @@ async def load_memory_context(
     # 2. Long-term: relevant memories from Milvus
     try:
         encoded = embedding_service.encode([user_query])
-        dense = encoded.dense[0]
+        dense = encoded.dense[0].tolist()
         sparse = encoded.sparse[0]
 
         hits = memory_milvus_service.hybrid_search(
@@ -221,7 +221,7 @@ async def _consolidate(
     # 3. Embed and write to Milvus
     try:
         encoded = embedding_service.encode([summary])
-        dense = encoded.dense[0]
+        dense = encoded.dense[0].tolist()
         sparse = encoded.sparse[0]
 
         memory_milvus_service.insert(
