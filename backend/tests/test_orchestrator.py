@@ -21,6 +21,8 @@ _mock_qa = MagicMock()
 _mock_qa.run_qa_agent = AsyncMock()
 _mock_gap = MagicMock()
 _mock_gap.run_gap_agent = AsyncMock()
+_mock_quiz = MagicMock()
+_mock_quiz.run_quiz_agent = AsyncMock()
 
 # Block the entire import chains
 for mod_name in [
@@ -39,12 +41,13 @@ for mod_name in [
     "app.agent.tools.query_decompose", "app.agent.tools.read_mastery",
     "app.agent.tools.update_mastery", "app.agent.tools.search_concepts",
     # App subagents (except we set our mocks)
-    "app.agent.subagents", "app.agent.subagents.quiz_agent",
+    "app.agent.subagents",
 ]:
     sys.modules[mod_name] = MagicMock()
 
 sys.modules["app.agent.subagents.qa_agent"] = _mock_qa
 sys.modules["app.agent.subagents.gap_agent"] = _mock_gap
+sys.modules["app.agent.subagents.quiz_agent"] = _mock_quiz
 
 from app.agent.state import OverallState  # noqa: E402
 from app.agent.nodes.orchestrator import (  # noqa: E402
@@ -95,7 +98,6 @@ class TestPlanNode:
             "steps": [
                 {"step": 1, "intent": "qa", "params": {"query": "什么是Transformer?"}, "depends_on": []}
             ],
-            "suggested_followup": None,
         })
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
@@ -106,7 +108,6 @@ class TestPlanNode:
 
             assert len(result["plan"]) == 1
             assert result["plan"][0]["intent"] == "qa"
-            assert result["suggested_followup"] is None
 
     @pytest.mark.asyncio
     async def test_gap_analysis_intent(self):
@@ -114,7 +115,6 @@ class TestPlanNode:
             "steps": [
                 {"step": 1, "intent": "gap_analysis", "params": {"scope": None, "keyword": "NLP"}, "depends_on": []}
             ],
-            "suggested_followup": None,
         })
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
@@ -133,7 +133,6 @@ class TestPlanNode:
                 {"step": 1, "intent": "gap_analysis", "params": {"scope": None, "keyword": "NLP"}, "depends_on": []},
                 {"step": 2, "intent": "qa", "params": {"query": "讲解最弱概念"}, "depends_on": [1]},
             ],
-            "suggested_followup": None,
         })
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
@@ -146,10 +145,32 @@ class TestPlanNode:
             assert result["plan"][1]["depends_on"] == [1]
 
     @pytest.mark.asyncio
-    async def test_quiz_only_goes_to_followup(self):
+    async def test_quiz_in_steps(self):
+        """Quiz should be allowed in steps as the last step."""
         plan_response = json.dumps({
-            "steps": [],
-            "suggested_followup": {"intent": "quiz", "params": {"topics": ["NLP"]}},
+            "steps": [
+                {"step": 1, "intent": "qa", "params": {"query": "Attention机制"}, "depends_on": []},
+                {"step": 2, "intent": "quiz", "params": {"topics": ["Attention"]}, "depends_on": [1]},
+            ],
+        })
+
+        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
+            mock_llm.chat = AsyncMock(return_value=_make_llm_response(plan_response))
+
+            state: OverallState = {"user_query": "讲讲Attention然后出题考我", "user_id": "test"}
+            result = await plan_node(state)
+
+            assert len(result["plan"]) == 2
+            assert result["plan"][1]["intent"] == "quiz"
+            assert result["plan"][1]["depends_on"] == [1]
+
+    @pytest.mark.asyncio
+    async def test_pure_quiz_intent(self):
+        """Pure quiz request should have quiz as the only step."""
+        plan_response = json.dumps({
+            "steps": [
+                {"step": 1, "intent": "quiz", "params": {"topics": ["NLP"]}, "depends_on": []}
+            ],
         })
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
@@ -158,8 +179,8 @@ class TestPlanNode:
             state: OverallState = {"user_query": "来几道NLP的题", "user_id": "test"}
             result = await plan_node(state)
 
-            assert len(result["plan"]) == 0
-            assert result["suggested_followup"]["intent"] == "quiz"
+            assert len(result["plan"]) == 1
+            assert result["plan"][0]["intent"] == "quiz"
 
     @pytest.mark.asyncio
     async def test_fallback_on_parse_error(self):
@@ -179,9 +200,8 @@ class TestPlanNode:
         plan_response = json.dumps({
             "steps": [
                 {"step": 1, "intent": "qa", "params": {"query": "test"}, "depends_on": []},
-                {"step": 2, "intent": "quiz", "params": {}, "depends_on": []},
+                {"step": 2, "intent": "unknown_intent", "params": {}, "depends_on": []},
             ],
-            "suggested_followup": None,
         })
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
@@ -190,9 +210,10 @@ class TestPlanNode:
             state: OverallState = {"user_query": "test", "user_id": "test"}
             result = await plan_node(state)
 
-            # quiz intent in steps should be filtered out
+            # unknown intent should be filtered out
             intents = [s["intent"] for s in result["plan"]]
-            assert "quiz" not in intents
+            assert "unknown_intent" not in intents
+            assert "qa" in intents
 
 
 # ── execute_node tests ───────────────────────────────────────
@@ -237,6 +258,75 @@ class TestExecuteNode:
             assert len(result["step_results"]) == 1
             assert result["step_results"][0]["intent"] == "gap_analysis"
             mock_gap.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_quiz_step_dispatches_to_quiz_agent(self):
+        mock_session = AsyncMock()
+
+        quiz_result = {
+            "questions": [
+                {"topic": "NLP", "question": "什么是分词?", "choices": ["A. x", "B. y", "C. z", "D. w"], "correct_answer": "A", "explanation": "..."},
+            ],
+            "topics": ["NLP"],
+        }
+
+        with patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz:
+            mock_quiz.return_value = quiz_result
+
+            state: OverallState = {
+                "plan": [{"step": 1, "intent": "quiz", "params": {"topics": ["NLP"]}, "depends_on": []}],
+                "user_query": "来几道NLP的题",
+                "user_id": "test",
+            }
+
+            result = await execute_node(state, mock_session)
+
+            assert len(result["step_results"]) == 1
+            assert result["step_results"][0]["intent"] == "quiz"
+            mock_quiz.assert_called_once_with(
+                session=mock_session,
+                user_id="test",
+                topics=["NLP"],
+                prior_context=None,
+            )
+
+    @pytest.mark.asyncio
+    async def test_quiz_step_with_prior_qa_context(self):
+        """Quiz step depending on QA should receive prior context."""
+        mock_session = AsyncMock()
+
+        quiz_result = {
+            "questions": [{"topic": "Attention", "question": "Q?", "choices": ["A", "B", "C", "D"], "correct_answer": "A", "explanation": "E"}],
+            "topics": ["Attention"],
+        }
+
+        rewrite_response = json.dumps({"topics": ["Attention"]})
+
+        with patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz, \
+             patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
+
+            mock_qa.return_value = {"answer": "Attention是注意力机制...", "confidence": "high", "plan": {}, "sources": []}
+            mock_quiz.return_value = quiz_result
+            mock_llm.chat = AsyncMock(return_value=_make_llm_response(rewrite_response))
+
+            state: OverallState = {
+                "plan": [
+                    {"step": 1, "intent": "qa", "params": {"query": "什么是Attention"}, "depends_on": []},
+                    {"step": 2, "intent": "quiz", "params": {"topics": ["Attention"]}, "depends_on": [1]},
+                ],
+                "user_query": "讲讲Attention然后出题",
+                "user_id": "test",
+            }
+
+            result = await execute_node(state, mock_session)
+
+            assert len(result["step_results"]) == 2
+            # Quiz should have received prior context
+            mock_quiz.assert_called_once()
+            call_kwargs = mock_quiz.call_args[1]
+            assert call_kwargs["prior_context"] is not None
+            assert "Attention" in call_kwargs["prior_context"]
 
     @pytest.mark.asyncio
     async def test_serial_gap_then_qa_with_rewrite(self):
@@ -356,7 +446,6 @@ class TestGraphIntegration:
 
         plan_response = json.dumps({
             "steps": [{"step": 1, "intent": "qa", "params": {"query": "什么是Transformer?"}, "depends_on": []}],
-            "suggested_followup": None,
         })
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
@@ -374,20 +463,31 @@ class TestGraphIntegration:
             )
 
             assert "Transformer" in result["final_answer"]
-            assert result["suggested_followup"] is None
 
     @pytest.mark.asyncio
-    async def test_quiz_only_flow(self):
-        """Test full graph: quiz-only -> plan (empty steps) -> quiz_passthrough -> END."""
+    async def test_pure_quiz_flow(self):
+        """Test full graph: pure quiz -> plan -> execute -> passthrough -> END."""
         mock_session = AsyncMock()
 
         plan_response = json.dumps({
-            "steps": [],
-            "suggested_followup": {"intent": "quiz", "params": {"topics": ["NLP"]}},
+            "steps": [
+                {"step": 1, "intent": "quiz", "params": {"topics": ["NLP"]}, "depends_on": []}
+            ],
         })
 
-        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
+        quiz_result = {
+            "questions": [
+                {"topic": "NLP", "question": "Q1?", "choices": ["A", "B", "C", "D"], "correct_answer": "A", "explanation": "E1"},
+                {"topic": "NLP", "question": "Q2?", "choices": ["A", "B", "C", "D"], "correct_answer": "B", "explanation": "E2"},
+            ],
+            "topics": ["NLP"],
+        }
+
+        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
+             patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz:
+
             mock_llm.chat = AsyncMock(return_value=_make_llm_response(plan_response))
+            mock_quiz.return_value = quiz_result
 
             from app.agent.graph import run_orchestrator
 
@@ -397,7 +497,8 @@ class TestGraphIntegration:
                 session=mock_session,
             )
 
-            assert result["suggested_followup"]["intent"] == "quiz"
+            # final_answer should contain the quiz questions JSON
+            assert "questions" in result["final_answer"]
 
     @pytest.mark.asyncio
     async def test_multi_intent_flow(self):
@@ -409,7 +510,6 @@ class TestGraphIntegration:
                 {"step": 1, "intent": "gap_analysis", "params": {"scope": None, "keyword": "NLP"}, "depends_on": []},
                 {"step": 2, "intent": "qa", "params": {"query": "讲解最弱概念"}, "depends_on": [1]},
             ],
-            "suggested_followup": None,
         })
 
         rewrite_response = json.dumps({"query": "什么是Attention机制"})
@@ -446,3 +546,54 @@ class TestGraphIntegration:
             assert len(result["final_answer"]) > 0
             mock_gap.assert_called_once()
             mock_qa.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_gap_then_quiz_flow(self):
+        """Test full graph: gap + quiz -> plan -> execute -> synthesize -> END."""
+        mock_session = AsyncMock()
+
+        plan_response = json.dumps({
+            "steps": [
+                {"step": 1, "intent": "gap_analysis", "params": {"scope": None, "keyword": "NLP"}, "depends_on": []},
+                {"step": 2, "intent": "quiz", "params": {"topics": []}, "depends_on": [1]},
+            ],
+        })
+
+        quiz_result = {
+            "questions": [
+                {"topic": "Attention", "question": "Q?", "choices": ["A", "B", "C", "D"], "correct_answer": "A", "explanation": "E"},
+            ],
+            "topics": ["Attention"],
+        }
+
+        call_count = {"n": 0}
+
+        async def mock_chat(**kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return _make_llm_response(plan_response)
+            else:
+                return _make_llm_response("你的NLP盲区在Attention，以下是测验题目...")
+
+        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
+             patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
+             patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz:
+
+            mock_llm.chat = mock_chat
+            mock_gap.return_value = {"report": "盲区: Attention"}
+            mock_quiz.return_value = quiz_result
+
+            from app.agent.graph import run_orchestrator
+
+            result = await run_orchestrator(
+                user_query="分析NLP盲区然后出题考我",
+                user_id="test",
+                session=mock_session,
+            )
+
+            assert len(result["step_results"]) == 2
+            mock_gap.assert_called_once()
+            mock_quiz.assert_called_once()
+            # Quiz should have received prior context from gap
+            quiz_call_kwargs = mock_quiz.call_args[1]
+            assert quiz_call_kwargs["prior_context"] is not None

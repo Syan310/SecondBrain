@@ -200,3 +200,30 @@
 5. **Synthesizer 只在多结果时激活**：单 SubAgent 结果直接 passthrough，不浪费 LLM 调用。
 
 6. **Python 3.9 兼容性**：为所有使用 `X | None` 语法的文件添加 `from __future__ import annotations`，State 中使用 `Optional[dict]` 以兼容 LangGraph 的 `get_type_hints()`。
+
+## 2026-04-04: Quiz 模块重构 — 从独立 session 改为 Orchestrator step
+
+### 决策
+- Quiz 从独立的 10 题多轮 session 改为 Orchestrator plan 的普通 step
+- 每次只出 2 道选择题，题目基于 RAG 检索内容生成
+- Quiz 永远是 plan 的最后一步，可 depends_on 前序 QA/Gap 步骤
+
+### 出题策略
+- 有前序 QA step → 围绕 QA 讲解的主题出题
+- 无特定主题 → 根据 mastery 弱点自动选题（effective_mastery 最低的 topics）
+- RAG 检索相关内容作为出题依据，不是纯 LLM 出题
+
+### 判分流程
+- 判分不走 Orchestrator，走独立 API endpoint (`POST /quiz/answer`)
+- 前端知道当前在答题状态，答案直接发到 quiz answer API
+- 判分后调用 update_mastery（三档：high +0.1 / medium +0.05 / low -0.15）
+
+### 动机
+- 原来的 10 题循环感觉割裂，像"做卷子"而非"和 tutor 聊天"
+- 新方案让 quiz 成为对话流的自然收尾（讲完就考，诊断完就练）
+- 想继续复习 → 用户说"继续考我" → 新一轮 plan
+
+### 移除
+- `suggested_followup` 字段从 OverallState 中移除
+- `quiz_passthrough` 节点从 graph 中移除
+- Quiz SubAgent 的 10 题 session 循环、message_history、_check_quiz_complete 等逻辑全部移除
