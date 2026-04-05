@@ -530,16 +530,15 @@ SecondBrain/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── ChatPanel.tsx       # QA问答
-│   │   │   ├── QuizPanel.tsx       # Quiz复习
-│   │   │   ├── GapAnalysis.tsx     # 知识盲区诊断
+│   │   │   ├── Layout.tsx          # sidebar导航 + 内容区布局
+│   │   │   ├── ChatPanel.tsx       # 统一对话 (QA/Quiz/Gap 三合一)
+│   │   │   ├── QuizModal.tsx       # Quiz MCQ 弹窗
 │   │   │   └── FileUpload.tsx      # 文档上传
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   ├── services/api.ts
-│   │   └── App.tsx
+│   │   ├── services/api.ts         # API客户端 (sendChat/submitQuizAnswer/uploadFile)
+│   │   ├── types.ts                # TypeScript类型定义
+│   │   └── App.tsx                 # 两面板切换 (chat/upload)
 │   ├── package.json
-│   └── vite.config.ts
+│   └── vite.config.ts              # Tailwind v4 + dev proxy
 ├── docker-compose.yml              # Milvus + Backend
 └── README.md
 ```
