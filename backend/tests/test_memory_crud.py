@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 # ── Ensure real modules are loaded ──────────────────────────
 # test_orchestrator.py may have replaced these with MagicMock at collection time.
 # Remove mocked entries so we can import the real modules.
-for mod_name in ["app.db", "app.db.models", "app.db.crud", "app.db.database"]:
+for mod_name in ["app.db", "app.db.models", "app.db.crud", "app.db.database", "aiosqlite"]:
     if mod_name in sys.modules and isinstance(sys.modules[mod_name], MagicMock):
         del sys.modules[mod_name]
 

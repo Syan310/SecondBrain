@@ -39,10 +39,11 @@
 
 ## Step 5: Orchestrator
 
-- [x] `state.py` 扩展 — OverallState 增加 plan, step_results, suggested_followup 字段
-- [x] `orchestrator.py` — Plan & Execute 架构: plan_node (LLM few-shot 意图识别+计划生成) + execute_node (按依赖顺序调用 SubAgent, 串行时 LLM 改写 params) + synthesize_node (多结果汇总) + passthrough_node (单结果直传)
-- [x] `graph.py` — LangGraph StateGraph: plan → route(has_steps/no_steps) → execute → route(single/multi) → passthrough|synthesize → END; quiz-only → quiz_passthrough → END
-- [x] 测试 — 24 个单元测试 + 集成测试全部通过 (plan_node, execute_node, synthesize_node, routing, graph flow)
+- [x] `state.py` 扩展 — OverallState 增加 plan, step_results, current_step_index, replan_action, replan_count 字段
+- [x] `orchestrator.py` — Plan & Execute with Replan 架构: plan_node (LLM few-shot 意图识别+计划生成, 支持 qa/gap_analysis/quiz 三种意图) + execute_step (单步执行) + replan_node (LLM 审视结果, continue/revise/finish) + synthesize_node (多结果汇总) + passthrough_node (单结果直传)
+- [x] `graph.py` — LangGraph StateGraph: plan → route → execute_step → replan → route(execute/single/multi) → execute_step|passthrough|synthesize → END
+- [x] `quiz_agent.py` 重构 — 从 10 题多轮 session 改为单次出 2 道选择题（RAG 检索出题）, 作为 orchestrator plan 的普通 step
+- [x] 测试 — 39 个单元测试 + 集成测试全部通过 (含 replan continue/revise/finish、quiz dispatch、graph flow)
 
 ## Step 5.5: Agent 记忆机制
 
@@ -59,10 +60,14 @@
 
 ## Step 6: API 层
 
-- [ ] `chat.py` — QA 问答 API, SSE 流式输出
-- [ ] `quiz.py` — Quiz API, 开始/作答/结束 session
-- [ ] `gap.py` — 知识盲区诊断 API
+- [ ] `chat.py` — 统一对话 API, SSE 流式输出, 走 orchestrator
+- [ ] `quiz_answer.py` — Quiz 判分 API (不走 orchestrator): 接收用户答案 → LLM 判分 → update_mastery → 返回结果
 - [ ] API Schema 定义 — Pydantic request/response models
+
+## Step 9: 对话记忆模块
+
+- [ ] API 层维护 message history, 每次请求带上最近几轮上下文传给 plan_node
+- [ ] 支持"继续考我"、"刚才那个概念再讲讲"等上下文引用
 
 ## Step 7: Frontend
 

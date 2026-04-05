@@ -37,6 +37,7 @@ def _restore_real_modules():
     Runs once at the start of this test file's session (after collection).
     """
     modules_to_restore = [
+        "aiosqlite",
         "app.db", "app.db.models", "app.db.crud", "app.db.database",
         "app.services.embedding", "app.services.milvus_client",
         "app.services.llm_client",
