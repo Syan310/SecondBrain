@@ -273,3 +273,17 @@
 ### 涉及文件
 
 config.py, models.py, crud.py, milvus_client.py, state.py, memory_manager.py, orchestrator.py, graph.py, main.py
+
+## 2026-04-05: Step 6 API 层 + 二元判分改造
+
+### 决策
+1. **取消 SSE 流式**：方案A 下 orchestrator 一次性跑完再返回，SSE 无实际收益。改为普通 POST → JSON 响应，后续 Step 8 优化阶段再考虑流式。
+2. **三档 quality 改为二元 is_correct**：MCQ 场景下字母比对足够，无需 LLM 判分。全链路改造：update_mastery.py (quality→is_correct) + crud.py upsert_mastery (quality→is_correct)。Delta 沿用原始规格：答对+0.1 / 答错-0.15。
+3. **chat.py 统一入口**：QA / Gap / Quiz 全走 orchestrator，quiz_answer 独立端点只做判分。
+
+### 实现
+- `schemas.py` — ChatRequest/Response, QuizAnswerRequest/Response, MasteryUpdate
+- `chat.py` — POST /api/chat/ → run_orchestrator → JSON
+- `quiz.py` — POST /api/quiz/answer → 字母比对 → update_mastery → JSON
+- `update_mastery.py` — QUALITY_DELTA dict 改为 CORRECT_DELTA/INCORRECT_DELTA 常量
+- `crud.py` — upsert_mastery 参数 quality:str → is_correct:bool

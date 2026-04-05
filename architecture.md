@@ -376,12 +376,11 @@ effective_mastery = mastery_score × exp(-λ × Δt)
   mastery=0.8, 10天未复习 → effective = 0.8 × e^(-0.5) ≈ 0.49 → weight=0.51
   mastery=0.8, 1天未复习  → effective = 0.8 × e^(-0.05) ≈ 0.76 → weight=0.24
 
-更新规则 (三档质量评估):
-  高质量 (high):   mastery_score = min(1.0, effective_mastery + 0.1)
-  中等质量 (medium): mastery_score = min(1.0, effective_mastery + 0.05)
-  低质量 (low):    mastery_score = max(0.0, effective_mastery - 0.15)
+更新规则 (二元判分):
+  答对 (correct):   mastery_score = min(1.0, effective_mastery + 0.1)
+  答错 (incorrect): mastery_score = max(0.0, effective_mastery - 0.15)
 
-  medium/high 计入 correct_count, low 不计入
+  correct 计入 correct_count, incorrect 不计入
   每次更新后 last_reviewed = now, 重置衰减起点
 ```
 
@@ -604,7 +603,7 @@ Step 8: 评估 & 优化
 - [x] Step 3: Tools 层 (rag_search + query_decompose + read_mastery + update_mastery + search_concepts)
 - [x] Step 4: SubAgents (state.py + qa_agent + quiz_agent + gap_agent)
 - [x] Step 5: Orchestrator (Plan & Execute, QA+Gap 编排, Quiz 独立)
-- [ ] Step 6: API 层
+- [x] Step 6: API 层 (chat.py 统一对话 + quiz.py 规则判分 + schemas.py)
 - [ ] Step 7: Frontend
 - [ ] Step 8: 评估 & 优化
 

@@ -27,7 +27,7 @@
 - [x] `rag_search.py` — dense+sparse 混合检索(RRF融合) + Rerank, 输入 query/top_k, 输出 ranked chunks + source info
 - [x] `query_decompose.py` — LLM 拆解复杂问题为 2-4 个子查询列表, JSON 数组输出, 解析失败 fallback 原始 query
 - [x] `read_mastery.py` — 读取用户掌握度, 含时间衰减 effective = score × exp(-λ×Δt), 返回 MasteryRecord 列表
-- [x] `update_mastery.py` — 答对+0.1/答错-0.15 (基于 effective_mastery), 更新 score + last_reviewed, 首次默认 0.3
+- [x] `update_mastery.py` — 二元判分 is_correct: 答对+0.1/答错-0.15 (基于 effective_mastery), 更新 score + last_reviewed, 首次默认 0.3
 - [x] `search_concepts.py` — 查询 knowledge_concepts 表, 支持 scope(source_doc) 和 keyword(topic LIKE) 过滤
 
 ## Step 4: SubAgents
@@ -62,14 +62,15 @@
 
 ## Step 6: API 层
 
-- [ ] `chat.py` — 统一对话 API, SSE 流式输出, 走 orchestrator
-- [ ] `quiz_answer.py` — Quiz 判分 API (不走 orchestrator): 接收用户答案 → LLM 判分 → update_mastery → 返回结果
-- [ ] API Schema 定义 — Pydantic request/response models
+- [x] `chat.py` — 统一对话 API, POST → orchestrator → JSON 响应 (QA/Gap/Quiz 全走此入口)
+- [x] `quiz.py` — Quiz 判分 API (不走 orchestrator): 接收用户答案 → 规则比对字母 → update_mastery → 返回结果
+- [x] `schemas.py` — Pydantic request/response models (ChatRequest/Response, QuizAnswerRequest/Response)
+- [x] 二元判分改造 — update_mastery + crud 从三档 quality(high/medium/low) 改为 is_correct: bool, 答对+0.1/答错-0.15
 
-## Step 9: 对话记忆模块
+## ~~Step 9: 对话记忆模块~~ (已由 Step 5.5 + Step 6 覆盖)
 
-- [ ] API 层维护 message history, 每次请求带上最近几轮上下文传给 plan_node
-- [ ] 支持"继续考我"、"刚才那个概念再讲讲"等上下文引用
+- [x] API 层维护 message history — run_orchestrator 自动 save_conversation, memory_node 自动加载
+- [x] 上下文引用 — 记忆上下文已注入 plan_node, LLM 天然支持指代理解
 
 ## Step 7: Frontend
 
