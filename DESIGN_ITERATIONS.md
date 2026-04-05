@@ -345,3 +345,7 @@ ARCHITECTURE.md 膨胀到 668 行，每次新对话冷启动需读取全文消�
 ### 效果
 - 冷启动 token 消耗: ~668行 → ~60行 (ARCHITECTURE.md) + ~100行 (TASKS.md)
 - 按需加载: 修改特定模块时才读对应 docs/*.md
+
+## 2026-04-05
+
+PDF 入库依赖与代码对齐：`requirements.txt` 由 `mineru[core]` 改为 `magic-pdf[full]`，因 `doc_processor._parse_pdf` 使用 `magic_pdf` 命名空间，而 `mineru` 2.x wheel 不包含该模块。

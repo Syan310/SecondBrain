@@ -41,6 +41,7 @@
 - **向量库**: Milvus Standalone (HNSW + SPARSE_INVERTED_INDEX, RRF 融合)
 - **后端**: FastAPI + LangGraph + SQLite (async via aiosqlite)
 - **前端**: React + Vite + TypeScript + Tailwind CSS v4
+- **PDF 解析**: `magic-pdf`（import 名 `magic_pdf`），与 PyPI 包 `mineru` 2.x 无模块级兼容；后端依赖以 `requirements.txt` 为准
 - **部署**: Docker Compose (etcd + minio + milvus + backend)
 
 ## 文档索引

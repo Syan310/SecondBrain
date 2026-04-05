@@ -21,7 +21,8 @@ aiosqlite>=0.20.0
 
 # Document processing
 python-docx>=1.1.0
-mineru[core]>=2.0.0
+# PDF: doc_processor 使用 magic_pdf API（PyPI 包名 magic-pdf）。mineru 2.x 不包含 magic_pdf 模块。
+magic-pdf[full]>=1.3.12,<2
 
 # Notion
 notion-client>=2.2.0

@@ -12,7 +12,7 @@
 - [x] `reranker.py` — bge-reranker-v2-m3, cross-encoder, fp16
 - [x] `llm_client.py` — Qwen3.6-Plus, chat() 非流式 + stream_chat() 流式, 支持 tool-calling
 - [x] `config.py` 更新 — embedding 模型路径改为 bge-m3
-- [x] `doc_processor.py` — MinerU(PDF) + python-docx(Word) + 直读(Markdown), 两刀切分块, 概念抽取
+- [x] `doc_processor.py` — magic-pdf(`magic_pdf` API, PDF) + python-docx(Word) + 直读(Markdown), 两刀切分块, 概念抽取（依赖见 `requirements.txt`：`magic-pdf[full]`，非 PyPI `mineru` 包）
 
 ## Step 2: Ingestion Pipeline
 
