@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import (
     Column,
     Float,
+    ForeignKey,
     Integer,
     Text,
     DateTime,
@@ -36,19 +37,32 @@ class UserMastery(Base):
 
 
 class KnowledgeConcept(Base):
-    """知识库概念索引（Ingestion时从文档Heading提取）"""
+    """知识库概念索引（Ingestion时由LLM从文档内容提取）"""
 
     __tablename__ = "knowledge_concepts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    topic = Column(Text, nullable=False)
+    topic = Column(Text, nullable=False, unique=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ConceptSource(Base):
+    """概念来源关联表：记录每个概念出现在哪些文档的哪些 parent chunk 里"""
+
+    __tablename__ = "concept_sources"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    concept_id = Column(
+        Integer,
+        ForeignKey("knowledge_concepts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     source_doc = Column(Text, nullable=False)
-    heading_path = Column(Text)
-    chunk_count = Column(Integer, default=1)
+    parent_chunk_id = Column(Text, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
-        UniqueConstraint("topic", "source_doc", name="uq_topic_source"),
+        UniqueConstraint("concept_id", "parent_chunk_id", name="uq_concept_chunk"),
     )
 
 

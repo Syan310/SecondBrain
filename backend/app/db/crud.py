@@ -7,8 +7,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import ConversationHistory, KnowledgeConcept, UserMastery
-from app.services.doc_processor import ConceptInfo
+from app.db.models import ConceptSource, ConversationHistory, KnowledgeConcept, UserMastery
 
 
 # ── Conversation History (Short-term Memory) ───────────────
@@ -152,56 +151,92 @@ async def delete_concepts_by_source(
     session: AsyncSession,
     source_doc: str,
 ) -> int:
-    """Delete all concepts belonging to a specific source document.
+    """Delete all concept sources for a document, and orphaned concepts.
 
-    Used during re-ingestion to clear old concepts before inserting new ones.
+    Used during re-ingestion to clear old data before inserting new ones.
 
     Returns:
-        Number of deleted rows.
+        Number of deleted source rows.
     """
     from sqlalchemy import delete
-    stmt = delete(KnowledgeConcept).where(
-        KnowledgeConcept.source_doc == source_doc,
-    )
+
+    # 1. Delete source mappings for this document
+    stmt = delete(ConceptSource).where(ConceptSource.source_doc == source_doc)
     result = await session.execute(stmt)
+    deleted_sources = result.rowcount
+
+    # 2. Delete orphaned concepts (no remaining source mappings)
+    orphan_stmt = (
+        delete(KnowledgeConcept)
+        .where(
+            ~KnowledgeConcept.id.in_(
+                select(ConceptSource.concept_id).distinct()
+            )
+        )
+    )
+    await session.execute(orphan_stmt)
     await session.commit()
-    return result.rowcount
+    return deleted_sources
 
 
 async def upsert_concepts(
     session: AsyncSession,
-    concepts: list[ConceptInfo],
+    topics: list[str],
+    source_doc: str,
+    parent_chunk_id: str,
 ) -> int:
-    """Insert new concepts, skip existing ones (by topic+source_doc). Returns count of newly inserted."""
-    if not concepts:
+    """Insert new concepts and create source mappings.
+
+    For each topic: get-or-create KnowledgeConcept, then create ConceptSource link.
+
+    Returns:
+        Number of newly created concepts (not source mappings).
+    """
+    if not topics:
         return 0
 
-    # Fetch existing (topic, source_doc) pairs in one query
-    topics = [c.topic for c in concepts]
+    # Fetch existing concepts by topic in one query
     result = await session.execute(
-        select(KnowledgeConcept.topic, KnowledgeConcept.source_doc)
-        .where(KnowledgeConcept.topic.in_(topics))
+        select(KnowledgeConcept).where(KnowledgeConcept.topic.in_(topics))
     )
-    existing = {(row[0], row[1]) for row in result.fetchall()}
+    existing_map: dict[str, KnowledgeConcept] = {
+        row.topic: row for row in result.scalars().all()
+    }
 
-    inserted = 0
-    for c in concepts:
-        key = (c.topic, c.source_doc)
-        if key in existing:
-            continue
-        session.add(
-            KnowledgeConcept(
-                topic=c.topic,
-                source_doc=c.source_doc,
-                heading_path=c.heading_path,
+    new_count = 0
+    for topic in topics:
+        concept = existing_map.get(topic)
+        if concept is None:
+            concept = KnowledgeConcept(topic=topic)
+            session.add(concept)
+            await session.flush()  # get id
+            existing_map[topic] = concept
+            new_count += 1
+
+        # Create source mapping (skip if already exists)
+        existing_link = await session.execute(
+            select(ConceptSource).where(
+                ConceptSource.concept_id == concept.id,
+                ConceptSource.parent_chunk_id == parent_chunk_id,
             )
         )
-        existing.add(key)
-        inserted += 1
+        if existing_link.scalar_one_or_none() is None:
+            session.add(ConceptSource(
+                concept_id=concept.id,
+                source_doc=source_doc,
+                parent_chunk_id=parent_chunk_id,
+            ))
 
-    if inserted:
-        await session.commit()
-    return inserted
+    await session.commit()
+    return new_count
+
+
+async def get_all_concept_topics(
+    session: AsyncSession,
+) -> list[str]:
+    """Get all unique concept topics (for LLM deduplication during extraction)."""
+    result = await session.execute(select(KnowledgeConcept.topic))
+    return [row[0] for row in result.fetchall()]
 
 
 async def list_documents(
@@ -215,11 +250,11 @@ async def list_documents(
     from sqlalchemy import func
     stmt = (
         select(
-            KnowledgeConcept.source_doc,
-            func.count().label("concept_count"),
+            ConceptSource.source_doc,
+            func.count(func.distinct(ConceptSource.concept_id)).label("concept_count"),
         )
-        .group_by(KnowledgeConcept.source_doc)
-        .order_by(KnowledgeConcept.source_doc)
+        .group_by(ConceptSource.source_doc)
+        .order_by(ConceptSource.source_doc)
     )
     result = await session.execute(stmt)
     return [
@@ -236,17 +271,20 @@ async def search_concepts(
     """Query knowledge_concepts with optional filters.
 
     Args:
-        scope: Filter by source_doc (exact match).
+        scope: Filter by source_doc (via concept_sources join).
         keyword: Filter by topic (case-insensitive LIKE match).
 
     Returns:
-        List of KnowledgeConcept rows.
+        List of KnowledgeConcept rows (deduplicated).
     """
     stmt = select(KnowledgeConcept)
     if scope:
-        stmt = stmt.where(KnowledgeConcept.source_doc == scope)
+        stmt = stmt.join(
+            ConceptSource, ConceptSource.concept_id == KnowledgeConcept.id
+        ).where(
+            ConceptSource.source_doc == scope
+        ).distinct()
     if keyword:
-        # Escape LIKE wildcards in user input to prevent unintended matching
         escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         stmt = stmt.where(KnowledgeConcept.topic.ilike(f"%{escaped}%", escape="\\"))
     result = await session.execute(stmt)

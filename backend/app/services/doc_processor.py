@@ -16,12 +16,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Headings too generic to stand alone as a topic
-_GENERIC_HEADINGS = frozenset({
-    "概述", "介绍", "简介", "总结", "小结", "原理", "背景", "定义", "说明", "补充",
-    "Overview", "Introduction", "Summary", "Background", "Definition", "Conclusion",
-})
-
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$")
 
 
@@ -50,21 +44,11 @@ class ParentChunk:
 
 
 @dataclass
-class ConceptInfo:
-    """A knowledge concept extracted from headings."""
-
-    topic: str
-    heading_path: str
-    source_doc: str
-
-
-@dataclass
 class ProcessedDocument:
     """Result of processing a single document."""
 
     source: str
     parents: list[ParentChunk]
-    concepts: list[ConceptInfo]
 
 
 # ── Processor ────────────────────────────────────────────────
@@ -105,15 +89,13 @@ class DocProcessor:
         logger.info("Chunking %s ...", path.name)
         parents = self._chunk_markdown(markdown)
 
-        concepts = self._extract_concepts(parents, source=path.name)
         logger.info(
-            "Done: %s → %d parents, %d children, %d concepts",
+            "Done: %s → %d parents, %d children",
             path.name,
             len(parents),
             sum(len(p.children) for p in parents),
-            len(concepts),
         )
-        return ProcessedDocument(source=path.name, parents=parents, concepts=concepts)
+        return ProcessedDocument(source=path.name, parents=parents)
 
     # ── Parsers ──────────────────────────────────────────────
 
@@ -382,44 +364,6 @@ class DocProcessor:
             if c.strip()
         ]
 
-    # ── Concept extraction ───────────────────────────────────
-
-    @staticmethod
-    def _extract_concepts(
-        parents: list[ParentChunk], source: str,
-    ) -> list[ConceptInfo]:
-        """Extract unique concepts from heading paths."""
-        seen: set[str] = set()
-        concepts: list[ConceptInfo] = []
-
-        for parent in parents:
-            # Collect all unique heading_paths from parent + children
-            paths: set[str] = set()
-            if parent.heading_path:
-                paths.add(parent.heading_path)
-            for child in parent.children:
-                if child.heading_path:
-                    paths.add(child.heading_path)
-
-            for path in sorted(paths):
-                if path in seen:
-                    continue
-                seen.add(path)
-
-                leaf = path.split("/")[-1]
-                if leaf in _GENERIC_HEADINGS and "/" in path:
-                    parts = path.split("/")
-                    topic = f"{parts[-2]}/{leaf}"
-                else:
-                    topic = leaf
-
-                concepts.append(ConceptInfo(
-                    topic=topic,
-                    heading_path=path,
-                    source_doc=source,
-                ))
-
-        return concepts
 
 
 # Module-level singleton

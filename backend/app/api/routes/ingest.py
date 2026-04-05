@@ -15,7 +15,10 @@ from app.api.schemas import (
     DocumentInfo, DocumentListResponse, MultiUploadResult, MultiUploadResponse,
 )
 from app.config import settings
-from app.db.crud import delete_concepts_by_source, list_documents, upsert_concepts
+from app.db.crud import (
+    delete_concepts_by_source, get_all_concept_topics, list_documents, upsert_concepts,
+)
+from app.services.concept_extractor import extract_concepts
 from app.services.doc_processor import doc_processor
 from app.services.embedding import embedding_service
 from app.services.milvus_client import milvus_service
@@ -81,6 +84,39 @@ def _parse_file(tmp_path: str, filename: str):
     return doc, all_children
 
 
+async def _extract_concepts_for_doc(
+    parents: list,
+    filename: str,
+    db_session: AsyncSession,
+) -> tuple[int, int]:
+    """Extract concepts via LLM for each parent chunk, upsert to DB.
+
+    Returns:
+        (total_concepts_found, new_concepts_inserted)
+    """
+    existing = await get_all_concept_topics(db_session)
+    total_found = 0
+    total_new = 0
+
+    for parent in parents:
+        topics = await extract_concepts(parent.full_text, existing)
+        if not topics:
+            continue
+
+        total_found += len(topics)
+        new_count = await upsert_concepts(
+            db_session, topics, source_doc=filename, parent_chunk_id=parent.id,
+        )
+        total_new += new_count
+
+        # Update running list so next chunk can deduplicate
+        for t in topics:
+            if t not in existing:
+                existing.append(t)
+
+    return total_found, total_new
+
+
 async def _ingest_one(
     filename: str,
     tmp_path: str,
@@ -115,22 +151,22 @@ async def _ingest_one(
             sparse_embeddings=sparse_embeddings,
         )
 
-        # 5. Upsert concepts
-        for concept in doc.concepts:
-            concept.source_doc = filename
-        new_concepts = await upsert_concepts(db_session, doc.concepts)
+        # 5. LLM concept extraction per parent chunk
+        concepts_total, concepts_new = await _extract_concepts_for_doc(
+            doc.parents, filename, db_session,
+        )
 
         logger.info(
-            "Ingested '%s': %d chunks → Milvus, %d new concepts → SQLite",
-            filename, count, new_concepts,
+            "Ingested '%s': %d chunks → Milvus, %d concepts found (%d new) → SQLite",
+            filename, count, concepts_total, concepts_new,
         )
         return MultiUploadResult(
             filename=filename,
             success=True,
             parents=len(doc.parents),
             chunks_inserted=count,
-            concepts_total=len(doc.concepts),
-            concepts_new=new_concepts,
+            concepts_total=concepts_total,
+            concepts_new=concepts_new,
         )
 
     except Exception as e:
@@ -206,21 +242,21 @@ async def upload_documents(
                 sparse_embeddings=sparse_embeddings,
             )
 
-            for concept in doc.concepts:
-                concept.source_doc = filename
-            new_concepts = await upsert_concepts(session, doc.concepts)
+            concepts_total, concepts_new = await _extract_concepts_for_doc(
+                doc.parents, filename, session,
+            )
 
             logger.info(
-                "Ingested '%s': %d chunks → Milvus, %d new concepts → SQLite",
-                filename, count, new_concepts,
+                "Ingested '%s': %d chunks → Milvus, %d concepts found (%d new) → SQLite",
+                filename, count, concepts_total, concepts_new,
             )
             results.append(MultiUploadResult(
                 filename=filename,
                 success=True,
                 parents=len(doc.parents),
                 chunks_inserted=count,
-                concepts_total=len(doc.concepts),
-                concepts_new=new_concepts,
+                concepts_total=concepts_total,
+                concepts_new=concepts_new,
             ))
         except Exception as e:
             logger.error("Ingestion failed for '%s': %s", filename, e)

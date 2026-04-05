@@ -24,9 +24,6 @@ class ConceptRecord:
     """A knowledge concept from the index."""
 
     topic: str
-    source_doc: str | None
-    heading_path: str | None
-    chunk_count: int
 
 
 async def search_concepts(
@@ -38,7 +35,7 @@ async def search_concepts(
 
     Args:
         session: Async DB session.
-        scope: Filter by source document name (exact match).
+        scope: Filter by source document name (exact match, via concept_sources join).
         keyword: Filter by topic keyword (case-insensitive substring match).
 
     Returns:
@@ -46,15 +43,7 @@ async def search_concepts(
     """
     rows = await crud.search_concepts(session, scope=scope, keyword=keyword)
 
-    records = [
-        ConceptRecord(
-            topic=row.topic,
-            source_doc=row.source_doc,
-            heading_path=row.heading_path,
-            chunk_count=row.chunk_count,
-        )
-        for row in rows
-    ]
+    records = [ConceptRecord(topic=row.topic) for row in rows]
 
     logger.info(
         "search_concepts: scope=%s keyword=%s | returned=%d concepts",
