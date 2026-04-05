@@ -31,7 +31,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 生产环境应限制为前端域名
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -45,7 +45,4 @@ app.include_router(ingest.router, prefix="/api")
 
 @app.get("/health")
 async def health_check():
-    return {
-        "status": "healthy",
-        "env": settings.app_env,
-    }
+    return {"status": "healthy"}

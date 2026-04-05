@@ -1,13 +1,26 @@
 """Tests for rag_search tool with mocked services."""
 
-import numpy as np
-import pytest
+import sys
 from unittest.mock import patch, MagicMock
 
-from app.services.embedding import EmbeddingOutput
-from app.services.milvus_client import SearchResult
-from app.services.reranker import RerankResult
-from app.agent.tools.rag_search import rag_search, RankedChunk
+import numpy as np
+import pytest
+
+# Mock heavy third-party libs that are not installed in the test environment
+for _mod in ["FlagEmbedding", "pymilvus"]:
+    if _mod not in sys.modules:
+        sys.modules[_mod] = MagicMock()
+
+from app.services.embedding import EmbeddingOutput  # noqa: E402
+from app.services.milvus_client import SearchResult  # noqa: E402
+from app.services.reranker import RerankResult  # noqa: E402
+
+# Import the MODULE directly (not the function re-exported via __init__.py)
+# so that @patch.object can target module-level service singletons.
+import importlib  # noqa: E402
+_rag_mod = importlib.import_module("app.agent.tools.rag_search")  # noqa: E402
+rag_search = _rag_mod.rag_search
+RankedChunk = _rag_mod.RankedChunk
 
 
 # ── Fixtures ─────────────────────────────────────────────────
@@ -46,9 +59,9 @@ def _make_rerank_results(
 # ── Tests ────────────────────────────────────────────────────
 
 
-@patch("app.agent.tools.rag_search.reranker_service")
-@patch("app.agent.tools.rag_search.milvus_service")
-@patch("app.agent.tools.rag_search.embedding_service")
+@patch.object(_rag_mod, "reranker_service")
+@patch.object(_rag_mod, "milvus_service")
+@patch.object(_rag_mod, "embedding_service")
 def test_rag_search_basic(mock_embed, mock_milvus, mock_reranker):
     """Basic flow: encode → hybrid_search → rerank → return RankedChunks."""
     # Mock embedding
@@ -89,9 +102,9 @@ def test_rag_search_basic(mock_embed, mock_milvus, mock_reranker):
     assert mock_reranker.rerank.call_args.kwargs["top_n"] == 5
 
 
-@patch("app.agent.tools.rag_search.reranker_service")
-@patch("app.agent.tools.rag_search.milvus_service")
-@patch("app.agent.tools.rag_search.embedding_service")
+@patch.object(_rag_mod, "reranker_service")
+@patch.object(_rag_mod, "milvus_service")
+@patch.object(_rag_mod, "embedding_service")
 def test_rag_search_empty_results(mock_embed, mock_milvus, mock_reranker):
     """When Milvus returns no candidates, return empty list without calling reranker."""
     mock_embed.encode_query.return_value = EmbeddingOutput(
@@ -106,9 +119,9 @@ def test_rag_search_empty_results(mock_embed, mock_milvus, mock_reranker):
     mock_reranker.rerank.assert_not_called()
 
 
-@patch("app.agent.tools.rag_search.reranker_service")
-@patch("app.agent.tools.rag_search.milvus_service")
-@patch("app.agent.tools.rag_search.embedding_service")
+@patch.object(_rag_mod, "reranker_service")
+@patch.object(_rag_mod, "milvus_service")
+@patch.object(_rag_mod, "embedding_service")
 def test_rag_search_fewer_candidates_than_topk(mock_embed, mock_milvus, mock_reranker):
     """When Milvus returns fewer candidates than top_k, rerank all of them."""
     mock_embed.encode_query.return_value = EmbeddingOutput(
@@ -129,9 +142,9 @@ def test_rag_search_fewer_candidates_than_topk(mock_embed, mock_milvus, mock_rer
     assert all(isinstance(r, RankedChunk) for r in results)
 
 
-@patch("app.agent.tools.rag_search.reranker_service")
-@patch("app.agent.tools.rag_search.milvus_service")
-@patch("app.agent.tools.rag_search.embedding_service")
+@patch.object(_rag_mod, "reranker_service")
+@patch.object(_rag_mod, "milvus_service")
+@patch.object(_rag_mod, "embedding_service")
 def test_rag_search_metadata_preserved(mock_embed, mock_milvus, mock_reranker):
     """Verify that source metadata is correctly mapped from candidates through rerank."""
     mock_embed.encode_query.return_value = EmbeddingOutput(
@@ -162,9 +175,9 @@ def test_rag_search_metadata_preserved(mock_embed, mock_milvus, mock_reranker):
     assert results[1].rerank_score == 0.80
 
 
-@patch("app.agent.tools.rag_search.reranker_service")
-@patch("app.agent.tools.rag_search.milvus_service")
-@patch("app.agent.tools.rag_search.embedding_service")
+@patch.object(_rag_mod, "reranker_service")
+@patch.object(_rag_mod, "milvus_service")
+@patch.object(_rag_mod, "embedding_service")
 def test_rag_search_with_filter_expr(mock_embed, mock_milvus, mock_reranker):
     """Verify that expr filter is passed through to hybrid_search."""
     mock_embed.encode_query.return_value = EmbeddingOutput(

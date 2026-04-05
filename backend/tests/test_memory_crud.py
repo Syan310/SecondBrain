@@ -9,22 +9,12 @@ Uses a real async SQLite in-memory database to verify:
 - get_next_round_number
 """
 
-import sys
-from unittest.mock import MagicMock
-
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# ── Ensure real modules are loaded ──────────────────────────
-# test_orchestrator.py may have replaced these with MagicMock at collection time.
-# Remove mocked entries so we can import the real modules.
-for mod_name in ["app.db", "app.db.models", "app.db.crud", "app.db.database", "aiosqlite"]:
-    if mod_name in sys.modules and isinstance(sys.modules[mod_name], MagicMock):
-        del sys.modules[mod_name]
-
-from app.db.models import Base  # noqa: E402
-from app.db.crud import (  # noqa: E402
+from app.db.models import Base
+from app.db.crud import (
     add_conversation_round,
     count_rounds,
     delete_rounds,

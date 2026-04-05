@@ -127,9 +127,10 @@ def _build_tool_executor(session: AsyncSession, user_id: str):
 
         try:
             if name == "read_mastery":
+                # Always use the real user_id from closure, not LLM-provided value
                 records = await _read_mastery(
                     session=session,
-                    user_id=args.get("user_id", user_id),
+                    user_id=user_id,
                     topics=args.get("topics"),
                 )
                 return json.dumps(
@@ -183,6 +184,7 @@ async def run_gap_agent(
     session: AsyncSession,
     user_id: str,
     scope: str | None = None,
+    keyword: str | None = None,
 ) -> dict:
     """Run the Gap Analysis SubAgent.
 
@@ -190,6 +192,7 @@ async def run_gap_agent(
         session: Async DB session for mastery/concepts queries.
         user_id: User identifier.
         scope: Optional source_doc filter to limit analysis scope.
+        keyword: Optional keyword filter to limit analysis to matching topics.
 
     Returns:
         dict with keys:
@@ -200,6 +203,8 @@ async def run_gap_agent(
     user_prompt = "请对我的知识掌握情况进行全面诊断分析。"
     if scope:
         user_prompt += f"只分析来源文档为「{scope}」的知识点。"
+    if keyword:
+        user_prompt += f"只分析与「{keyword}」相关的知识点。"
 
     messages = [
         {"role": "system", "content": GAP_SYSTEM_PROMPT},

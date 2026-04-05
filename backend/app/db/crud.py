@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """CRUD operations for SQLite tables."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -148,24 +148,46 @@ async def get_next_round_number(
 # ── Knowledge Concepts ──────────────────────────────────────
 
 
+async def delete_concepts_by_source(
+    session: AsyncSession,
+    source_doc: str,
+) -> int:
+    """Delete all concepts belonging to a specific source document.
+
+    Used during re-ingestion to clear old concepts before inserting new ones.
+
+    Returns:
+        Number of deleted rows.
+    """
+    from sqlalchemy import delete
+    stmt = delete(KnowledgeConcept).where(
+        KnowledgeConcept.source_doc == source_doc,
+    )
+    result = await session.execute(stmt)
+    await session.commit()
+    return result.rowcount
+
+
 async def upsert_concepts(
     session: AsyncSession,
     concepts: list[ConceptInfo],
 ) -> int:
-    """Insert new concepts, skip existing ones (by topic). Returns count of newly inserted."""
+    """Insert new concepts, skip existing ones (by topic+source_doc). Returns count of newly inserted."""
     if not concepts:
         return 0
 
-    # Fetch existing topics in one query
+    # Fetch existing (topic, source_doc) pairs in one query
     topics = [c.topic for c in concepts]
     result = await session.execute(
-        select(KnowledgeConcept.topic).where(KnowledgeConcept.topic.in_(topics))
+        select(KnowledgeConcept.topic, KnowledgeConcept.source_doc)
+        .where(KnowledgeConcept.topic.in_(topics))
     )
-    existing = {row[0] for row in result.fetchall()}
+    existing = {(row[0], row[1]) for row in result.fetchall()}
 
     inserted = 0
     for c in concepts:
-        if c.topic in existing:
+        key = (c.topic, c.source_doc)
+        if key in existing:
             continue
         session.add(
             KnowledgeConcept(
@@ -174,7 +196,7 @@ async def upsert_concepts(
                 heading_path=c.heading_path,
             )
         )
-        existing.add(c.topic)
+        existing.add(key)
         inserted += 1
 
     if inserted:
@@ -200,7 +222,9 @@ async def search_concepts(
     if scope:
         stmt = stmt.where(KnowledgeConcept.source_doc == scope)
     if keyword:
-        stmt = stmt.where(KnowledgeConcept.topic.ilike(f"%{keyword}%"))
+        # Escape LIKE wildcards in user input to prevent unintended matching
+        escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        stmt = stmt.where(KnowledgeConcept.topic.ilike(f"%{escaped}%", escape="\\"))
     result = await session.execute(stmt)
     return list(result.scalars().all())
 
@@ -249,7 +273,7 @@ async def upsert_mastery(
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     if record is None:
         record = UserMastery(

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column,
@@ -28,7 +28,7 @@ class UserMastery(Base):
     total_attempts = Column(Integer, default=0)
     correct_count = Column(Integer, default=0)
     last_reviewed = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
         UniqueConstraint("user_id", "topic", name="uq_user_topic"),
@@ -41,11 +41,15 @@ class KnowledgeConcept(Base):
     __tablename__ = "knowledge_concepts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    topic = Column(Text, nullable=False, unique=True)
-    source_doc = Column(Text)
+    topic = Column(Text, nullable=False)
+    source_doc = Column(Text, nullable=False)
     heading_path = Column(Text)
     chunk_count = Column(Integer, default=1)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("topic", "source_doc", name="uq_topic_source"),
+    )
 
 
 class ConversationHistory(Base):
@@ -59,7 +63,7 @@ class ConversationHistory(Base):
     role = Column(Text, nullable=False)           # "user" | "assistant"
     content = Column(Text, nullable=False)
     round_number = Column(Integer, nullable=False)  # 对话轮次，同一轮 user+assistant 共享
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class QuizSession(Base):
@@ -69,7 +73,7 @@ class QuizSession(Base):
 
     id = Column(Text, primary_key=True)
     user_id = Column(Text, nullable=False)
-    started_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     ended_at = Column(DateTime)
     total_questions = Column(Integer, default=0)
     correct_count = Column(Integer, default=0)

@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     notion_api_key: str = ""
     notion_database_id: str = ""
 
+    # Mastery
+    default_mastery_score: float = 0.3  # initial mastery for first-attempt topics
+
+    # Upload
+    max_upload_size_mb: int = 50  # max file upload size in MB
+
     # App
     app_host: str = "0.0.0.0"
     app_port: int = 8000

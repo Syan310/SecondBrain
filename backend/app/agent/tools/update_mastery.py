@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.db import crud
 from app.agent.tools.read_mastery import _compute_effective_mastery
 
@@ -75,8 +76,8 @@ async def update_mastery(
             row.mastery_score, row.decay_rate, row.last_reviewed
         )
     else:
-        # First attempt on this topic — default mastery 0.3
-        old_effective = 0.3
+        # First attempt on this topic
+        old_effective = settings.default_mastery_score
 
     # Apply quality-based delta
     delta = QUALITY_DELTA[quality]
