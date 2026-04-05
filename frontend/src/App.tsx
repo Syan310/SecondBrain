@@ -9,8 +9,12 @@ export default function App() {
 
   return (
     <Layout activePanel={activePanel} onNavigate={setActivePanel}>
-      {activePanel === "chat" && <ChatPanel />}
-      {activePanel === "upload" && <FileUpload />}
+      <div className={`h-full ${activePanel !== "chat" ? "hidden" : ""}`}>
+        <ChatPanel />
+      </div>
+      <div className={`h-full ${activePanel !== "upload" ? "hidden" : ""}`}>
+        <FileUpload />
+      </div>
     </Layout>
   );
 }
