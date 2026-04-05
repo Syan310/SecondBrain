@@ -1,0 +1,242 @@
+[
+  {
+    "question": "原始 Transformer 使用什么函数生成位置编码？这些编码在训练过程中是否参与梯度更新？",
+    "ground_truth": "使用正余弦函数生成，且不参与梯度更新。",
+    "source_doc": "Transformer 复习.md",
+    "question_type": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "question": "为什么多头注意力（Multi-Head Attention）机制在增加 head 数量的同时不会增加整体计算量？",
+    "ground_truth": "因为整个 d_model 维度被按 head 数量均分，每个 head 仅在低维子空间中独立计算注意力，最后将所有 head 的输出拼接回原始维度，因此总计算量保持不变。",
+    "source_doc": "Transformer 复习.md",
+    "question_type": "conceptual",
+    "difficulty": "medium"
+  },
+  {
+    "question": "Pre-Norm 和 Post-Norm 在 Layer Normalization 的放置位置上有何区别？为什么现代大模型普遍采用 Pre-Norm？",
+    "ground_truth": "Post-Norm 将 LayerNorm 放在残差连接之后，而 Pre-Norm 将其放在残差连接之前。现代模型采用 Pre-Norm 是因为它能保持残差路径通畅，使梯度回传更稳定，训练更容易收敛。",
+    "source_doc": "Transformer 复习.md",
+    "question_type": "comparison",
+    "difficulty": "medium"
+  },
+  {
+    "question": "在训练用于文本生成的 Decoder 模型时，为了防止模型“偷看答案”，应在注意力分数矩阵的哪个具体区域填充 -∞？这属于哪种 Mask 机制？",
+    "ground_truth": "应在注意力分数矩阵（Q·Kᵀ 之后、Softmax 之前）的右上三角区域填充 -∞。这属于 Causal Mask（因果掩码）机制。",
+    "source_doc": "Transformer 复习.md",
+    "question_type": "application",
+    "difficulty": "hard"
+  },
+  {
+    "question": "Feed Forward Network (FFN) 在处理数据时，其内部维度的标准变化流程是怎样的？",
+    "ground_truth": "先将 d_model 维升维到高维（通常为 4 × d_model），在高维空间应用非线性激活函数后，再降维投射回 d_model 维。",
+    "source_doc": "Transformer 复习.md",
+    "question_type": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "question": "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为哪三个步骤？",
+    "ground_truth": "索引 → 检索 → 生成",
+    "source_doc": "RAG复习.md",
+    "question_type": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "question": "为什么 E5 系列模型不能混用 query 和 document 的编码策略？",
+    "ground_truth": "因为这类模型在训练时使用了不对称训练（asymmetric training），混用会导致向量空间不对齐，相似度计算失准。",
+    "source_doc": "RAG复习.md",
+    "question_type": "conceptual",
+    "difficulty": "medium"
+  },
+  {
+    "question": "OpenAI 的 text-embedding 系列模型与 E5 系列模型在处理输入前缀时有什么主要区别？",
+    "ground_truth": "OpenAI 的 text-embedding 系列不需要加前缀，对称使用即可；而 E5 系列需要分别为 query 添加 'query: ' 前缀，为 document 添加 'passage: ' 前缀。",
+    "source_doc": "RAG复习.md",
+    "question_type": "comparison",
+    "difficulty": "medium"
+  },
+  {
+    "question": "在实际工程中，如果缺乏历史数据来评估 RAG 系统，文档推荐的最常用构建测试集方案是什么？",
+    "ground_truth": "利用 LLM 自动生成测试集，即直接让 LLM 从已有文档中生成问题-答案对。",
+    "source_doc": "RAG复习.md",
+    "question_type": "application",
+    "difficulty": "medium"
+  },
+  {
+    "question": "在计算 RAGAS 的 Faithfulness（忠实度）指标时，具体的计算公式是什么？",
+    "ground_truth": "Faithfulness = 可被上下文支持的陈述数 / 总陈述数",
+    "source_doc": "RAG复习.md",
+    "question_type": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "question": "在 Agent 的记忆系统设计中，MEMORY.md 对应的是哪一种记忆类型？",
+    "ground_truth": "语义记忆。",
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "question_type": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "question": "根据文档，Workflow 和 Agent 的核心区别是什么？",
+    "ground_truth": "核心区别在于控制权掌握在谁手里。Workflow 的执行路径由代码预先写死，而 Agent 的下一步由 LLM 动态决定。",
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "question_type": "comparison",
+    "difficulty": "easy"
+  },
+  {
+    "question": "为什么在上下文分层管理中强调“别把确定性逻辑放进上下文”？正确的处理方式是什么？",
+    "ground_truth": "因为将确定性逻辑放入上下文会降低信息密度，使模型难以注意到真正有用的部分。正确的处理方式是将其交给外部系统（如 Hooks、代码规则或工具约束）来处理，而不是让模型反复读取。",
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "question_type": "conceptual",
+    "difficulty": "medium"
+  },
+  {
+    "question": "根据 Harness 的关键结论，若要让 Agent 在开发任务中发挥最大效能，团队应如何调整任务属性并设定验收标准？",
+    "ground_truth": "应将任务推进到“目标明确、结果可以自动验证”的右上角区域。验收标准应设定为机器可执行的判断标准，以替代人工审查，从而突破吞吐量天花板。",
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "question_type": "application",
+    "difficulty": "medium"
+  },
+  {
+    "question": "在工具设计的第三代演进中，采用“Programmatic Tool Calling（代码编排）”方式后，token 消耗大约能从多少降低到多少？",
+    "ground_truth": "token 消耗可从约 150,000 降到约 2,000。",
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "question_type": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "question": "LangGraph 的 Checkpointer 机制主要提供哪四种核心能力？",
+    "ground_truth": "跨会话记忆、Human-in-the-Loop（人工介入/暂停确认）、错误恢复、时间旅行（Time Travel）。",
+    "source_doc": "Agent 复习.md",
+    "question_type": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "question": "相比原始的 ReAct 框架，Reflexion 框架的核心优势是什么？",
+    "ground_truth": "对中间结果的质量做显式检查，允许 Agent 从失败中学习并在同一任务内自我纠错。",
+    "source_doc": "Agent 复习.md",
+    "question_type": "conceptual",
+    "difficulty": "medium"
+  },
+  {
+    "question": "在 LangGraph 中实现 Function Call 时，为什么推荐使用“独立 Tool 节点”而非“共享 Tool 节点”？",
+    "ground_truth": "独立 Tool 节点逻辑清晰且维护简单；而共享 Tool 节点需要额外编写路由逻辑来判断工具归属并正确返回结果，实现复杂度更高，因此一般不推荐。",
+    "source_doc": "Agent 复习.md",
+    "question_type": "comparison",
+    "difficulty": "medium"
+  },
+  {
+    "question": "当 Agent 运行出现“上下文爆炸（Context Overflow）”问题时，文档推荐了哪些具体解法？",
+    "ground_truth": "使用滑动窗口或摘要压缩策略；将中间结果存入长期记忆而非全部保留在上下文中。",
+    "source_doc": "Agent 复习.md",
+    "question_type": "application",
+    "difficulty": "easy"
+  },
+  {
+    "question": "根据文档中的正反示例对比，一个“好的工具描述”应当包含哪些关键要素？",
+    "ground_truth": "应明确说明工具的具体用途、输入格式（如字符串）、输出内容（如返回的文档数量和字段），以及清晰的使用边界或限制条件（如仅适用于特定场景，不适用于其他场景）。",
+    "source_doc": "Agent 复习.md",
+    "question_type": "application",
+    "difficulty": "medium"
+  },
+  {
+    "question": "在RAG系统中，如果采用递归切分（Recursive Splitting）策略并设置重叠窗口，这对IVF索引检索时`nprobe`参数的选择有何影响？为什么？",
+    "ground_truth": "递归切分配合重叠窗口能有效保留块边界的上下文语义，使生成的向量表征更完整、区分度更高。在IVF检索中，`nprobe`控制搜索的簇数量以平衡召回率与速度。由于高质量切分提升了向量本身的语义完整性，通常无需设置过大的`nprobe`即可保证较高的召回率，从而在维持检索精度的同时避免速度显著下降；反之，若切分丢失上下文，则需增大`nprobe`来补偿召回损失。",
+    "source_docs": [
+      "RAG复习.md | RAG 分块（Chunking）/切块方法",
+      "RAG复习.md | 存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "在构建Agent循环时，为什么频繁变更工具定义（Tool Definitions）会严重削弱Prompt Caching的优化效果？结合缓存底层原理说明原因。",
+    "ground_truth": "Prompt Caching的底层机制依赖于输入前缀的精确Token级匹配，系统提示词和工具定义通常构成请求的稳定前缀。如果工具定义频繁变动，会导致每次请求的前缀发生变化，从而破坏缓存匹配条件，迫使LLM重新计算所有KV对。保持工具定义稳定能确保前缀命中率，使得即使系统提示较长，也能享受高达90%的读取折扣，显著降低边际推理成本。",
+    "source_docs": [
+      "你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销",
+      "你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "对比多Agent系统中的「统筹者（Orchestrator）模式」与LangGraph的「共享State」通信机制，它们在上下文隔离和状态管理上各有什么特点？",
+    "ground_truth": "统筹者模式采用异步委派和结构化协议（如JSONL inbox）通信，子Agent上下文严格隔离，仅向主Agent回传摘要，有效防止上下文污染且适合复杂并行任务；而LangGraph的共享State机制通过读写同一State对象（如使用`operator.add`追加消息）实现间接通信，实现简单且天然契合图架构，但字段设计需谨慎，过多字段易导致状态混乱。前者强隔离、高扩展，后者紧耦合、易实现。",
+    "source_docs": [
+      "你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/7. 多 Agent 组织",
+      "Agent 复习.md | Multi-Agent 通信方式/1. 共享 State（Shared State）"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "若要科学地确定RAG系统的最佳分块大小（如128、256、512 token），应如何结合文中提到的评估框架与测试指标进行验证？",
+    "ground_truth": "首先按不同量级切块并存入向量库，然后针对用户提问生成回复。评估时可结合RAGAS框架或自定义LLM-as-Judge，重点使用“忠诚度测试（Loyalty/Faithfulness）”和“相关性测试（Relevance）”对不同块大小的回复进行打分。忠诚度测试确保生成内容不脱离切块原文，相关性测试验证回答是否精准匹配问题。LangSmith可用于记录完整评估轨迹以便调试，最终综合得分选出最优量级。",
+    "source_docs": [
+      "RAG复习.md | RAG 分块（Chunking）/切块大小如何选择？",
+      "Agent 复习.md | Agent 评估体系/常用评估框架"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "在Transformer架构中，Token Embedding为什么要乘以√d_model？这一操作与后续的Layer Normalization在数值稳定性上如何协同工作？",
+    "ground_truth": "乘以√d_model是为了放大Embedding的数值尺度，防止其被位置编码的数值淹没，确保两者相加时语义和位置信息权重均衡。相加后的向量会输入LayerNorm进行标准化（均值0、方差1）。Embedding的预缩放操作实际上为LayerNorm提供了更合理的初始分布，避免极端值导致梯度消失或爆炸，两者协同保障了深层网络训练时的数值稳定性与特征表达能力。",
+    "source_docs": [
+      "Transformer 复习.md | 2. Token Embedding",
+      "Transformer 复习.md | 8. Layer Normalization"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "在基于IVF索引的向量检索中，如何结合Metadata Filter（如`doc_type`或`created_at`）来优化检索效率与精度？",
+    "ground_truth": "IVF检索时仅在`nprobe`个最近簇内进行精确搜索。若结合Metadata Filter，可在簇内精确搜索阶段或之前应用过滤条件（预过滤），直接排除不符合元数据（如特定文档类型或时间范围）的向量。这种组合避免了全量暴力过滤，大幅缩小候选集规模，在保持IVF速度优势的同时，通过元数据约束提升了最终Top-K结果的业务相关性与检索精度。",
+    "source_docs": [
+      "RAG复习.md | 向量数据库的 Metadata Filter/典型元数据字段",
+      "RAG复习.md | 存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "引入并行工具调用（Parallel Tool Call）是否会破坏Agent主循环的稳定性？请结合主循环的运转阶段与并行调用的实现条件进行分析。",
+    "ground_truth": "不会破坏。Agent主循环（感知->决策->行动->反馈）的核心控制流非常稳定，新增能力通常叠加在循环外部而非改动内部。并行工具调用是在“行动”阶段对独立工具执行的优化（使用`asyncio.gather`等并发逻辑），前提是工具间无数据依赖。它仅缩短了单次循环的RTT（往返时间），并未改变循环的状态流转与反馈机制，因此完全符合“主循环稳定、能力外扩”的架构原则。",
+    "source_docs": [
+      "你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式",
+      "Agent 复习.md | Parallel Tool Call（并行工具调用）/优势与注意点"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "为什么在生产环境中使用稳定的BPE分词器（如tiktoken）对提升Prompt Caching的命中率至关重要？",
+    "ground_truth": "Prompt Caching的触发条件是输入前缀的精确Token级匹配。BPE分词器通过合并高频字符对生成Token，其词表和合并规则直接决定了文本的Token化结果。如果分词器不稳定或动态内容导致Token边界变化，前缀匹配就会失败，缓存失效。使用tiktoken等成熟且固定的BPE工具，能确保系统提示和长文档等静态内容在多轮请求中生成完全一致的Token序列，从而保障前缀稳定性，最大化缓存命中率。",
+    "source_docs": [
+      "Transformer 复习.md | 1. BPE 分词器",
+      "你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "在多Agent协作中，如何结合「深度限制（Depth Limit）」与LangGraph的「State Reducer」机制来安全地处理递归调用与消息累积？",
+    "ground_truth": "深度限制作为硬性约束，直接防止子Agent无限递归调用导致系统崩溃。同时，利用State Reducer机制（如将`messages`字段配置为`operator.add`追加模式），可以在递归过程中安全地累积交互历史而不覆盖旧状态。两者结合既通过深度限制控制了调用栈的边界，又通过追加型Reducer保留了完整的上下文轨迹，实现了递归过程的安全可控与状态可追溯。",
+    "source_docs": [
+      "你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/7. 多 Agent 组织",
+      "Agent 复习.md | LangGraph 深入：State Reducer 机制/基本用法"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  },
+  {
+    "question": "Transformer中的FFN层旨在通过高维非线性变换学习更丰富的语义表示，这与RAG中的「语义切块（Semantic Chunking）」策略在目标上有何内在联系？",
+    "ground_truth": "FFN层的作用是对注意力机制的输出进行非线性映射，提取并强化更抽象、丰富的语义特征。语义切块策略则是通过计算句子间相似度，将语义连贯的内容合并、不连贯的切开，旨在保证输入模型的每个文本块本身就是一个完整的语义单元。两者在目标上高度一致：FFN在模型内部通过数学变换增强语义表征能力，而语义切块在数据预处理阶段通过结构划分确保输入信息的语义完整性，共同提升模型对复杂语义的理解与检索效果。",
+    "source_docs": [
+      "Transformer 复习.md | 6. Feed Forward Network（FFN）",
+      "RAG复习.md | RAG 分块（Chunking）/切块方法"
+    ],
+    "question_type": "multi-hop",
+    "difficulty": "hard"
+  }
+]

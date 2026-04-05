@@ -1,0 +1,122 @@
+[
+  {
+    "query": "Transformer里的自注意力机制是怎么算的？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "RAG架构中检索器和生成器是如何协同工作的？能详细讲讲向量检索和重排序的区别吗？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "请阐述多智能体系统中基于角色的任务分配机制及其优缺点。",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "位置编码在Transformer里到底起啥作用啊？不用它行不行？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "在工程实践中，Agent调用外部工具时常见的延迟和超时问题一般怎么解决？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "RAG的全称是什么？主要解决大模型的什么问题？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "请解释Transformer模型中多头注意力机制的数学表达及其并行计算优势。",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "Agent里的ReAct框架到底是个啥逻辑？能举个简单的例子说明下吗？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "当RAG遇到检索内容与问题不相关或者存在知识冲突时，模型通常采用哪些策略来保证生成质量？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "对比Plan-and-Execute与ReAct两种Agent架构，它们在任务规划与执行流程上有何本质差异？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "帮我出几道题考考我，看看我最近复习得咋样。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "请基于《Transformer 复习.md》的内容，生成一套包含5道选择题和3道简答题的测试卷。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "针对RAG这块儿，给我出几个面试题练练手呗。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "请根据提供的复习文档，设计一份综合知识测验，涵盖核心概念与原理。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "关于Agent的工程实践部分，能不能出几道场景题让我模拟一下？",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "请依据《Agent 复习.md》生成一份随堂小测，重点考察记忆与规划模块。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "随机抽10个知识点考考我，难度中等就行。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "请结合RAG与Transformer的相关文档，生成一份交叉知识点的问答题测验。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "就Agent的原理架构这块，给我整一套快速自测题，带答案解析的。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "请生成一份涵盖所有复习文档的阶段性考核试卷，题型不限。",
+    "expected_intent": "quiz"
+  },
+  {
+    "query": "帮我看看我这些复习材料里，哪些地方最容易考或者最容易出错？",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "请分析《Transformer 复习.md》中的知识体系，指出初学者通常容易忽略的薄弱环节。",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "基于全部提供的文档，请评估当前知识覆盖的完整性，并列出潜在的知识盲区。",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "RAG这部分我总觉得学得有点虚，能帮我挑出重点难点和容易踩坑的地方吗？",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "请针对《你不知道的Agent-原理架构与工程实践.md》进行深度剖析，找出工程落地阶段常见的认知盲区。",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "结合这几份文档，给我做个知识体检，看看我还有啥没掌握透的。",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "请对《Agent 复习.md》进行结构化拆解，识别出逻辑链条中最薄弱的关联节点。",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "Transformer和RAG结合起来看的话，有哪些知识点是容易搞混或者遗漏的？帮我列一下。",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "请综合评估所有复习文档，构建知识图谱并标注出当前内容中缺乏深度讲解或易产生误解的模块。",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "就Agent的原理这块，你觉得我复习的时候最容易在哪些概念上钻牛角尖或者理解不到位？",
+    "expected_intent": "gap_analysis"
+  }
+]

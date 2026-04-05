@@ -8,6 +8,11 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     llm_model: str = "qwen3.6-plus"
 
+    # Judge LLM (for evaluation)
+    judge_api_key: str = ""
+    judge_base_url: str = "https://api.moonshot.cn/v1"
+    judge_model: str = "kimi-k2.5"
+
     # Embedding (bge-m3: 1024-dim, multilingual Chinese/English)
     embedding_model_path: str = "./models/bge-m3"
 

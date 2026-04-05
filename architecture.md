@@ -50,6 +50,7 @@
 
 | 文档 | 内容 | 何时需要 |
 |------|------|----------|
+| [docs/ARCHITECTURE_AND_DATAFLOW.md](docs/ARCHITECTURE_AND_DATAFLOW.md) | **架构 + 存储 + 数据流 + LangGraph 工作流（详述）** | 新人上手、联调、写设计说明 |
 | [docs/agents.md](docs/agents.md) | Agent 分层架构 (Orchestrator + 3 SubAgent) | 修改 Agent 调度逻辑 |
 | [docs/langgraph.md](docs/langgraph.md) | LangGraph 节点、流程图、条件路由 | 修改图结构或节点 |
 | [docs/tools.md](docs/tools.md) | Tool 定义、Agent×Tool 分配、Gap 规则 | 增删改 Tool |

@@ -349,3 +349,16 @@ ARCHITECTURE.md 膨胀到 668 行，每次新对话冷启动需读取全文消�
 ## 2026-04-05
 
 PDF 入库依赖与代码对齐：`requirements.txt` 由 `mineru[core]` 改为 `magic-pdf[full]`，因 `doc_processor._parse_pdf` 使用 `magic_pdf` 命名空间，而 `mineru` 2.x wheel 不包含该模块。
+
+## 2026-04-05: Step 8 评估方案重设计
+
+**变更**: 重构评估指标体系，从 6 维 20+ 指标精简为 RAG + Agent 两条线 13 个核心指标。
+
+**决策**:
+1. RAG 评估采用 RAGAS 框架（业界标准），核心 4 指标：Context Precision/Recall + Faithfulness + Answer Relevancy
+2. Agent 评估采用任务驱动方式：Intent Acc + Tool Selection Acc + Task Success Rate
+3. Judge 模型选用 Kimi-K2.5（避免 Qwen 自评偏差）
+4. 砍掉不可离线测量的指标：Mastery Convergence, Decay Effectiveness, Adaptive Accuracy, Session Completion Rate
+5. 评估数据集半自动生成（LLM 从 chunks 生成候选 → 人工审核）
+
+**原因**: 原方案指标过多且部分需纵向用户数据无法离线评估，RAGAS 是 RAG 评估事实标准，可直接 pip install 使用。

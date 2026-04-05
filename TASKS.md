@@ -88,13 +88,49 @@
 
 ## Step 8: 评估 & 优化
 
-- [ ] 构建评估数据集 (QA pairs, 复杂度标注)
-- [ ] 检索评估 — Recall@K, MRR, Reranker Lift
-- [ ] 生成评估 — Faithfulness, Answer Relevance, Citation Accuracy
-- [ ] 多跳评估 — Decomposition Quality, Synthesis Coherence, Multi-hop Lift
-- [ ] Quiz 评估 — Answer Eval Accuracy, Mastery Convergence, Topic Coverage
-- [ ] Gap Analysis 评估 — Gap Detection Precision/Recall
-- [ ] 端到端评估 — E2E Latency, Intent Classification Acc
-- [ ] Prompt 调优
+评估方法：RAG 用 RAGAS 框架（业界标准），Agent 用任务驱动评估。Judge 模型用 Kimi-K2.5（避免 Qwen 自评偏差）。
+
+### 8.1 评估数据集生成（半自动）
+- [x] 数据集生成脚本 `evaluation/generate_dataset.py` — 从 Milvus chunks 用 LLM 生成 QA 候选
+- [x] QA 评估集 `evaluation/datasets/qa_dataset.json` — 30 条（20 单跳 + 10 多跳）
+- [x] Intent 评估集 `evaluation/datasets/intent_dataset.json` — 30 条（qa/quiz/gap 各 10）
+- [x] 人工审核 & 定稿数据集
+- [ ] Quiz 评估集 — 10 组生成题目（用 LLM-as-Judge 评分）— 待补充
+- [ ] Gap 评估集 — 5-10 条预设 mastery 状态场景 — 待补充
+
+### 8.2 RAG 评估（RAGAS 框架）— `evaluation/eval_rag.py`
+
+运行方式：`cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag`
+结果输出：`evaluation/results/rag_eval_results.json`
+
+已实现指标：
+- [x] RAGAS 检索层 — Context Precision, Context Recall
+- [x] RAGAS 生成层 — Faithfulness, Answer Relevancy
+- [x] 经典 IR 指标 — Recall@K, MRR, Reranker Lift
+- [x] Multi-hop Lift — 单跳 vs 多跳 Faithfulness 差值
+
+### 8.3 Agent 评估（任务驱动）— `evaluation/eval_agent.py`
+
+运行方式：`cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent`
+结果输出：`evaluation/results/agent_eval_results.json`
+
+已实现指标：
+- [x] Intent Classification Acc — LLM 意图分类 vs 标注 test set
+- [x] Task Success Rate — 全链路 Orchestrator E2E + Kimi LLM-as-Judge (pass/partial/fail)
+- [x] E2E Latency P50/P95 — 每条 QA 的端到端耗时
+
+未实现（待结果分析后决定是否补充）：
+- [ ] Tool Selection Acc — 需记录 orchestrator trajectory 对比预期工具调用
+- [ ] Replan Efficiency — 需提取 replan_count 统计
+- [ ] Quiz Question Quality — 需 Quiz 评估集 + LLM-as-Judge 评分
+- [ ] Gap Detection Precision — 需 Gap 评估集 + 人工/LLM 抽检
+
+### 8.4 辅助模块
+- [x] `evaluation/judge_client.py` — Kimi-K2.5 Judge 客户端 (OpenAI-compatible)
+- [x] `evaluation/__init__.py`
+
+### 8.5 收尾
+- [ ] 评估结果分析 & 优化建议
+- [ ] Prompt 调优（基于评估结果）
 - [ ] Docker 化部署
-- [ ] README + 项目文档 (含评估结果)
+- [ ] README + 项目文档（含评估结果）
