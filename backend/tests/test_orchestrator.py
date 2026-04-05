@@ -907,3 +907,104 @@ class TestGraphIntegration:
             assert len(result["step_results"]) == 1
             mock_qa.assert_called_once()
             mock_gap.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_stream_single_qa_flow(self):
+        """Single QA stream: emits status events, token chunks, and final payload."""
+        mock_session = AsyncMock()
+
+        plan_response = json.dumps({
+            "steps": [{"step": 1, "intent": "qa", "params": {"query": "什么是Transformer?"}, "depends_on": []}],
+        })
+        replan_finish = json.dumps({"action": "finish", "revised_steps": [], "reason": "已完成"})
+
+        call_count = {"n": 0}
+
+        async def mock_chat(**kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return _make_llm_response(plan_response)
+            return _make_llm_response(replan_finish)
+
+        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
+             patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
+             patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
+
+            mock_llm.chat = mock_chat
+            mock_qa.return_value = {"answer": "Transformer是一种模型架构", "confidence": "high", "plan": {}, "sources": []}
+
+            from app.agent.graph import run_orchestrator_stream
+
+            events = [event async for event in run_orchestrator_stream(
+                user_query="什么是Transformer?",
+                user_id="test",
+                session=mock_session,
+            )]
+
+            status_messages = [e["message"] for e in events if e["type"] == "status"]
+            token_text = "".join(e["text"] for e in events if e["type"] == "token")
+            final_event = next(e for e in events if e["type"] == "final")
+
+            assert any("规划" in msg for msg in status_messages)
+            assert any("问答结果已生成" in msg for msg in status_messages)
+            assert "Transformer" in token_text
+            assert "Transformer" in final_event["answer"]
+
+    @pytest.mark.asyncio
+    async def test_stream_multi_step_uses_streaming_synthesis(self):
+        """Multi-step stream: synthesis tokens should come from llm_client.stream_chat."""
+        mock_session = AsyncMock()
+
+        plan_response = json.dumps({
+            "steps": [
+                {"step": 1, "intent": "gap_analysis", "params": {"scope": None, "keyword": "NLP"}, "depends_on": []},
+                {"step": 2, "intent": "qa", "params": {"query": "讲解最弱概念"}, "depends_on": [1]},
+            ],
+        })
+        rewrite_response = json.dumps({"query": "讲解Attention机制"})
+        replan_continue = json.dumps({"action": "continue", "revised_steps": [], "reason": "继续"})
+        replan_finish = json.dumps({"action": "finish", "revised_steps": [], "reason": "完成"})
+
+        call_count = {"n": 0}
+
+        async def mock_chat(**kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return _make_llm_response(plan_response)
+            if call_count["n"] == 2:
+                return _make_llm_response(replan_continue)
+            if call_count["n"] == 3:
+                return _make_llm_response(rewrite_response)
+            return _make_llm_response(replan_finish)
+
+        async def mock_stream_chat(**kwargs):
+            for chunk in ["综合：", "盲区在Attention。"]:
+                yield chunk
+
+        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
+             patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
+             patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.graph.llm_client.stream_chat", mock_stream_chat), \
+             patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
+             patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
+
+            mock_llm.chat = mock_chat
+            mock_gap.return_value = {"report": "盲区: Attention"}
+            mock_qa.return_value = {"answer": "Attention是注意力机制...", "confidence": "high", "plan": {}, "sources": []}
+
+            from app.agent.graph import run_orchestrator_stream
+
+            events = [event async for event in run_orchestrator_stream(
+                user_query="分析NLP盲区然后讲讲最弱的",
+                user_id="test",
+                session=mock_session,
+            )]
+
+            status_messages = [e["message"] for e in events if e["type"] == "status"]
+            token_text = "".join(e["text"] for e in events if e["type"] == "token")
+            final_event = next(e for e in events if e["type"] == "final")
+
+            assert any("汇总多个子任务结果" in msg for msg in status_messages)
+            assert token_text == "综合：盲区在Attention。"
+            assert final_event["answer"] == "综合：盲区在Attention。"

@@ -279,6 +279,25 @@ def _parse_json(text: str) -> dict:
     return json.loads(text)
 
 
+def build_synthesize_messages(user_query: str, step_results: list[dict]) -> list[dict]:
+    """Build synthesis prompt messages for both sync and streaming paths."""
+    results_text = "\n\n".join(
+        f"### 子任务 {r['step']} ({r['intent']})\n{r['result']}"
+        for r in step_results
+    )
+
+    return [
+        {"role": "system", "content": SYNTHESIZE_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                f"## 用户原始输入\n{user_query}\n\n"
+                f"## 各子任务结果\n{results_text}"
+            ),
+        },
+    ]
+
+
 # ── Plan Node ────────────────────────────────────────────────
 
 
@@ -503,22 +522,7 @@ async def synthesize_node(state: OverallState) -> dict:
     """
     step_results = state.get("step_results", [])
     user_query = state["user_query"]
-
-    results_text = "\n\n".join(
-        f"### 子任务 {r['step']} ({r['intent']})\n{r['result']}"
-        for r in step_results
-    )
-
-    messages = [
-        {"role": "system", "content": SYNTHESIZE_SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": (
-                f"## 用户原始输入\n{user_query}\n\n"
-                f"## 各子任务结果\n{results_text}"
-            ),
-        },
-    ]
+    messages = build_synthesize_messages(user_query, step_results)
 
     response = await llm_client.chat(
         messages=messages,

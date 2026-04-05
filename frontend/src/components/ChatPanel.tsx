@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { sendChat, getChatHistory } from "../services/api";
+import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import "katex/dist/katex.min.css";
+import { sendChatStream, getChatHistory } from "../services/api";
 import QuizModal from "./QuizModal";
 import type { ChatMessage, QuizData } from "../types";
 
@@ -48,43 +53,113 @@ export default function ChatPanel() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const appendStage = (message: string) => {
+    setMessages((prev) => {
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (!last || last.role !== "assistant") return prev;
+
+      const stages = last.stages ?? [];
+      if (stages[stages.length - 1] === message) return prev;
+
+      next[next.length - 1] = {
+        ...last,
+        stages: [...stages, message],
+      };
+      return next;
+    });
+  };
+
+  const appendAssistantToken = (text: string) => {
+    if (!text) return;
+
+    setMessages((prev) => {
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (!last || last.role !== "assistant") return prev;
+
+      next[next.length - 1] = {
+        ...last,
+        content: `${last.content}${text}`,
+      };
+      return next;
+    });
+  };
+
   const handleSend = async (override?: string) => {
     const query = (override ?? input).trim();
     if (!query || loading) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: query }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: query },
+      { role: "assistant", content: "", stages: ["已发送请求，准备开始处理..."] },
+    ]);
     if (!override) setInput("");
     setLoading(true);
 
     try {
-      const res = await sendChat(query);
+      let finalResponse: {
+        answer: string;
+        step_results: { intent: string; result: string }[];
+      } | null = null;
 
-      // Check if any step is a quiz intent
+      await sendChatStream(query, "default", "default", {
+        onStatus: (event) => appendStage(event.message),
+        onToken: (text) => appendAssistantToken(text),
+        onFinal: (response) => {
+          finalResponse = response;
+        },
+      });
+
+      const res = finalResponse;
+      if (!res) {
+        throw new Error("未收到最终响应");
+      }
+
       const quizStep = res.step_results.find((s) => s.intent === "quiz");
+      let parsedQuiz: QuizData | null = null;
       if (quizStep) {
         try {
-          const parsed: QuizData = JSON.parse(quizStep.result);
-          setMessages((prev) => [
-            ...prev,
-            { role: "assistant", content: res.answer, quizData: parsed },
-          ]);
-          setQuizData(parsed);
-          return;
+          parsedQuiz = JSON.parse(quizStep.result) as QuizData;
+          setQuizData(parsedQuiz);
         } catch {
-          // Not valid quiz JSON, treat as normal answer
+          parsedQuiz = null;
         }
       }
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: res.answer },
-      ]);
+      const answerText =
+        parsedQuiz && res.answer.trim().startsWith("{")
+          ? "已为你生成测验，请在弹窗中作答。"
+          : res.answer;
+
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (!last || last.role !== "assistant") return prev;
+
+        next[next.length - 1] = {
+          ...last,
+          content: answerText || last.content,
+          quizData: parsedQuiz ?? undefined,
+        };
+        return next;
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "请求失败";
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: `错误: ${msg}` },
-      ]);
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (!last || last.role !== "assistant") {
+          return [...prev, { role: "assistant", content: `错误: ${msg}` }];
+        }
+
+        next[next.length - 1] = {
+          ...last,
+          content: `错误: ${msg}`,
+        };
+        return next;
+      });
     } finally {
       setLoading(false);
     }
@@ -134,23 +209,36 @@ export default function ChatPanel() {
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                   msg.role === "user"
                     ? "bg-indigo-600 text-white"
                     : "bg-white border border-gray-200 text-gray-800"
                 }`}
               >
-                {msg.content}
+                {msg.role === "assistant" && msg.stages && msg.stages.length > 0 && (
+                  <div className="mb-3 space-y-1">
+                    {msg.stages.map((stage, idx) => (
+                      <div key={idx} className="text-xs text-gray-500">
+                        {stage}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {msg.role === "assistant" ? (
+                  <div className="break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_a]:text-indigo-600 [&_a]:underline [&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-gray-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em] [&_h1]:mb-3 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mb-3 [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_hr]:my-4 [&_li]:mb-1 [&_ol]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-gray-900 [&_pre]:px-4 [&_pre]:py-3 [&_pre]:text-gray-100 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit [&_pre_code]:rounded-none [&_table]:mb-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-gray-200 [&_th]:bg-gray-50 [&_th]:px-3 [&_th]:py-2 [&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-5">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                )}
               </div>
             </div>
           ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-400 animate-pulse">
-                思考中...
-              </div>
-            </div>
-          )}
           <div ref={bottomRef} />
         </div>
 

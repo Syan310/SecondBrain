@@ -9,6 +9,14 @@ export interface ChatResponse {
   step_results: StepResult[];
 }
 
+export interface ChatStreamStatusEvent {
+  stage: string;
+  message: string;
+  step?: number;
+  intent?: string;
+  total_steps?: number;
+}
+
 export interface QuizQuestion {
   topic: string;
   question: string;
@@ -81,6 +89,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   quizData?: QuizData;
+  stages?: string[];
 }
 
 export type Panel = "chat" | "upload";

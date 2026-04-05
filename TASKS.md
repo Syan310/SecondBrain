@@ -80,7 +80,7 @@
 
 - [x] React + Vite + TypeScript 项目搭建, Tailwind CSS v4
 - [x] `Layout.tsx` — 左侧 sidebar (聊天问答 + 文档上传) + 右侧内容区
-- [x] `ChatPanel.tsx` — 统一对话界面 (QA/Quiz/Gap 三合一), 首屏能力卡片, quiz 意图自动弹窗, 初始化加载历史消息
+- [x] `ChatPanel.tsx` — 统一对话界面 (QA/Quiz/Gap 三合一), 首屏能力卡片, quiz 意图自动弹窗, 初始化加载历史消息, assistant 支持 Markdown/LaTeX 渲染
 - [x] `QuizModal.tsx` — Quiz MCQ 弹窗: 选项卡片 + 判分 + mastery 变化 + 完成总结
 - [x] `FileUpload.tsx` — 多文件拖拽/点击上传, 已上传文档列表持久化显示, 文档删除
 - [x] `api.ts` + `types.ts` — API 客户端 (sendChat/getChatHistory/uploadFiles/getDocuments/deleteDocument) + TypeScript 类型定义

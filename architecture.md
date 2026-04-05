@@ -536,7 +536,7 @@ SecondBrain/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── Layout.tsx          # sidebar导航 + 内容区布局
-│   │   │   ├── ChatPanel.tsx       # 统一对话 (QA/Quiz/Gap 三合一)
+│   │   │   ├── ChatPanel.tsx       # 统一对话 (QA/Quiz/Gap 三合一, assistant 支持 Markdown/LaTeX 渲染)
 │   │   │   ├── QuizModal.tsx       # Quiz MCQ 弹窗
 │   │   │   └── FileUpload.tsx      # 文档管理 (多文件上传 + 已上传列表 + 删除)
 │   │   ├── services/api.ts         # API客户端 (sendChat/getChatHistory/submitQuizAnswer/uploadFiles/getDocuments/deleteDocument)
