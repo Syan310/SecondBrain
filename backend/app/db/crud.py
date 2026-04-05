@@ -250,7 +250,7 @@ async def upsert_mastery(
     user_id: str,
     topic: str,
     new_mastery_score: float,
-    quality: str,
+    is_correct: bool,
 ) -> UserMastery:
     """Update mastery after a quiz answer; create if not exists.
 
@@ -258,13 +258,12 @@ async def upsert_mastery(
         user_id: User identifier.
         topic: The topic being tested.
         new_mastery_score: Pre-calculated new mastery score (caller applies decay + delta).
-        quality: Answer quality — "low", "medium", or "high".
-                 medium/high count as correct for correct_count.
+        is_correct: Whether the user answered correctly.
 
     Returns:
         The updated UserMastery record.
     """
-    is_counted_correct = quality in ("medium", "high")
+    is_counted_correct = is_correct
 
     stmt = select(UserMastery).where(
         UserMastery.user_id == user_id,
