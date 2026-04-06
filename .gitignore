@@ -22,6 +22,9 @@ data/
 # Models (large files)
 models/
 
+# Claude Code (local git worktrees; do not commit)
+.claude/worktrees/
+
 # IDE
 .vscode/
 .idea/

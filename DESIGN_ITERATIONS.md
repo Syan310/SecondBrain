@@ -368,3 +368,17 @@ PDF 入库依赖与代码对齐：`requirements.txt` 由 `mineru[core]` 改为 `
 - 决策：评测脚本统一支持 smoke / standard / full 三档。
 - 口径：RAG smoke=4单跳+2多跳，standard=10单跳+5多跳，full=全量30；Agent intent smoke=6，standard=15，full=30；Agent QA smoke=3单跳+1多跳，standard=10单跳+5多跳，full=全量。
 - 原因：保留同一数据集与同一评测逻辑，仅调整抽样规模，便于开发回归与阶段性验收共存。
+
+## 2026-04-05 评测结果输出单文件
+
+RAG/Agent 评测由「子目录时间戳 JSON + results 根目录 latest」双写改为仅在 `results/rag/`、`results/agent/` 各写一份；报告 meta 使用 `output_file` 替代 `output_archive_file` / `output_latest_file`。
+
+## 2026-04-05 评测时间改为洛杉矶
+
+`eval_rag` / `eval_agent` 的报告文件名与 `meta.started_at` / `meta.finished_at` 改为 `America/Los_Angeles`；`meta` 增加 `timezone`，移除 `*_utc` 键名。
+
+## 2026-04-06 Eval Sampling + GPT-5.4 Judge
+- 决定将 Step 8 的 profile 子集选择从“按文件顺序截前 N 条”改为“确定性分层 round-robin 采样”。
+- QA 评测按 single-hop / multi-hop 分桶后，再按来源文档或来源组合做稳定轮转，避免结果被数据集排序污染。
+- Intent 评测按 qa / quiz / gap_analysis 三类均衡抽样，确保 smoke 与 standard 档位都覆盖完整路由面。
+- Judge 评测链路统一收口到 OpenAI GPT-5.4，并按 reasoning 模型参数契约构造请求；Agent judge 直接使用 max_completion_tokens，RAGAS judge 复用其 OpenAI adapter 的 GPT-5 参数映射。

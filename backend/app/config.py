@@ -5,13 +5,13 @@ from pathlib import Path
 class Settings(BaseSettings):
     # LLM
     llm_api_key: str = ""
-    llm_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    llm_base_url: str = "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
     llm_model: str = "qwen3.6-plus"
 
     # Judge LLM (for evaluation)
     judge_api_key: str = ""
-    judge_base_url: str = "https://api.moonshot.cn/v1"
-    judge_model: str = "kimi-k2.5"
+    judge_base_url: str = "https://api.openai.com/v1"
+    judge_model: str = "gpt-5.4"
 
     # Embedding (bge-m3: 1024-dim, multilingual Chinese/English)
     embedding_model_path: str = "./models/bge-m3"
@@ -34,10 +34,6 @@ class Settings(BaseSettings):
     # SQLite
     sqlite_db_path: str = "./data/secondbrain.db"
 
-    # Notion
-    notion_api_key: str = ""
-    notion_database_id: str = ""
-
     # Mastery
     default_mastery_score: float = 0.3  # initial mastery for first-attempt topics
 
@@ -57,6 +53,9 @@ class Settings(BaseSettings):
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
+        # Allow older/unused keys in .env without crashing startup.
+        # This is important for local dev where env files may accumulate settings.
+        "extra": "ignore",
     }
 
 

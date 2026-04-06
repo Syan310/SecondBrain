@@ -263,6 +263,7 @@ SYNTHESIZE_SYSTEM_PROMPT = """\
 - 使用自然流畅的语言串联
 - 使用与用户提问相同的语言
 - 如果有诊断报告和知识讲解，先展示诊断，再展示讲解
+- 篇幅控制在 400 字以内：只保留核心结论和关键信息，省略冗余细节和延伸讨论
 """
 
 
@@ -527,7 +528,7 @@ async def synthesize_node(state: OverallState) -> dict:
     response = await llm_client.chat(
         messages=messages,
         temperature=0.3,
-        max_tokens=4096,
+        max_tokens=2048,
     )
 
     return {"final_answer": response["content"] or ""}

@@ -78,4 +78,12 @@ Step 1: Services → Step 2: Ingestion → Step 3: Tools → Step 4: SubAgents
   - `smoke`：开发时快速回归
   - `standard`：日常主评测口径
   - `full`：阶段性全量验收
-- `eval_rag.py` 与 `eval_agent.py` 均通过 `--profile {smoke|standard|full}` 选择档位，并在结果 `meta` 中记录本次 profile
+- `evaluation/profiles.py` 现使用**确定性分层采样**而非简单截取文件头部：
+  - QA 子集按 `single-hop / multi-hop` 分桶后，再按来源文档（multi-hop 为来源组合）做稳定 round-robin 选样，避免结果受数据集排序影响
+  - Intent 子集按 `qa / quiz / gap_analysis` 标签均衡抽样，保证 `smoke / standard` 档位都覆盖三类路由
+- `eval_rag.py` 与 `eval_agent.py` 均通过 `--profile {smoke|standard|full}` 选择档位，并在结果 `meta` 中记录本次 profile；每轮各只落盘一份 JSON（`results/rag/rag_eval_*.json`、`results/agent/agent_eval_*.json`），文件名与 `meta.started_at` / `meta.finished_at` 为 **洛杉矶时间**（`America/Los_Angeles`），`meta.output_file` 为绝对路径
+- 评测日志按任务拆分目录落盘：RAG 写入 `results/logs_rag/eval_rag_*.log`，Agent 写入 `results/agentlog/eval_agent_*.log`；两类结果 JSON 的 `meta.run_log_file` 均记录对应日志绝对路径，便于回查
+- Judge LLM 默认使用 OpenAI `gpt-5.4`（由 `settings.judge_api_key / settings.judge_base_url / settings.judge_model` 配置），评测脚本按 GPT-5.4 reasoning 模型口径传参：
+  - Chat Completions 使用 `max_completion_tokens`
+  - 温度固定按 GPT-5 reasoning 约束处理
+  - RAGAS 侧复用其 OpenAI adapter 的 GPT-5 参数映射能力

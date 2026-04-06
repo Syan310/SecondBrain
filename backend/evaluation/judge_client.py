@@ -1,4 +1,4 @@
-"""Judge LLM client — Kimi-K2.5 via OpenAI-compatible Moonshot API.
+"""Judge LLM client — evaluation judge via OpenAI-compatible API.
 
 Used for LLM-as-Judge evaluation (Faithfulness, Relevancy, Quiz Quality, etc.)
 Separated from main LLM client to avoid self-evaluation bias (Qwen judges Qwen).
@@ -13,9 +13,37 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+GPT5_JUDGE_MODEL_PREFIX = "gpt-5.4"
+
+
+def build_judge_request_kwargs(
+    *,
+    model: str,
+    messages: list[dict],
+    max_completion_tokens: int,
+) -> dict:
+    """Build OpenAI Chat Completions kwargs for the GPT-5.4 judge path.
+
+    GPT-5.4 follows the reasoning-model parameter contract: use
+    ``max_completion_tokens`` and keep temperature fixed at ``1``.
+    """
+    normalized_model = (model or "").strip().lower()
+    if normalized_model and not normalized_model.startswith(GPT5_JUDGE_MODEL_PREFIX):
+        logger.warning(
+            "Judge model '%s' is outside the validated GPT-5.4 path; continuing with GPT-5.4-compatible params.",
+            model,
+        )
+
+    return {
+        "model": model,
+        "messages": messages,
+        "temperature": 1,
+        "max_completion_tokens": max_completion_tokens,
+    }
+
 
 class JudgeClient:
-    """Async wrapper around Kimi-K2.5 for evaluation judging."""
+    """Async wrapper for evaluation judging."""
 
     def __init__(self) -> None:
         self._client: AsyncOpenAI | None = None
@@ -31,18 +59,16 @@ class JudgeClient:
     async def judge(
         self,
         messages: list[dict],
-        # Moonshot kimi-k2.5 rejects temperature=0; API requires 1 for this model.
-        temperature: float = 1.0,
-        max_tokens: int = 2048,
+        max_completion_tokens: int = 2048,
     ) -> str:
         """Single judge call, returns content string."""
         client = self._get_client()
-        response = await client.chat.completions.create(
+        create_kwargs = build_judge_request_kwargs(
             model=settings.judge_model,
             messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
+            max_completion_tokens=max_completion_tokens,
         )
+        response = await client.chat.completions.create(**create_kwargs)
         return response.choices[0].message.content or ""
 
 

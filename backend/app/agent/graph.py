@@ -311,7 +311,7 @@ async def run_orchestrator_stream(
             async for chunk in llm_client.stream_chat(
                 messages=messages,
                 temperature=0.3,
-                max_tokens=4096,
+                max_tokens=2048,
             ):
                 chunks.append(chunk)
                 yield {"type": "token", "text": chunk}

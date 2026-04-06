@@ -116,6 +116,7 @@ EXECUTOR_SYSTEM_PROMPT = """\
 - 回答必须基于检索到的文档内容，不要编造
 - 如果检索不到相关信息，明确说明
 - 保持回答简洁聚焦，只回答当前步骤的问题
+- 篇幅控制在 150 字以内，只保留核心结论和关键依据，不展开背景介绍和延伸讨论
 """
 
 SYNTHESIZER_PROMPT = """\
@@ -132,6 +133,7 @@ SYNTHESIZER_PROMPT = """\
 - 保持逻辑连贯，消除重复
 - 适当引用来源文档
 - 使用与原始问题相同的语言
+- 篇幅控制在 300 字以内：只保留核心结论、关键机制和必要公式，省略背景铺垫、示例展开和延伸讨论
 """
 
 QC_SYSTEM_PROMPT = """\
@@ -439,7 +441,7 @@ async def _synthesize(original_query: str, step_results: list[dict]) -> str:
     response = await llm_client.chat(
         messages=messages,
         temperature=0.3,
-        max_tokens=4096,
+        max_tokens=2048,
     )
 
     return response["content"] or ""
@@ -531,7 +533,7 @@ async def run_qa_agent(query: str, user_id: str = "default") -> dict:
                 {"role": "user", "content": query},
             ],
             temperature=0.3,
-            max_tokens=4096,
+            max_tokens=2048,
         )
         return {
             "answer": response["content"] or "",

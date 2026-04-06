@@ -88,7 +88,7 @@
 
 ## Step 8: 评估 & 优化
 
-评估方法：RAG 用 RAGAS 框架（业界标准），Agent 用任务驱动评估。Judge 模型用 Kimi-K2.5（避免 Qwen 自评偏差）。
+评估方法：RAG 用 RAGAS 框架（业界标准），Agent 用任务驱动评估。Judge 模型默认走 OpenAI（通过 `judge_api_key/judge_base_url/judge_model` 配置），避免 Qwen 自评偏差。
 
 ### 8.1 评估数据集生成（半自动）
 - [x] 数据集生成脚本 `evaluation/generate_dataset.py` — 从 Milvus chunks 用 LLM 生成 QA 候选
@@ -101,7 +101,8 @@
 ### 8.2 RAG 评估（RAGAS 框架）— `evaluation/eval_rag.py`
 
 运行方式：`cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag --profile {smoke|standard|full}`
-结果输出：`evaluation/results/rag_eval_results.json`
+结果输出：`evaluation/results/rag/rag_eval_YYYYMMDD_HHMMSS.json`（每次运行一份；时间戳为洛杉矶本地）
+运行日志：`evaluation/results/logs_rag/eval_rag_YYYYMMDD_HHMMSS.log`（每次运行一份；`meta.run_log_file` 记录绝对路径）
 
 已实现指标：
 - [x] RAGAS 检索层 — Context Precision, Context Recall
@@ -111,15 +112,20 @@
 - [x] RAGAS 评测稳健性修复 — Kimi judge 显式参数适配（`temperature=1`, `top_p=0.95`）
 - [x] RAGAS 逐指标执行 + 错误显式记录 — 输出 `ragas_metric_status`，避免整批静默 `NaN`
 - [x] 评测分档 — `smoke=4单跳+2多跳`、`standard=10单跳+5多跳`、`full=全量30`
+- [x] 子集采样去偏 — QA 档位由“取前 N 条”改为按来源文档/来源组合的稳定 round-robin 分层采样
+- [x] GPT-5.4 Judge 兼容 — RAGAS judge 默认对齐 `gpt-5.4` 参数契约，避免 GPT-5 系列参数不兼容
 
 ### 8.3 Agent 评估（任务驱动）— `evaluation/eval_agent.py`
 
 运行方式：`cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile {smoke|standard|full}`
-结果输出：`evaluation/results/agent_eval_results.json`
+结果输出：`evaluation/results/agent/agent_eval_YYYYMMDD_HHMMSS.json`（每次运行一份；时间戳为洛杉矶本地）
+运行日志：`evaluation/results/agentlog/eval_agent_YYYYMMDD_HHMMSS.log`（每次运行一份；`meta.run_log_file` 记录绝对路径）
 
 已实现指标：
 - [x] Intent Classification Acc — 直接评估真实 `plan_node` 单意图规划结果
-- [x] QA E2E Task Success — 分层 QA 子集 + 独立会话 + Kimi LLM-as-Judge (pass/partial/fail/error)
+- [x] QA E2E Task Success — 分层 QA 子集 + 独立会话 + GPT-5.4 LLM-as-Judge (pass/partial/fail/error)
+- [x] Intent 子集去偏 — `smoke / standard / full` 改为按 `qa / quiz / gap_analysis` 均衡抽样，而非取数据集前缀
+- [x] GPT-5.4 Judge 兼容 — Agent judge 请求统一按 `gpt-5.4` reasoning 参数构造
 - [x] E2E Latency P50/P95 — 每条 QA 的端到端耗时
 - [x] Judge Error 分离统计 — `judge_error_rate` / `pass_rate_evaluated`
 - [x] 评测分档 — Intent: `smoke=6` / `standard=15` / `full=30`；QA: `smoke=3单跳+1多跳` / `standard=10单跳+5多跳` / `full=全量`
@@ -131,7 +137,7 @@
 - [ ] Gap Detection Precision — 需 Gap 评估集 + 人工/LLM 抽检
 
 ### 8.4 辅助模块
-- [x] `evaluation/judge_client.py` — Kimi-K2.5 Judge 客户端 (OpenAI-compatible)
+- [x] `evaluation/judge_client.py` — GPT-5.4 Judge 客户端 (OpenAI-compatible)
 - [x] `evaluation/__init__.py`
 
 ### 8.5 收尾

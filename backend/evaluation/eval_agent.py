@@ -10,9 +10,9 @@ Usage:
     MILVUS_HOST=localhost python -m evaluation.eval_agent
     MILVUS_HOST=localhost python -m evaluation.eval_agent --profile smoke
 
-Each run writes a timestamped log under ``evaluation/results/logs/eval_agent_YYYYMMDD_HHMMSS.log``
-(UTF-8) and a timestamped JSON report under ``evaluation/results/agent/``.
-The latest snapshot is also synced to ``evaluation/results/agent_eval_results.json``.
+Each run writes a timestamped log under ``evaluation/results/agentlog/eval_agent_YYYYMMDD_HHMMSS.log``
+(UTF-8) and one timestamped JSON report under ``evaluation/results/agent/``.
+Timestamps use America/Los_Angeles local wall clock.
 
 Requires Milvus, embedding/reranker models, and LLM APIs to be available.
 """
@@ -26,8 +26,9 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from app.services.milvus_client import milvus_service, memory_milvus_service
@@ -35,15 +36,15 @@ from app.agent.graph import run_orchestrator
 from app.agent.nodes.orchestrator import plan_node
 from app.db.database import async_session_factory
 from evaluation.judge_client import judge_client
-from evaluation.profiles import build_stratified_subset, get_eval_profile
+from evaluation.profiles import build_intent_eval_subset, build_stratified_subset, get_eval_profile
 
 logger = logging.getLogger(__name__)
 
 DATASET_DIR = Path(__file__).parent / "datasets"
 OUTPUT_DIR = Path(__file__).parent / "results"
 AGENT_OUTPUT_DIR = OUTPUT_DIR / "agent"
-LATEST_AGENT_OUTPUT_PATH = OUTPUT_DIR / "agent_eval_results.json"
-LOG_DIR = OUTPUT_DIR / "logs"
+LOG_DIR = OUTPUT_DIR / "agentlog"
+EVAL_TZ = ZoneInfo("America/Los_Angeles")
 
 _LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
 _LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
@@ -67,10 +68,9 @@ def _configure_run_logging(log_file: Path) -> None:
     root.addHandler(sh)
 
 
-def _make_agent_output_paths(run_ts: str) -> tuple[Path, Path]:
-    """Return (archive_path, latest_path) for one eval run."""
-    archive_path = AGENT_OUTPUT_DIR / f"agent_eval_{run_ts}.json"
-    return archive_path, LATEST_AGENT_OUTPUT_PATH
+def _agent_report_path(run_ts: str) -> Path:
+    """Single JSON report path for one eval run (under results/agent/)."""
+    return AGENT_OUTPUT_DIR / f"agent_eval_{run_ts}.json"
 
 
 # ── 1. Intent Classification ──────────────────────────────────
@@ -89,18 +89,6 @@ def _safe_p95(values: list[float]) -> float:
     ordered = sorted(values)
     idx = min(int(len(ordered) * 0.95), len(ordered) - 1)
     return ordered[idx]
-
-
-def build_intent_eval_subset(
-    intent_dataset: list[dict[str, Any]],
-    intent_limit: int | None,
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Return the first N intent samples, or the full dataset when limit is None."""
-    subset = list(intent_dataset if intent_limit is None else intent_dataset[:intent_limit])
-    return subset, {
-        "intent_limit": intent_limit,
-        "intent_selected": len(subset),
-    }
 
 
 async def classify_intent(query: str) -> dict[str, Any]:
@@ -187,13 +175,13 @@ AI助手的回答: {answer}
 
 
 async def judge_task_success(question: str, ground_truth: str, answer: str) -> dict:
-    """Use Kimi judge to evaluate if the task was completed successfully."""
+    """Use the configured GPT-5.4 judge to evaluate task completion."""
     prompt = JUDGE_PROMPT.format(
         question=question, ground_truth=ground_truth, answer=answer
     )
     resp = await judge_client.judge(
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=256,
+        max_completion_tokens=1024,
     )
 
     # Parse JSON
@@ -348,8 +336,9 @@ def parse_args() -> argparse.Namespace:
 
 
 async def main(run_log_file: Path, profile_name: str) -> None:
-    started_at = datetime.now(timezone.utc).isoformat()
-    run_ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    t_start = datetime.now(EVAL_TZ)
+    started_at = t_start.isoformat()
+    run_ts = t_start.strftime("%Y%m%d_%H%M%S")
     profile = get_eval_profile(profile_name)
     logger.info("=== eval_agent run start ===")
     logger.info("Log file: %s", run_log_file.resolve())
@@ -418,16 +407,16 @@ async def main(run_log_file: Path, profile_name: str) -> None:
     # ── Save results ──
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     AGENT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    archive_output_path, latest_output_path = _make_agent_output_paths(run_ts)
-    finished_at = datetime.now(timezone.utc).isoformat()
+    output_path = _agent_report_path(run_ts)
+    finished_at = datetime.now(EVAL_TZ).isoformat()
     full_report = {
         "meta": {
             "run_log_file": str(run_log_file.resolve()),
-            "started_at_utc": started_at,
-            "finished_at_utc": finished_at,
+            "timezone": "America/Los_Angeles",
+            "started_at": started_at,
+            "finished_at": finished_at,
             "profile": profile.name,
-            "output_archive_file": str(archive_output_path.resolve()),
-            "output_latest_file": str(latest_output_path.resolve()),
+            "output_file": str(output_path.resolve()),
         },
         "intent_classification": {
             "metric_scope": "single-intent plan_node accuracy",
@@ -438,7 +427,7 @@ async def main(run_log_file: Path, profile_name: str) -> None:
             "details": intent_results["details"],
         },
         "qa_e2e_task_success": {
-            "metric_scope": "isolated QA subset E2E + Kimi judge",
+            "metric_scope": "isolated QA subset E2E + GPT-5.4 judge",
             "subset": qa_subset_meta,
             "pass_rate_all": task_results["pass_rate_all"],
             "partial_rate_all": task_results["partial_rate_all"],
@@ -457,12 +446,9 @@ async def main(run_log_file: Path, profile_name: str) -> None:
             "details": task_results["details"],
         },
     }
-    with open(archive_output_path, "w", encoding="utf-8") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(full_report, f, ensure_ascii=False, indent=2, default=str)
-    with open(latest_output_path, "w", encoding="utf-8") as f:
-        json.dump(full_report, f, ensure_ascii=False, indent=2, default=str)
-    logger.info("Agent archive saved to %s", archive_output_path)
-    logger.info("Agent latest snapshot saved to %s", latest_output_path)
+    logger.info("Agent report saved to %s", output_path)
 
     # ── Summary ──
     logger.info("=" * 60)
@@ -481,7 +467,7 @@ async def main(run_log_file: Path, profile_name: str) -> None:
 
 if __name__ == "__main__":
     args = parse_args()
-    _ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    _ts = datetime.now(EVAL_TZ).strftime("%Y%m%d_%H%M%S")
     _log_path = LOG_DIR / f"eval_agent_{_ts}.log"
     _configure_run_logging(_log_path)
     try:

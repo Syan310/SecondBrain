@@ -3,7 +3,7 @@
 Evaluates:
   1. RAGAS metrics: Context Precision, Context Recall, Faithfulness, Answer Relevancy
   2. Classic IR: Recall@K, MRR, Reranker Lift
-  3. Multi-hop Lift: decompose on/off comparison
+  3. Multi-hop Lift: single-hop vs multi-hop faithfulness gap
 
 Usage:
     cd backend
@@ -11,6 +11,7 @@ Usage:
     MILVUS_HOST=localhost python -m evaluation.eval_rag --profile smoke
 
 Requires Milvus, embedding/reranker models, and LLM APIs to be available.
+Report filename and meta timestamps use America/Los_Angeles local wall clock.
 """
 
 from __future__ import annotations
@@ -20,9 +21,11 @@ import argparse
 import json
 import logging
 import os
+import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from app.config import settings
@@ -33,15 +36,37 @@ from app.services.llm_client import llm_client
 from app.agent.tools.rag_search import rag_search
 from evaluation.profiles import build_stratified_subset, get_eval_profile
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 DATASET_DIR = Path(__file__).parent / "datasets"
 OUTPUT_DIR = Path(__file__).parent / "results"
 RAG_OUTPUT_DIR = OUTPUT_DIR / "rag"
-LATEST_RAG_OUTPUT_PATH = OUTPUT_DIR / "rag_eval_results.json"
-KIMI_RAGAS_TEMPERATURE = 1.0
-KIMI_RAGAS_TOP_P = 0.95
+RAG_LOG_DIR = OUTPUT_DIR / "logs_rag"
+EVAL_TZ = ZoneInfo("America/Los_Angeles")
+RAGAS_JUDGE_TEMPERATURE = 1.0
+
+_LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+_LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
+
+
+def _configure_run_logging(log_file: Path) -> None:
+    """Console + one UTF-8 file per run (root logger, captures httpx/sqlalchemy/app)."""
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(_LOG_FORMAT, datefmt=_LOG_DATEFMT)
+
+    fh = logging.FileHandler(log_file, encoding="utf-8")
+    fh.setLevel(logging.INFO)
+    fh.setFormatter(formatter)
+    root.addHandler(fh)
+
+    sh = logging.StreamHandler(sys.stderr)
+    sh.setLevel(logging.INFO)
+    sh.setFormatter(formatter)
+    root.addHandler(sh)
 
 
 # ── 1. Run RAG pipeline per question ──────────────────────────
@@ -49,7 +74,8 @@ KIMI_RAGAS_TOP_P = 0.95
 
 QA_SYSTEM_PROMPT = """\
 你是一个知识问答助手。根据以下检索到的文档片段回答用户问题。
-如果文档中没有相关信息，请说明无法回答。
+你可以综合多个片段的信息进行推理和关联分析，不必局限于单个片段中的显式表述。
+如果文档片段与问题完全无关，请说明无法回答。
 
 检索到的文档片段：
 {contexts}
@@ -175,7 +201,7 @@ class BGEm3RagasEmbeddings(BaseRagasEmbeddings):
 
 
 async def run_ragas_evaluation(samples: list[dict]) -> dict:
-    """Run RAGAS metrics using Kimi-K2.5 as judge.
+    """Run RAGAS metrics using external judge model.
 
     Each sample: {user_input, response, retrieved_contexts, reference}
     """
@@ -211,12 +237,17 @@ async def run_ragas_evaluation(samples: list[dict]) -> dict:
 
     try:
         client = OpenAI(api_key=settings.judge_api_key, base_url=settings.judge_base_url)
-        judge_llm = llm_factory(
-            settings.judge_model,
-            client=client,
-            temperature=KIMI_RAGAS_TEMPERATURE,
-            top_p=KIMI_RAGAS_TOP_P,
-        )
+        # RAGAS 0.4.x InstructorModelArgs defaults max_tokens=1024; its
+        # _map_openai_params auto-converts max_tokens → max_completion_tokens
+        # for GPT-5/o-series. We must pass max_tokens here (not
+        # max_completion_tokens) so the override takes effect before mapping.
+        judge_llm_kwargs: dict[str, Any] = {
+            "client": client,
+            "temperature": RAGAS_JUDGE_TEMPERATURE,
+            "max_tokens": 16384,
+        }
+
+        judge_llm = llm_factory(settings.judge_model, **judge_llm_kwargs)
         bge_embeddings = BGEm3RagasEmbeddings()
     except Exception as e:
         logger.exception("Failed to initialize RAGAS judge/embeddings: %s", e)
@@ -250,10 +281,10 @@ async def run_ragas_evaluation(samples: list[dict]) -> dict:
         try:
             metric = builder()
             logger.info(
-                "Running RAGAS metric=%s with Kimi config temperature=%.2f top_p=%.2f",
+                "Running RAGAS metric=%s with judge config temperature=%.2f max_tokens=%d (mapped to max_completion_tokens by RAGAS)",
                 metric_name,
-                KIMI_RAGAS_TEMPERATURE,
-                KIMI_RAGAS_TOP_P,
+                RAGAS_JUDGE_TEMPERATURE,
+                judge_llm_kwargs["max_tokens"],
             )
             result = evaluate(
                 dataset=dataset,
@@ -282,10 +313,9 @@ async def run_ragas_evaluation(samples: list[dict]) -> dict:
     return {"results": merged_results, "metric_status": metric_status}
 
 
-def _make_rag_output_paths(run_ts: str) -> tuple[Path, Path]:
-    """Return (archive_path, latest_path) for one eval run."""
-    archive_path = RAG_OUTPUT_DIR / f"rag_eval_{run_ts}.json"
-    return archive_path, LATEST_RAG_OUTPUT_PATH
+def _rag_report_path(run_ts: str) -> Path:
+    """Single JSON report path for one eval run (under results/rag/)."""
+    return RAG_OUTPUT_DIR / f"rag_eval_{run_ts}.json"
 
 
 # ── 4. Main ───────────────────────────────────────────────────
@@ -302,10 +332,16 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-async def main(profile_name: str):
-    started_at = datetime.now(timezone.utc).isoformat()
-    run_ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+async def main(run_log_file: Path, profile_name: str):
+    t_start = datetime.now(EVAL_TZ)
+    started_at = t_start.isoformat()
+    run_ts = t_start.strftime("%Y%m%d_%H%M%S")
     profile = get_eval_profile(profile_name)
+    logger.info("=== eval_rag run start ===")
+    logger.info("Log file: %s", run_log_file.resolve())
+    logger.info("cwd=%s python=%s", os.getcwd(), sys.version.split()[0])
+    logger.info("MILVUS_HOST=%s", os.environ.get("MILVUS_HOST", "(unset)"))
+    logger.info("EVAL_PROFILE=%s", profile.name)
 
     # Init services
     logger.info("Connecting to Milvus...")
@@ -451,15 +487,16 @@ async def main(profile_name: str):
     # ── Save results ──
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     RAG_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    archive_output_path, latest_output_path = _make_rag_output_paths(run_ts)
-    finished_at = datetime.now(timezone.utc).isoformat()
+    output_path = _rag_report_path(run_ts)
+    finished_at = datetime.now(EVAL_TZ).isoformat()
     full_report = {
         "meta": {
-            "started_at_utc": started_at,
-            "finished_at_utc": finished_at,
+            "run_log_file": str(run_log_file.resolve()),
+            "timezone": "America/Los_Angeles",
+            "started_at": started_at,
+            "finished_at": finished_at,
             "profile": profile.name,
-            "output_archive_file": str(archive_output_path.resolve()),
-            "output_latest_file": str(latest_output_path.resolve()),
+            "output_file": str(output_path.resolve()),
         },
         "subset": qa_subset_meta,
         "ir_metrics": ir_metrics,
@@ -469,12 +506,9 @@ async def main(profile_name: str):
         "sample_count": len(ragas_samples),
         "ragas_per_sample": ragas_results,
     }
-    with open(archive_output_path, "w", encoding="utf-8") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(full_report, f, ensure_ascii=False, indent=2, default=str)
-    with open(latest_output_path, "w", encoding="utf-8") as f:
-        json.dump(full_report, f, ensure_ascii=False, indent=2, default=str)
-    logger.info("RAG archive saved to %s", archive_output_path)
-    logger.info("RAG latest snapshot saved to %s", latest_output_path)
+    logger.info("RAG report saved to %s", output_path)
 
     # ── Summary ──
     logger.info("=" * 60)
@@ -497,8 +531,16 @@ async def main(profile_name: str):
     if "lift" in multi_hop_lift:
         logger.info("  Multi-hop Lift:    %.3f  (target > 0)", multi_hop_lift["lift"])
     logger.info("=" * 60)
+    logger.info("=== eval_rag run end; full log: %s ===", run_log_file.resolve())
 
 
 if __name__ == "__main__":
     args = parse_args()
-    asyncio.run(main(args.profile))
+    _ts = datetime.now(EVAL_TZ).strftime("%Y%m%d_%H%M%S")
+    _log_path = RAG_LOG_DIR / f"eval_rag_{_ts}.log"
+    _configure_run_logging(_log_path)
+    try:
+        asyncio.run(main(_log_path, args.profile))
+    except Exception:
+        logging.exception("eval_rag aborted with exception (see log file above)")
+        raise

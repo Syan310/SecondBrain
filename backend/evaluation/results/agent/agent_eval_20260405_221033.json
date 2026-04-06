@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "run_log_file": "/Users/sy/Desktop/SecondBrian/backend/evaluation/results/agentlog/eval_agent_20260405_221033.log",
+    "timezone": "America/Los_Angeles",
+    "started_at": "2026-04-05T22:10:33.088648-07:00",
+    "finished_at": "2026-04-05T22:24:45.389393-07:00",
+    "profile": "smoke",
+    "output_file": "/Users/sy/Desktop/SecondBrian/backend/evaluation/results/agent/agent_eval_20260405_221033.json"
+  },
+  "intent_classification": {
+    "metric_scope": "single-intent plan_node accuracy",
+    "subset": {
+      "intent_limit": 6,
+      "intent_selected": 6
+    },
+    "accuracy": 1.0,
+    "correct": 6,
+    "total": 6,
+    "details": [
+      {
+        "query": "Transformer里的自注意力机制是怎么算的？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true
+      },
+      {
+        "query": "RAG架构中检索器和生成器是如何协同工作的？能详细讲讲向量检索和重排序的区别吗？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true
+      },
+      {
+        "query": "请阐述多智能体系统中基于角色的任务分配机制及其优缺点。",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true
+      },
+      {
+        "query": "位置编码在Transformer里到底起啥作用啊？不用它行不行？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true
+      },
+      {
+        "query": "在工程实践中，Agent调用外部工具时常见的延迟和超时问题一般怎么解决？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true
+      },
+      {
+        "query": "RAG的全称是什么？主要解决大模型的什么问题？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true
+      }
+    ]
+  },
+  "qa_e2e_task_success": {
+    "metric_scope": "isolated QA subset E2E + Kimi judge",
+    "subset": {
+      "single_hop_limit": 3,
+      "multi_hop_limit": 1,
+      "single_hop_selected": 3,
+      "multi_hop_selected": 1,
+      "total_selected": 4
+    },
+    "pass_rate_all": 1.0,
+    "partial_rate_all": 0.0,
+    "fail_rate_all": 0.0,
+    "judge_error_rate": 0.0,
+    "pass_rate_evaluated": 1.0,
+    "partial_rate_evaluated": 0.0,
+    "fail_rate_evaluated": 0.0,
+    "verdicts": {
+      "pass": 4,
+      "partial": 0,
+      "fail": 0,
+      "error": 0
+    },
+    "evaluated_total": 4,
+    "judge_error_total": 0,
+    "orchestrator_error_total": 0,
+    "latency_p50_ms": 150936.21808302123,
+    "latency_p95_ms": 308703.00324997515,
+    "total": 4,
+    "details": [
+      {
+        "sample_id": "qa_eval_001",
+        "question": "原始 Transformer 使用什么函数生成位置编码？这些编码在训练过程中是否参与梯度更新？",
+        "question_type": "factual",
+        "ground_truth": "使用正余弦函数生成，且不参与梯度更新。",
+        "answer": "原始 Transformer 使用**正弦（sin）和余弦（cos）函数**生成位置编码，核心公式为：\n$PE_{(pos, 2i)} = \\sin(pos / 10000^{2i/d_{model}})$\n$PE_{(pos, 2i+1)} = \\cos(pos / 10000^{2i/d_{model}})$\n其中 $pos$ 为位置，$i$ 为维度索引，$d_{model}$ 为模型维度。该设计采用多频率机制，低维高频捕捉局部差异，高维低频捕捉全局关系。\n\n在训练过程中，这些编码**不参与梯度更新**。因为它们是直接通过固定数学公式预计算的常量，而非模型的可学习参数。此设计避免了占用模型容量，且使模型具备泛化至任意长度序列的能力。",
+        "verdict": "pass",
+        "reason": "回答准确指出使用正余弦函数生成位置编码，并明确说明这些编码在训练过程中不参与梯度更新，关键信息完整无遗漏，且提供了准确的公式和合理的解释。",
+        "latency_ms": 122177.47674998827,
+        "user_id": "qa_eval_001_user",
+        "session_id": "qa_eval_001_session",
+        "orchestrator_failed": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_002",
+        "question": "为什么多头注意力（Multi-Head Attention）机制在增加 head 数量的同时不会增加整体计算量？",
+        "question_type": "conceptual",
+        "ground_truth": "因为整个 d_model 维度被按 head 数量均分，每个 head 仅在低维子空间中独立计算注意力，最后将所有 head 的输出拼接回原始维度，因此总计算量保持不变。",
+        "answer": "基于检索内容，多头注意力不增加计算量的核心在于**维度均分**机制：\n\n1.  **维度拆分**：将模型总维度 $d_{model}$ 按 head 数量 $h$ 均分，每个 head 的维度 $d_k = d_{model} / h$。\n2.  **参数量守恒**：单头投影矩阵大小为 $d_{model} \\times d_{model}$。多头时，每个 head 的投影矩阵为 $d_{model} \\times d_k$，总参数量为 $h \\times (d_{model} \\times d_{model}/h) = d_{model}^2$，与单头一致。\n3.  **计算量守恒**：注意力计算在低维子空间（$d_k$）进行，虽然 head 数量增加，但单次计算维度降低，总 FLOPs 保持不变。\n\n最终通过拼接恢复原始维度，整体计算复杂度不变。",
+        "verdict": "pass",
+        "reason": "回答准确抓住了维度均分的核心机制，清晰解释了计算量守恒的原因（head数量增加与单head维度降低相互抵消），并正确补充了参数量守恒的推导，完整且准确地回答了问题。",
+        "latency_ms": 145796.0863749904,
+        "user_id": "qa_eval_002_user",
+        "session_id": "qa_eval_002_session",
+        "orchestrator_failed": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_003",
+        "question": "Pre-Norm 和 Post-Norm 在 Layer Normalization 的放置位置上有何区别？为什么现代大模型普遍采用 Pre-Norm？",
+        "question_type": "comparison",
+        "ground_truth": "Post-Norm 将 LayerNorm 放在残差连接之后，而 Pre-Norm 将其放在残差连接之前。现代模型采用 Pre-Norm 是因为它能保持残差路径通畅，使梯度回传更稳定，训练更容易收敛。",
+        "answer": "Pre-Norm 与 Post-Norm 的核心区别在于 LayerNorm 相对于残差连接的位置：**Pre-Norm** 将归一化置于子层输入处（残差相加前），计算形式为 $x + \\text{Sublayer}(\\text{LN}(x))$；**Post-Norm** 则将归一化置于残差相加之后，形式为 $\\text{LN}(x + \\text{Sublayer}(x))$。\n\n现代大模型普遍采用 Pre-Norm 主要因其**训练稳定性**与**收敛优势**。Pre-Norm 使残差路径保持近似恒等映射，避免了 Post-Norm 在深层网络中对梯度信号的缩放干扰，从而保障反向传播的梯度稳定。该机制使模型训练初期更平稳，通常无需依赖 Warm-up 策略即可高效收敛，显著提升了超大规模参数下的训练成功率。",
+        "verdict": "pass",
+        "reason": "回答准确描述了Pre-Norm和Post-Norm在残差连接前后的位置差异，并正确解释了Pre-Norm的优势（保持残差路径通畅、梯度稳定、易于收敛），信息完整且准确。",
+        "latency_ms": 150936.21808302123,
+        "user_id": "qa_eval_003_user",
+        "session_id": "qa_eval_003_session",
+        "orchestrator_failed": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_004",
+        "question": "在RAG系统中，如果采用递归切分（Recursive Splitting）策略并设置重叠窗口，这对IVF索引检索时`nprobe`参数的选择有何影响？为什么？",
+        "question_type": "multi-hop",
+        "ground_truth": "递归切分配合重叠窗口能有效保留块边界的上下文语义，使生成的向量表征更完整、区分度更高。在IVF检索中，`nprobe`控制搜索的簇数量以平衡召回率与速度。由于高质量切分提升了向量本身的语义完整性，通常无需设置过大的`nprobe`即可保证较高的召回率，从而在维持检索精度的同时避免速度显著下降；反之，若切分丢失上下文，则需增大`nprobe`来补偿召回损失。",
+        "answer": "采用递归切分与重叠窗口策略，通常会**降低对`nprobe`的依赖，允许适当调小该参数以优化检索延迟，同时维持高召回率**。\n\n**关键机制：**\n1. **语义冗余提升命中概率**：重叠使相邻块内容高度重合，在向量空间形成局部密集簇。查询向量更易落入目标聚类或邻近簇，较小`nprobe`即可覆盖相关内容。\n2. **缓解边界截断风险**：保留上下文完整性，降低向量因切分边界偏离聚类中心而漏检的概率，增强检索鲁棒性。\n3. **精度-速度再平衡**：`nprobe`本质是召回率与延迟的权衡杠杆。因分块策略已前置提升召回基线，实际可适度减小`nprobe`换取速度，仅需根据向量总数与密度变化进行微调。",
+        "verdict": "pass",
+        "reason": "AI助手准确回答了递归切分配合重叠窗口允许适当调小nprobe参数的核心结论，并从语义冗余、缓解边界截断、精度-速度再平衡三个维度给出了与参考答案逻辑一致的技术解释，关键信息无遗漏。",
+        "latency_ms": 308703.00324997515,
+        "user_id": "qa_eval_004_user",
+        "session_id": "qa_eval_004_session",
+        "orchestrator_failed": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      }
+    ]
+  }
+}

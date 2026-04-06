@@ -11,7 +11,7 @@
 - Agent 的 QA E2E 评测对每条样本使用独立 `user_id/session_id`，避免记忆串题污染结果。
 - Agent 的 E2E 默认使用**分层子集**（single-hop + multi-hop），而不是简单取数据集前缀。
 - RAG / Agent 评测脚本统一支持 `smoke / standard / full` 三档运行口径，用同一份数据集文件按不同规模抽样。
-- RAG / Agent 评测结果按时间戳归档保存，同时同步一份 `latest` 快捷文件，避免新结果覆盖历史结果。
+- RAG / Agent 评测结果文件名与时间字段使用 **洛杉矶时间**（`America/Los_Angeles`，ISO 含夏令时偏移）；每轮仅落盘一份带时间戳的 JSON。
 
 ---
 
@@ -131,5 +131,5 @@
   - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile smoke`
   - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile standard`
   - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile full`
-- **RAG 输出增强**: `evaluation/results/rag/rag_eval_YYYYMMDD_HHMMSS.json` 归档保存；`evaluation/results/rag_eval_results.json` 始终指向最新结果，并额外记录 `ragas_metric_status`
-- **Agent 输出增强**: `evaluation/results/agent/agent_eval_YYYYMMDD_HHMMSS.json` 归档保存；`evaluation/results/agent_eval_results.json` 始终指向最新结果，并额外记录 `metric_scope`、当前 `profile`、子集组成、judge error 统计
+- **RAG 输出增强**: 每次运行仅写入 `evaluation/results/rag/rag_eval_YYYYMMDD_HHMMSS.json`（`YYYYMMDD_HHMMSS` 为洛杉矶本地），`meta.timezone` / `meta.started_at` / `meta.finished_at`（ISO 含偏移）、`meta.output_file`，并记录 `ragas_metric_status`
+- **Agent 输出增强**: 每次运行仅写入 `evaluation/results/agent/agent_eval_YYYYMMDD_HHMMSS.json`（同上为洛杉矶本地），`meta` 字段同上，并记录 `metric_scope`、当前 `profile`、子集组成、judge error 统计

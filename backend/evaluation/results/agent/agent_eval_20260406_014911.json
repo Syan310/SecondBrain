@@ -1,6 +1,6 @@
 {
   "meta": {
-    "run_log_file": "/Users/sy/Desktop/SecondBrian/backend/evaluation/results/logs/eval_agent_20260405_184911.log",
+    "run_log_file": "/Users/sy/Desktop/SecondBrian/backend/evaluation/results/agentlog/eval_agent_20260405_184911.log",
     "started_at_utc": "2026-04-06T01:49:11.257698+00:00",
     "finished_at_utc": "2026-04-06T02:47:33.894186+00:00",
     "output_archive_file": "/Users/sy/Desktop/SecondBrian/backend/evaluation/results/agent/agent_eval_20260406_014911.json",
