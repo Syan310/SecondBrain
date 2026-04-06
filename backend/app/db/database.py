@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from sqlalchemy import inspect as sa_inspect, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -7,8 +8,18 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+
+def _sqlite_async_url() -> str:
+    """Resolve SQLite path, ensure parent dir exists (gitignored ./data/ is often missing)."""
+    p = Path(settings.sqlite_db_path).expanduser()
+    if not p.is_absolute():
+        p = (Path.cwd() / p).resolve()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return f"sqlite+aiosqlite:///{p.as_posix()}"
+
+
 engine = create_async_engine(
-    settings.database_url,
+    _sqlite_async_url(),
     echo=settings.app_env == "development",
 )
 

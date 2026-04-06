@@ -8,6 +8,11 @@ Evaluates:
 Usage:
     cd backend
     MILVUS_HOST=localhost python -m evaluation.eval_agent
+    MILVUS_HOST=localhost python -m evaluation.eval_agent --profile smoke
+
+Each run writes a timestamped log under ``evaluation/results/logs/eval_agent_YYYYMMDD_HHMMSS.log``
+(UTF-8) and a timestamped JSON report under ``evaluation/results/agent/``.
+The latest snapshot is also synced to ``evaluation/results/agent_eval_results.json``.
 
 Requires Milvus, embedding/reranker models, and LLM APIs to be available.
 """
@@ -15,60 +20,108 @@ Requires Milvus, embedding/reranker models, and LLM APIs to be available.
 from __future__ import annotations
 
 import asyncio
+import argparse
 import json
 import logging
+import os
+import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
-from app.config import settings
 from app.services.milvus_client import milvus_service, memory_milvus_service
-from app.services.llm_client import llm_client
 from app.agent.graph import run_orchestrator
+from app.agent.nodes.orchestrator import plan_node
 from app.db.database import async_session_factory
 from evaluation.judge_client import judge_client
+from evaluation.profiles import build_stratified_subset, get_eval_profile
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 DATASET_DIR = Path(__file__).parent / "datasets"
 OUTPUT_DIR = Path(__file__).parent / "results"
+AGENT_OUTPUT_DIR = OUTPUT_DIR / "agent"
+LATEST_AGENT_OUTPUT_PATH = OUTPUT_DIR / "agent_eval_results.json"
+LOG_DIR = OUTPUT_DIR / "logs"
+
+_LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+_LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
+def _configure_run_logging(log_file: Path) -> None:
+    """Console + one UTF-8 file per run (root logger, captures httpx/sqlalchemy/app)."""
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(_LOG_FORMAT, datefmt=_LOG_DATEFMT)
+
+    fh = logging.FileHandler(log_file, encoding="utf-8")
+    fh.setLevel(logging.INFO)
+    fh.setFormatter(formatter)
+    root.addHandler(fh)
+
+    sh = logging.StreamHandler(sys.stderr)
+    sh.setLevel(logging.INFO)
+    sh.setFormatter(formatter)
+    root.addHandler(sh)
+
+
+def _make_agent_output_paths(run_ts: str) -> tuple[Path, Path]:
+    """Return (archive_path, latest_path) for one eval run."""
+    archive_path = AGENT_OUTPUT_DIR / f"agent_eval_{run_ts}.json"
+    return archive_path, LATEST_AGENT_OUTPUT_PATH
 
 
 # ── 1. Intent Classification ──────────────────────────────────
 
 
-INTENT_EXTRACT_PROMPT = """\
-分析以下用户查询，判断其意图类别。只输出一个意图标签。
-
-意图类别：
-- qa: 知识问答（问事实、概念、原理、对比等）
-- quiz: 要求测验、复习、出题
-- gap_analysis: 要求分析知识盲区、薄弱点
-
-用户查询: {query}
-
-只输出意图标签（qa/quiz/gap_analysis），不要其他文字。"""
+def _safe_p50(values: list[float]) -> float:
+    if not values:
+        return 0
+    ordered = sorted(values)
+    return ordered[len(ordered) // 2]
 
 
-async def classify_intent(query: str) -> str:
-    """Use the orchestrator's plan_node to classify intent."""
-    # Use LLM directly for intent classification (faster than full orchestrator)
+def _safe_p95(values: list[float]) -> float:
+    if not values:
+        return 0
+    ordered = sorted(values)
+    idx = min(int(len(ordered) * 0.95), len(ordered) - 1)
+    return ordered[idx]
 
-    # The orchestrator returns a final answer; we need to infer intent from
-    # the plan. Let's use a simpler approach: directly call the LLM with the
-    # same prompt pattern the orchestrator uses, to test intent classification.
-    resp = await llm_client.chat(
-        messages=[{"role": "user", "content": INTENT_EXTRACT_PROMPT.format(query=query)}],
-        temperature=0.0,
-        max_tokens=20,
+
+def build_intent_eval_subset(
+    intent_dataset: list[dict[str, Any]],
+    intent_limit: int | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Return the first N intent samples, or the full dataset when limit is None."""
+    subset = list(intent_dataset if intent_limit is None else intent_dataset[:intent_limit])
+    return subset, {
+        "intent_limit": intent_limit,
+        "intent_selected": len(subset),
+    }
+
+
+async def classify_intent(query: str) -> dict[str, Any]:
+    """Evaluate real orchestrator planning instead of a parallel prompt."""
+    plan_update = await plan_node(
+        {
+            "user_query": query,
+            "user_id": "eval_intent",
+            "messages": [],
+            "memory_context": "",
+        }
     )
-    content = (resp.get("content") or "").strip().lower()
-
-    # Normalize
-    for intent in ["qa", "quiz", "gap_analysis"]:
-        if intent in content:
-            return intent
-    return content
+    plan = plan_update.get("plan", [])
+    step_intents = [step.get("intent", "") for step in plan]
+    primary_intent = step_intents[0] if len(step_intents) == 1 else ""
+    return {
+        "primary_intent": primary_intent,
+        "step_intents": step_intents,
+        "plan_length": len(plan),
+        "plan": plan,
+    }
 
 
 async def eval_intent_classification(dataset: list[dict]) -> dict:
@@ -82,17 +135,24 @@ async def eval_intent_classification(dataset: list[dict]) -> dict:
         logger.info("  [%d/%d] %s -> expected: %s", i + 1, len(dataset), query[:50], expected)
 
         predicted = await classify_intent(query)
-        is_correct = predicted == expected
+        is_correct = predicted["primary_intent"] == expected and predicted["plan_length"] == 1
         if is_correct:
             correct += 1
 
         results.append({
             "query": query,
             "expected": expected,
-            "predicted": predicted,
+            "predicted": predicted["primary_intent"],
+            "predicted_step_intents": predicted["step_intents"],
+            "plan_length": predicted["plan_length"],
             "correct": is_correct,
         })
-        logger.info("    predicted: %s  %s", predicted, "✓" if is_correct else "✗")
+        logger.info(
+            "    predicted: %s steps=%s %s",
+            predicted["primary_intent"] or "(multi/invalid)",
+            predicted["step_intents"],
+            "✓" if is_correct else "✗",
+        )
 
     accuracy = correct / len(dataset) if dataset else 0
     return {
@@ -133,7 +193,6 @@ async def judge_task_success(question: str, ground_truth: str, answer: str) -> d
     )
     resp = await judge_client.judge(
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.0,
         max_tokens=256,
     )
 
@@ -146,72 +205,129 @@ async def judge_task_success(question: str, ground_truth: str, answer: str) -> d
 
     try:
         result = json.loads(resp)
-        return result
     except json.JSONDecodeError:
         # Try extracting JSON
         start = resp.find("{")
         end = resp.rfind("}")
         if start != -1 and end != -1:
             try:
-                return json.loads(resp[start:end + 1])
+                result = json.loads(resp[start:end + 1])
             except json.JSONDecodeError:
-                pass
+                result = None
+        else:
+            result = None
+
+    if not isinstance(result, dict):
         return {"verdict": "error", "reason": f"Failed to parse judge response: {resp[:100]}"}
+
+    verdict = str(result.get("verdict", "error")).strip().lower()
+    if verdict not in {"pass", "partial", "fail"}:
+        return {"verdict": "error", "reason": f"Invalid judge verdict: {result}"}
+    return {
+        "verdict": verdict,
+        "reason": str(result.get("reason", "")).strip(),
+    }
 
 
 async def eval_task_success(qa_dataset: list[dict]) -> dict:
-    """Run E2E orchestrator for each QA item and judge success."""
+    """Run isolated QA E2E evaluation and keep judge errors separate."""
     results = []
     latencies = []
     verdicts = {"pass": 0, "partial": 0, "fail": 0, "error": 0}
+    judge_error_total = 0
+    orchestrator_error_total = 0
 
     for i, item in enumerate(qa_dataset):
         question = item["question"]
         ground_truth = item.get("ground_truth", "")
         logger.info("  [%d/%d] %s", i + 1, len(qa_dataset), question[:60])
+        sample_id = f"qa_eval_{i + 1:03d}"
+        user_id = f"{sample_id}_user"
+        session_id = f"{sample_id}_session"
 
         # Run orchestrator E2E
         t0 = time.perf_counter()
+        orchestrator_failed = False
         try:
             async with async_session_factory() as session:
                 result = await run_orchestrator(
-                    question, user_id="eval_user", session=session
+                    question,
+                    user_id=user_id,
+                    session=session,
+                    session_id=session_id,
                 )
                 answer = result.get("final_answer", "")
         except Exception as e:
             logger.error("    Orchestrator error: %s", e)
-            answer = f"Error: {e}"
+            orchestrator_failed = True
+            orchestrator_error_total += 1
+            answer = f"Error: {type(e).__name__}: {e}"
         t1 = time.perf_counter()
 
         latency_ms = (t1 - t0) * 1000
         latencies.append(latency_ms)
 
-        # Judge
-        judge_result = await judge_task_success(question, ground_truth, answer)
+        judge_call_failed = False
+        judge_skipped = False
+        if orchestrator_failed:
+            judge_skipped = True
+            judge_result = {
+                "verdict": "fail",
+                "reason": "orchestrator_exception: assistant pipeline failed before judge",
+            }
+        else:
+            try:
+                judge_result = await judge_task_success(question, ground_truth, answer)
+            except Exception as e:
+                judge_call_failed = True
+                judge_error_total += 1
+                logger.warning(
+                    "    Judge call failed (recorded as error, continuing): %s: %s",
+                    type(e).__name__,
+                    e,
+                )
+                judge_result = {
+                    "verdict": "error",
+                    "reason": f"judge_exception: {type(e).__name__}: {e}",
+                }
+
         verdict = judge_result.get("verdict", "error")
         verdicts[verdict] = verdicts.get(verdict, 0) + 1
 
         results.append({
+            "sample_id": sample_id,
             "question": question,
+            "question_type": item.get("question_type", "unknown"),
             "ground_truth": ground_truth,
             "answer": answer,
             "verdict": verdict,
             "reason": judge_result.get("reason", ""),
             "latency_ms": latency_ms,
+            "user_id": user_id,
+            "session_id": session_id,
+            "orchestrator_failed": orchestrator_failed,
+            "judge_call_failed": judge_call_failed,
+            "judge_skipped": judge_skipped,
         })
         logger.info("    verdict: %s (%.0fms)", verdict, latency_ms)
 
     total = len(qa_dataset)
-    success_rate = verdicts["pass"] / total if total else 0
-    partial_rate = verdicts["partial"] / total if total else 0
+    evaluated_total = total - verdicts["error"]
 
     return {
-        "success_rate": success_rate,
-        "partial_rate": partial_rate,
-        "fail_rate": verdicts["fail"] / total if total else 0,
+        "pass_rate_all": verdicts["pass"] / total if total else 0,
+        "partial_rate_all": verdicts["partial"] / total if total else 0,
+        "fail_rate_all": verdicts["fail"] / total if total else 0,
+        "judge_error_rate": verdicts["error"] / total if total else 0,
+        "pass_rate_evaluated": verdicts["pass"] / evaluated_total if evaluated_total else 0,
+        "partial_rate_evaluated": verdicts["partial"] / evaluated_total if evaluated_total else 0,
+        "fail_rate_evaluated": verdicts["fail"] / evaluated_total if evaluated_total else 0,
         "verdicts": verdicts,
-        "latency_p50_ms": sorted(latencies)[len(latencies) // 2] if latencies else 0,
-        "latency_p95_ms": sorted(latencies)[int(len(latencies) * 0.95)] if latencies else 0,
+        "evaluated_total": evaluated_total,
+        "judge_error_total": judge_error_total,
+        "orchestrator_error_total": orchestrator_error_total,
+        "latency_p50_ms": _safe_p50(latencies),
+        "latency_p95_ms": _safe_p95(latencies),
         "total": total,
         "details": results,
     }
@@ -220,7 +336,27 @@ async def eval_task_success(qa_dataset: list[dict]) -> dict:
 # ── 3. Main ───────────────────────────────────────────────────
 
 
-async def main():
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run agent evaluation with a preset profile.")
+    parser.add_argument(
+        "--profile",
+        choices=("smoke", "standard", "full"),
+        default=os.environ.get("EVAL_PROFILE", "standard"),
+        help="Evaluation profile preset.",
+    )
+    return parser.parse_args()
+
+
+async def main(run_log_file: Path, profile_name: str) -> None:
+    started_at = datetime.now(timezone.utc).isoformat()
+    run_ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    profile = get_eval_profile(profile_name)
+    logger.info("=== eval_agent run start ===")
+    logger.info("Log file: %s", run_log_file.resolve())
+    logger.info("cwd=%s python=%s", os.getcwd(), sys.version.split()[0])
+    logger.info("MILVUS_HOST=%s", os.environ.get("MILVUS_HOST", "(unset)"))
+    logger.info("EVAL_PROFILE=%s", profile.name)
+
     # Init services
     logger.info("Connecting to Milvus...")
     milvus_service.connect()
@@ -231,7 +367,7 @@ async def main():
         logger.warning("Memory collection init failed, continuing without memory.")
 
     # Initialize SQLite
-    from app.services.database import init_db
+    from app.db.database import init_db
     await init_db()
 
     # Load datasets
@@ -244,59 +380,112 @@ async def main():
         qa_dataset = json.load(f)
 
     logger.info("Loaded %d intent items, %d QA items.", len(intent_dataset), len(qa_dataset))
+    intent_subset, intent_subset_meta = build_intent_eval_subset(
+        intent_dataset,
+        profile.agent_intent_limit,
+    )
+    qa_subset, qa_subset_meta = build_stratified_subset(
+        qa_dataset,
+        profile.agent_qa_single_hop_limit,
+        profile.agent_qa_multi_hop_limit,
+    )
 
     # ── Phase 1: Intent Classification ──
     logger.info("=== Phase 1: Intent Classification ===")
-    intent_results = await eval_intent_classification(intent_dataset)
+    logger.info(
+        "Running intent eval on %d items (limit=%s)...",
+        intent_subset_meta["intent_selected"],
+        intent_subset_meta["intent_limit"],
+    )
+    intent_results = await eval_intent_classification(intent_subset)
     logger.info("Intent Accuracy: %.1f%% (%d/%d)",
                 intent_results["accuracy"] * 100,
                 intent_results["correct"],
                 intent_results["total"])
 
-    # ── Phase 2: Task Success Rate (E2E) ──
-    logger.info("=== Phase 2: Task Success Rate (E2E) ===")
-    # Use a subset for E2E (it's slow) — first 15 items
-    qa_subset = qa_dataset[:15]
-    logger.info("Running E2E on %d QA items (subset)...", len(qa_subset))
+    # ── Phase 2: QA E2E Task Success (stratified subset) ──
+    logger.info("=== Phase 2: QA E2E Task Success ===")
+    logger.info(
+        "Running E2E on %d QA items (single-hop=%d, multi-hop=%d)...",
+        qa_subset_meta["total_selected"],
+        qa_subset_meta["single_hop_selected"],
+        qa_subset_meta["multi_hop_selected"],
+    )
     task_results = await eval_task_success(qa_subset)
-    logger.info("Task Success Rate: %.1f%%", task_results["success_rate"] * 100)
+    logger.info("QA E2E Pass Rate (all): %.1f%%", task_results["pass_rate_all"] * 100)
+    logger.info("QA E2E Pass Rate (judge-ok): %.1f%%", task_results["pass_rate_evaluated"] * 100)
 
     # ── Save results ──
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    AGENT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    archive_output_path, latest_output_path = _make_agent_output_paths(run_ts)
+    finished_at = datetime.now(timezone.utc).isoformat()
     full_report = {
+        "meta": {
+            "run_log_file": str(run_log_file.resolve()),
+            "started_at_utc": started_at,
+            "finished_at_utc": finished_at,
+            "profile": profile.name,
+            "output_archive_file": str(archive_output_path.resolve()),
+            "output_latest_file": str(latest_output_path.resolve()),
+        },
         "intent_classification": {
+            "metric_scope": "single-intent plan_node accuracy",
+            "subset": intent_subset_meta,
             "accuracy": intent_results["accuracy"],
             "correct": intent_results["correct"],
             "total": intent_results["total"],
             "details": intent_results["details"],
         },
-        "task_success": {
-            "success_rate": task_results["success_rate"],
-            "partial_rate": task_results["partial_rate"],
-            "fail_rate": task_results["fail_rate"],
+        "qa_e2e_task_success": {
+            "metric_scope": "isolated QA subset E2E + Kimi judge",
+            "subset": qa_subset_meta,
+            "pass_rate_all": task_results["pass_rate_all"],
+            "partial_rate_all": task_results["partial_rate_all"],
+            "fail_rate_all": task_results["fail_rate_all"],
+            "judge_error_rate": task_results["judge_error_rate"],
+            "pass_rate_evaluated": task_results["pass_rate_evaluated"],
+            "partial_rate_evaluated": task_results["partial_rate_evaluated"],
+            "fail_rate_evaluated": task_results["fail_rate_evaluated"],
             "verdicts": task_results["verdicts"],
+            "evaluated_total": task_results["evaluated_total"],
+            "judge_error_total": task_results["judge_error_total"],
+            "orchestrator_error_total": task_results["orchestrator_error_total"],
             "latency_p50_ms": task_results["latency_p50_ms"],
             "latency_p95_ms": task_results["latency_p95_ms"],
             "total": task_results["total"],
             "details": task_results["details"],
         },
     }
-    output_path = OUTPUT_DIR / "agent_eval_results.json"
-    with open(output_path, "w", encoding="utf-8") as f:
+    with open(archive_output_path, "w", encoding="utf-8") as f:
         json.dump(full_report, f, ensure_ascii=False, indent=2, default=str)
-    logger.info("Results saved to %s", output_path)
+    with open(latest_output_path, "w", encoding="utf-8") as f:
+        json.dump(full_report, f, ensure_ascii=False, indent=2, default=str)
+    logger.info("Agent archive saved to %s", archive_output_path)
+    logger.info("Agent latest snapshot saved to %s", latest_output_path)
 
     # ── Summary ──
     logger.info("=" * 60)
     logger.info("AGENT EVALUATION SUMMARY")
     logger.info("=" * 60)
     logger.info("  Intent Accuracy:   %.1f%%  (target ≥ 95%%)", intent_results["accuracy"] * 100)
-    logger.info("  Task Success Rate: %.1f%%  (target ≥ 80%%)", task_results["success_rate"] * 100)
+    logger.info("  QA Pass Rate(all): %.1f%%  (target ≥ 80%%)", task_results["pass_rate_all"] * 100)
+    logger.info("  QA Pass Rate(ok):  %.1f%%", task_results["pass_rate_evaluated"] * 100)
     logger.info("  E2E Latency P50:   %.0f ms", task_results["latency_p50_ms"])
     logger.info("  E2E Latency P95:   %.0f ms (target < 2000ms)", task_results["latency_p95_ms"])
-    logger.info("  Verdicts: %s", task_results["verdicts"])
+    logger.info("  Verdicts:          %s", task_results["verdicts"])
+    logger.info("  QA Subset:         %s", qa_subset_meta)
     logger.info("=" * 60)
+    logger.info("=== eval_agent run end; full log: %s ===", run_log_file.resolve())
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    args = parse_args()
+    _ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    _log_path = LOG_DIR / f"eval_agent_{_ts}.log"
+    _configure_run_logging(_log_path)
+    try:
+        asyncio.run(main(_log_path, args.profile))
+    except Exception:
+        logging.exception("eval_agent aborted with exception (see log file above)")
+        raise

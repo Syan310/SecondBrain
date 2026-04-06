@@ -31,7 +31,8 @@ class JudgeClient:
     async def judge(
         self,
         messages: list[dict],
-        temperature: float = 0.0,
+        # Moonshot kimi-k2.5 rejects temperature=0; API requires 1 for this model.
+        temperature: float = 1.0,
         max_tokens: int = 2048,
     ) -> str:
         """Single judge call, returns content string."""

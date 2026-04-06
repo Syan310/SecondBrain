@@ -129,3 +129,68 @@
 - 面板切换: 正常
 - 能力卡片点击: 触发对话正常
 - Vite proxy → Backend: 所有 API 调用通过代理正常转发
+
+## Step 8: `eval_agent` LLM-as-Judge (2026-04-05)
+
+### 变更
+- Moonshot `kimi-k2.5` 判分接口拒绝 `temperature=0`，返回 `400 invalid temperature: only 1 is allowed for this model`。
+- `evaluation/judge_client.py` 默认 `temperature=1.0`；`eval_agent.judge_task_success` 不再传入 `0.0`。
+- Phase 2 单条判题若抛错（如 429 `engine_overloaded`），记为 `verdict: error`、`judge_call_failed: true`，写入 `results` 明细并继续后续条目，整轮评估不再中断。
+- 每次运行生成 `evaluation/results/logs/eval_agent_YYYYMMDD_HHMMSS.log`（根 logger，含第三方 INFO）；`agent_eval_results.json` 的 `meta.run_log_file` / `started_at_utc` / `finished_at_utc` 便于对照排查。
+
+### 验证
+- 需在本地具备 Milvus、嵌入/重排模型与 API 密钥后运行：`MILVUS_HOST=localhost python -m evaluation.eval_agent`。
+
+## Step 8: 评测脚本口径修复 (2026-04-06)
+
+### 变更
+- `evaluation/eval_rag.py`
+  - RAGAS judge 显式适配 Moonshot `kimi-k2.5`：`temperature=1`、`top_p=0.95`
+  - RAGAS 改为逐指标执行，输出 `ragas_metric_status`，单指标失败不再让整批结果静默变成 `NaN`
+  - Multi-hop lift 改为仅基于有效 `faithfulness` 值计算，并按 `question_type` 区分单跳/多跳
+  - 结果改为双写：时间戳归档 `evaluation/results/rag/rag_eval_YYYYMMDD_HHMMSS.json` + 最新快照 `evaluation/results/rag_eval_results.json`
+- `evaluation/eval_agent.py`
+  - Intent 评测改为直接调用真实 `plan_node`
+  - QA E2E 样本改为独立 `user_id/session_id`，避免记忆串题
+  - QA E2E 子集改为 single-hop / multi-hop 分层抽样，不再直接取前 15 条
+  - judge 错误与真实 `pass/partial/fail` 分开统计，输出 `pass_rate_all` / `pass_rate_evaluated` / `judge_error_rate`
+  - 结果改为双写：时间戳归档 `evaluation/results/agent/agent_eval_YYYYMMDD_HHMMSS.json` + 最新快照 `evaluation/results/agent_eval_results.json`
+
+### 执行的检查
+- `PYTHONPATH=/Users/sy/Desktop/SecondBrian/backend /opt/anaconda3/bin/python -m py_compile evaluation/eval_rag.py evaluation/eval_agent.py`
+- IDE lints: `evaluation/eval_rag.py`, `evaluation/eval_agent.py`
+
+### 结果
+- `py_compile` 通过
+- 两个评测脚本无 IDE linter 报错
+- 本轮**未运行**完整 `eval_rag` / `eval_agent`，因此尚未生成新的评测结果
+
+### 遇到的问题
+1. `ragas` 通过 `llm_factory()` 调 Kimi 时默认采样参数与 Moonshot 约束不兼容，会导致 `400 invalid temperature` / `400 invalid top_p`，此前在 `raise_exceptions=False` 下表现为整列空值。
+2. `eval_agent.py` 原实现复用了同一 `user_id/session_id`，会让记忆跨题污染 E2E 成功率。
+
+## Step 8: 评测分档 (2026-04-05)
+
+### 变更
+- 新增 `evaluation/profiles.py`，统一维护 `smoke / standard / full` 三档评测预设。
+- `evaluation/eval_agent.py`
+  - 新增 `--profile {smoke,standard,full}` 参数，默认 `standard`
+  - Intent 评测支持分档：`smoke=6`、`standard=15`、`full=全量30`
+  - QA E2E 支持分档：`smoke=3单跳+1多跳`、`standard=10单跳+5多跳`、`full=全量`
+  - 结果 `meta` 中新增 `profile`，Intent 结果中新增 `subset`
+- `evaluation/eval_rag.py`
+  - 新增 `--profile {smoke,standard,full}` 参数，默认 `standard`
+  - RAG 评测支持分档：`smoke=4单跳+2多跳`、`standard=10单跳+5多跳`、`full=全量30`
+  - 输出新增 `subset` 元信息，便于回看当次口径
+- 新增 `tests/test_eval_profiles.py`，验证三档抽样数量与默认 profile 归一化逻辑
+
+### 执行的测试
+- `python -m py_compile backend/evaluation/eval_agent.py backend/evaluation/eval_rag.py backend/evaluation/profiles.py backend/tests/test_eval_profiles.py`
+- `PYTHONPATH=backend pytest -q backend/tests/test_eval_profiles.py`
+
+### 结果
+- `py_compile` 通过
+- `4 passed in 0.01s`
+
+### 遇到的问题
+1. `eval_rag.py` 在接入 CLI profile 参数时引入了一处重复 `main()` 定义，首次 `py_compile` 报 `IndentationError`；已删除残留定义并重新验证通过。

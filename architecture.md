@@ -70,4 +70,12 @@ Step 1: Services → Step 2: Ingestion → Step 3: Tools → Step 4: SubAgents
 ### 当前进度
 
 - [x] Step 1-7: 全部完成
-- [ ] Step 8: 评估 & 优化 (待开始)
+- [ ] Step 8: 评估 & 优化 (进行中：已完成评测脚本修正与 `smoke / standard / full` 分档，待产出稳定结果与优化建议)
+
+### Step 8 当前实现补充
+
+- 评测脚本已支持三档运行口径，均复用同一份数据集文件：
+  - `smoke`：开发时快速回归
+  - `standard`：日常主评测口径
+  - `full`：阶段性全量验收
+- `eval_rag.py` 与 `eval_agent.py` 均通过 `--profile {smoke|standard|full}` 选择档位，并在结果 `meta` 中记录本次 profile

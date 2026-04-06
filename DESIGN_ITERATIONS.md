@@ -362,3 +362,9 @@ PDF 入库依赖与代码对齐：`requirements.txt` 由 `mineru[core]` 改为 `
 5. 评估数据集半自动生成（LLM 从 chunks 生成候选 → 人工审核）
 
 **原因**: 原方案指标过多且部分需纵向用户数据无法离线评估，RAGAS 是 RAG 评估事实标准，可直接 pip install 使用。
+
+## 2026-04-05 评测分档决策
+- 目标：在不拆分现有评测数据集文件的前提下，缩短开发期评测耗时。
+- 决策：评测脚本统一支持 smoke / standard / full 三档。
+- 口径：RAG smoke=4单跳+2多跳，standard=10单跳+5多跳，full=全量30；Agent intent smoke=6，standard=15，full=30；Agent QA smoke=3单跳+1多跳，standard=10单跳+5多跳，full=全量。
+- 原因：保留同一数据集与同一评测逻辑，仅调整抽样规模，便于开发回归与阶段性验收共存。

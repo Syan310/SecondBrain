@@ -100,7 +100,7 @@
 
 ### 8.2 RAG 评估（RAGAS 框架）— `evaluation/eval_rag.py`
 
-运行方式：`cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag`
+运行方式：`cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag --profile {smoke|standard|full}`
 结果输出：`evaluation/results/rag_eval_results.json`
 
 已实现指标：
@@ -108,16 +108,21 @@
 - [x] RAGAS 生成层 — Faithfulness, Answer Relevancy
 - [x] 经典 IR 指标 — Recall@K, MRR, Reranker Lift
 - [x] Multi-hop Lift — 单跳 vs 多跳 Faithfulness 差值
+- [x] RAGAS 评测稳健性修复 — Kimi judge 显式参数适配（`temperature=1`, `top_p=0.95`）
+- [x] RAGAS 逐指标执行 + 错误显式记录 — 输出 `ragas_metric_status`，避免整批静默 `NaN`
+- [x] 评测分档 — `smoke=4单跳+2多跳`、`standard=10单跳+5多跳`、`full=全量30`
 
 ### 8.3 Agent 评估（任务驱动）— `evaluation/eval_agent.py`
 
-运行方式：`cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent`
+运行方式：`cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile {smoke|standard|full}`
 结果输出：`evaluation/results/agent_eval_results.json`
 
 已实现指标：
-- [x] Intent Classification Acc — LLM 意图分类 vs 标注 test set
-- [x] Task Success Rate — 全链路 Orchestrator E2E + Kimi LLM-as-Judge (pass/partial/fail)
+- [x] Intent Classification Acc — 直接评估真实 `plan_node` 单意图规划结果
+- [x] QA E2E Task Success — 分层 QA 子集 + 独立会话 + Kimi LLM-as-Judge (pass/partial/fail/error)
 - [x] E2E Latency P50/P95 — 每条 QA 的端到端耗时
+- [x] Judge Error 分离统计 — `judge_error_rate` / `pass_rate_evaluated`
+- [x] 评测分档 — Intent: `smoke=6` / `standard=15` / `full=30`；QA: `smoke=3单跳+1多跳` / `standard=10单跳+5多跳` / `full=全量`
 
 未实现（待结果分析后决定是否补充）：
 - [ ] Tool Selection Acc — 需记录 orchestrator trajectory 对比预期工具调用
