@@ -1,11 +1,11 @@
 {
   "meta": {
-    "run_log_file": "/Users/sy/Desktop/SecondBrian/backend/evaluation/results/logs_rag/eval_rag_20260406_010139.log",
+    "run_log_file": "/app/evaluation/results/logs_rag/eval_rag_20260406_142834.log",
     "timezone": "America/Los_Angeles",
-    "started_at": "2026-04-06T01:01:39.824014-07:00",
-    "finished_at": "2026-04-06T01:04:50.539808-07:00",
+    "started_at": "2026-04-06T14:28:34.409258-07:00",
+    "finished_at": "2026-04-06T14:37:25.105679-07:00",
     "profile": "smoke",
-    "output_file": "/Users/sy/Desktop/SecondBrian/backend/evaluation/results/rag/rag_eval_20260406_010139.json"
+    "output_file": "/app/evaluation/results/rag/rag_eval_20260406_142834.json"
   },
   "subset": {
     "single_hop_limit": 4,
@@ -38,35 +38,41 @@
     "mrr_raw": 1.0,
     "mrr_reranked": 1.0,
     "reranker_lift": 0.0,
-    "latency_p50_ms": 19298.110999981873,
-    "latency_p95_ms": 20112.0788329863
+    "latency_p50_ms": 37256.23918400379,
+    "latency_p95_ms": 38007.30418396415
   },
-  "ragas_means": {},
+  "ragas_means": {
+    "faithfulness": 0.7484405458089669,
+    "answer_relevancy": 0.890189377238619,
+    "llm_context_precision_with_reference": 0.8749999999270833,
+    "context_recall": 0.9166666666666666
+  },
   "ragas_metric_status": {
     "faithfulness": {
-      "status": "error",
-      "error_type": "InstructorRetryException",
-      "error": "<failed_attempts>\n\n<generation number=\"1\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n<generation number=\"2\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n<generation number=\"3\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n</failed_attempts>\n\n<last_exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</last_exception>"
+      "status": "ok",
+      "valid_count": 6,
+      "sample_count": 6
     },
     "answer_relevancy": {
-      "status": "error",
-      "error_type": "InstructorRetryException",
-      "error": "<failed_attempts>\n\n<generation number=\"1\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n<generation number=\"2\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n<generation number=\"3\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n</failed_attempts>\n\n<last_exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</last_exception>"
+      "status": "ok",
+      "valid_count": 6,
+      "sample_count": 6
     },
     "llm_context_precision_with_reference": {
-      "status": "error",
-      "error_type": "InstructorRetryException",
-      "error": "<failed_attempts>\n\n<generation number=\"1\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n<generation number=\"2\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n<generation number=\"3\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n</failed_attempts>\n\n<last_exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</last_exception>"
+      "status": "ok",
+      "valid_count": 6,
+      "sample_count": 6
     },
     "context_recall": {
-      "status": "error",
-      "error_type": "InstructorRetryException",
-      "error": "<failed_attempts>\n\n<generation number=\"1\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n<generation number=\"2\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n<generation number=\"3\">\n<exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</exception>\n<completion>\n    None\n</completion>\n</generation>\n\n</failed_attempts>\n\n<last_exception>\n    Error code: 400 - {'error': {'message': \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\", 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': 'unsupported_parameter'}}\n</last_exception>"
+      "status": "ok",
+      "valid_count": 6,
+      "sample_count": 6
     }
   },
   "multi_hop_lift": {
-    "single_hop_faithfulness": null,
-    "multi_hop_faithfulness": null
+    "single_hop_faithfulness": 0.8055555555555556,
+    "multi_hop_faithfulness": 0.6342105263157896,
+    "lift": -0.17134502923976602
   },
   "sample_count": 6,
   "ragas_per_sample": {
@@ -79,12 +85,12 @@
       "在构建Agent循环时，为什么频繁变更工具定义（Tool Definitions）会严重削弱Prompt Caching的优化效果？结合缓存底层原理说明原因。"
     ],
     "response": [
-      "根据检索到的文档片段，原始 Transformer 使用**正余弦函数**（正弦和余弦函数）生成位置编码。这些位置编码是预先计算好的固定值，在训练过程中**不参与梯度更新**。",
-      "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为以下三个步骤：\n\n1. **索引（Indexing）**：文档解析 → 文本分块 → 向量化（Embedding） → 存入向量数据库\n2. **检索（Retrieval）**：将用户 Query 向量化后进行相似度检索，取出 Top-K 相关片段\n3. **生成（Generation）**：将检索到的结果拼接进 Prompt，输入大语言模型（LLM）生成最终回答\n\n（该流程为早期 RAG 的固定线性范式，具体参考文档片段 [2]）",
-      "根据检索到的文档片段，在 Agent 的记忆系统设计中，`MEMORY.md` 对应的是**语义记忆（Semantic Memory）**。\n\n文档中明确将 Agent 的记忆划分为四类，其中 `MEMORY.md` 专门用于承载语义记忆。它主要用于存储跨会话的精选事实、通用经验或经过提炼的抽象知识，通常由 Agent 主动进行维护和更新（如基于 token 使用率阈值触发整合），并在需要时按需读取，而不是直接全部加载到系统提示词或上下文窗口中。",
-      "根据检索到的文档片段，LangGraph 的 `Checkpointer` 机制主要提供以下四种核心能力：\n\n1. **跨会话记忆**：同一用户下次对话时可直接恢复上次的 State，无需从头开始。\n2. **Human-in-the-Loop（人工介入）**：工作流执行到特定步骤时可暂停，等待人工审核或确认后再继续执行。\n3. **错误恢复**：当执行出错时，可从最后一个成功的 Checkpoint 处重新执行，避免全量重试。\n4. **时间旅行（Time Travel）**：支持回退到历史任意一个 State 快照，并基于该状态重新分叉执行。",
-      "在RAG系统中，采用递归切分（Recursive Splitting）并设置重叠窗口（Overlap）通常会使得 **IVF 检索时的最优 `nprobe` 值倾向于更小**，或在保持相同 `nprobe` 的情况下显著提升召回率与精度。具体原因如下：\n\n### 1. 提升 Chunk 的语义聚焦度，改善向量空间分布\n- 递归切分避免了长文本整体向量化导致的语义稀释问题（文档[5]指出长文本单向量精度低），确保每个块长度适中、主题集中。\n- 重叠窗口有效保留了切分边界处的上下文信息（文档[2]），防止关键语义被截断。\n- **结果**：存入向量库的每个 chunk 向量语义更完整、噪声更低，在向量空间中分布更紧凑。\n\n### 2. 使 IVF 聚类更贴合真实语义边界\n- IVF 依赖 k-means 将向量划分为 `nlist` 个簇（文档[1]）。当 chunk 向量质量提高后，语义相近的文档会更自然地聚集在同一个或相邻的簇中，减少“语义相近却被分到远端簇”的错位现象。\n- 用户 Query 向量化后，其位置会更精准地落在或紧邻包含目标答案的簇中心附近。\n\n### 3. 降低对宽泛簇搜索的依赖（`nprobe` 的 trade-off 偏移）\n- `nprobe` 控制检索时探查的簇数量，本质是**召回率 vs 检索速度**的权衡（文档[1]）。\n- 由于高质量切分已大幅提升了目标信息在向量空间中的“可定位性”，系统无需扩大 `nprobe` 去遍历更多簇即可捕获关键上下文。\n- **实际影响**：\n  - ✅ **若追求相同召回率**：可适当调低 `nprobe`，减少距离计算量，提升检索延迟。\n  - ✅ **若保持 `nprobe` 不变**：召回率和排序精度会进一步提升，进而降低下游 LLM 的幻觉率（呼应文档[3]中朴素 RAG 检索精度低的问题）。\n\n### 💡 实践建议\n该策略**不会自动修改 `nprobe` 的算法逻辑**，而是改变了数据分布，使 `nprobe` 的“性能-速度”曲线整体左移。在实际调参时：\n1. 可先使用默认 `nprobe`（如 10~20）验证召回效果；\n2. 若业务延迟敏感，可逐步下调 `nprobe` 并监控召回率，通常能找到比粗粒度切分更小的最优值；\n3. 最终取值仍需结合 `nlist` 规模、数据领域特性及线上 A/B 测试确定。\n\n综上，递归切分+重叠窗口通过提升向量语义质量，优化了 IVF 的聚类对齐效果，从而允许在更小的 `nprobe` 下实现高效、高精度的检索。",
-      "结合检索到的文档内容，频繁变更工具定义会严重削弱 Prompt Caching 优化效果的原因，可从缓存底层原理与 Agent 上下文结构两个维度进行说明：\n\n### 1. Prompt Caching 的底层原理：精确前缀匹配\nLLM 在推理时，Transformer 的注意力机制会为输入序列的每个 token 计算 Key-Value (KV) 对。Prompt Caching 的核心机制是**精确前缀匹配**：只有当当前请求的输入前缀（token 序列）与历史某次请求**完全一致**时，系统才会直接复用已计算的 KV 缓存，跳过重复计算。文档明确指出：`“命中的前提是精确前缀匹配，不是内容相似就能触发，任何一个 token 不同都会破坏匹配。”`\n\n### 2. 工具定义在缓存计算中的位置\n在 Agent 的请求上下文中，工具定义（Tool Definitions）通常作为系统提示或常驻层的一部分，被放置在输入序列的**最前端**。文档指出：`“工具定义同样参与缓存计算”`，这意味着工具定义的 token 序列直接构成了缓存匹配的前缀基础。\n\n### 3. 频繁变更如何破坏缓存命中\n由于缓存命中依赖“绝对精确的前缀 token 序列”，一旦工具集发生变动（例如：增删 MCP 工具、修改工具描述、调整参数结构），前缀的 token 排列就会发生改变。哪怕只改动了一个 token，也会直接导致前缀匹配失败，触发 `Cache Miss`。文档中明确提到：`“接了很多 MCP 工具的 Agent 如果工具集频繁变动，缓存命中就会不断失效。”`\n\n### 4. 实际工程影响\n- **成本与延迟上升**：缓存失效意味着每次请求都必须重新计算整个前缀的 KV 对，无法享受缓存带来的计算折扣（稳定前缀的后续读取成本可降低约 90%）。\n- **抵消优化收益**：频繁变更会使 Prompt Caching 形同虚设，不仅无法降低边际成本，反而可能因工具定义本身较长（仅 5 个 MCP 服务器就可能带来约 55,000 tokens 开销）而放大重复计算的开销。\n\n### 💡 架构设计建议\n为保护缓存命中率，Agent 的上下文工程应遵循**“前缀稳定、动态后置”**原则：\n- 将系统提示、核心工具定义等**常驻层保持短而稳定**，避免频繁增改。\n- 将动态信息（如当前时间、用户实时输入、工具调用结果、按需加载的 Skills）追加在稳定前缀之后，这样即使动态部分变化，也不会破坏前缀的精确匹配。\n- 工具设计应注重质量与稳定性，合并重叠工具、明确命名空间，从源头减少前缀变动频率。\n\n综上，Prompt Caching 的优化效果高度依赖输入前缀的稳定性，工具定义作为前缀的重要组成部分，其频繁变更会直接破坏精确匹配条件，导致缓存持续失效，从而严重削弱该机制带来的成本与性能收益。"
+      "根据检索到的文档片段，原始 Transformer 使用**正余弦函数**生成位置编码。这些编码在训练过程中是预先计算好的固定值，**不参与梯度更新**。",
+      "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为以下三个步骤：\n\n1. **索引（Indexing）**：文档解析 → 文本分块 → 向量化（Embedding） → 存入向量数据库。\n2. **检索（Retrieval）**：将用户 Query 向量化后，与库中文档进行相似度匹配，取出 Top-K 个最相关的文本块。\n3. **生成（Generation）**：将检索到的文本块拼接进 Prompt，送入大语言模型（LLM）生成最终回答。\n\n该流程为早期 RAG 的固定线性范式，后续演进出的 Advanced RAG 和 Modular RAG 均是在此基础上针对各阶段进行优化或模块化重构。",
+      "根据检索到的文档，在 Agent 的记忆系统设计中，`MEMORY.md` 对应的是**语义记忆（Semantic Memory）**。\n\n它主要用于存储经过提炼的跨会话经验、精选事实和通用规则，由 Agent 主动维护与更新。在实际架构中，它通常作为独立的记忆层存在，不直接写入系统提示词，而是在需要时按需读取，以保持上下文的高效与稳定。",
+      "根据检索到的文档片段，LangGraph 的 `Checkpointer` 机制主要提供以下四种核心能力：\n\n1. **跨会话记忆**：在同一用户下次对话时能够恢复上次的 State，无需从头开始。\n2. **Human-in-the-Loop（人工介入）**：支持在工作流执行到某一步时暂停，等待人工确认后再继续执行。\n3. **错误恢复**：当执行出错时，可以从最后一个成功的 Checkpoint 处重新执行，避免从头开始。\n4. **时间旅行（Time Travel）**：允许回退到历史某个 State 快照，并基于该状态重新分叉执行。\n\n这些能力均基于 Checkpointer 在每一步执行后自动保存 State 快照的持久化机制实现。",
+      "结合检索到的文档原理，采用**递归切分+重叠窗口**策略通常会对 IVF 索引的 `nprobe` 参数选择产生**“允许适当调低 `nprobe`，或在相同 `nprobe` 下显著提升召回精度”**的影响。具体原因如下：\n\n### 🔍 核心影响结论\n高质量的分块策略（递归切分+重叠窗口）会提升向量表征的语义质量，使 Query 向量更容易落入包含正确答案的 IVF 簇中。因此，在满足业务召回要求的前提下，**可以适当降低 `nprobe` 以提升检索速度**；若保持原有 `nprobe`，则能**获得更高的召回率与更低的幻觉率**。\n\n### 📖 原因分析（基于文档原理关联推理）\n1. **重叠窗口保障语义连续性，提升聚类紧凑度**（关联片段 `[2]`）\n   - 重叠窗口（如相邻块重叠 50 token）有效避免了关键上下文在切分边界处被截断。这使得每个 Chunk 的向量表示更完整、语义更聚焦。\n   - 在 IVF 索引构建阶段（片段 `[1]`），k-means 会对这些高质量向量进行聚类。语义完整的向量会形成**更紧凑、边界更清晰的簇**。Query 向量与簇中心的距离计算会更准确，更容易命中包含目标信息的簇，从而降低了对“扩大搜索范围（调高 `nprobe`）”的依赖。\n\n2. **递归切分控制粒度，避免语义稀释或碎片化**（关联片段 `[2]`、`[5]`）\n   - 递归切分按“章节→段落→句子”自适应降维，确保 Chunk 长度适中。这直接解决了片段 `[5]` 指出的两个问题：避免长文本导致向量模型输入超限/语义精确度下降，也避免过短文本丢失上下文。\n   - 粒度合理的 Chunk 在向量空间中分布更均匀，IVF 的 `nlist` 个簇能更好地覆盖不同语义主题。检索时，Query 只需探测少数几个最相关的簇即可找到 Top-K，无需通过增大 `nprobe` 来补偿因切分不当导致的“语义漂移”。\n\n3. **优化 `nprobe` 的 Trade-off 平衡**（关联片段 `[1]`）\n   - 片段 `[1]` 明确指出：`nprobe` 越大，召回率越高但速度越慢；`nprobe = nlist` 时退化为暴力搜索。\n   - 优秀的分块策略本质上是**在索引构建阶段提升了数据质量**，相当于为检索阶段“铺好了路”。当 Chunk 语义质量高时，系统可以用更小的 `nprobe` 达到原先需要较大 `nprobe` 才能实现的召回效果，从而在**检索速度与精度之间取得更优的平衡**。\n\n### 💡 实际调优建议\n- **初始设置**：若已采用递归切分+合理重叠（如 10%~20%），可尝试将 `nprobe` 设置为 `nlist` 的 `1%~5%`（例如 `nlist=1024` 时，`nprobe` 从 10~50 开始测试），观察召回率是否满足需求。\n- **动态调整**：若业务查询意图模糊或文档领域跨度大，仍需适当提高 `nprobe`；若追求低延迟且分块质量高，可进一步压低 `nprobe`。\n- **注意**：分块策略解决的是“向量表征质量”问题，`nprobe` 解决的是“检索覆盖范围”问题。前者是基础优化，后者是检索阶段的补偿/加速参数。两者配合使用，能显著缓解朴素 RAG（片段 `[3]`）中“检索精度低、幻觉率高”的局限性。\n\n> 注：检索文档未直接给出分块策略与 `nprobe` 的定量关系，上述结论基于 IVF 聚类原理、分块语义完整性要求及 `nprobe` 的召回-速度权衡机制进行的逻辑推演，符合 RAG 系统调优的通用实践。",
+      "结合检索文档，频繁变更工具定义会严重削弱 Prompt Caching 优化效果的原因，可从缓存底层原理与 Agent 上下文设计两个维度进行说明：\n\n### 1. 缓存底层原理：依赖“精确前缀匹配”\nPrompt Caching 的核心机制是 **KV Cache 复用**。LLM 推理时，Transformer 会为输入序列的每个 token 计算 Key-Value 对。如果当前请求的输入前缀与历史请求**完全一致**，系统会直接跳过该部分的重复计算，从缓存中读取 KV 对。\n⚠️ **关键限制**：缓存命中要求**严格的 token 级精确匹配**，而非语义相似。只要前缀中有一个 token 发生变化（增、删、改），整个前缀的哈希/匹配链就会断裂，缓存立即失效。\n\n### 2. 工具定义在 Agent 上下文中的位置\n在 Agent 循环中，工具定义（Tool Definitions）通常作为系统提示或初始化上下文的一部分，被放置在请求的**前缀区域（常驻层）**。文档明确指出：`“工具定义同样参与缓存计算”`。这意味着工具列表、参数描述、命名空间等内容会直接构成输入序列的开头部分。\n\n### 3. 频繁变更如何破坏缓存\n当工具集频繁变动时（例如动态增删 MCP 工具、修改工具描述或调整参数结构），会导致输入前缀的 token 序列发生改变。由于缓存机制对 token 差异“零容忍”，这种变动会直接破坏前缀的精确匹配条件，导致：\n- 之前缓存的 KV 对无法命中；\n- 每次请求都必须重新计算整个前缀（包括原本稳定的系统提示、长文档等）的 KV 对；\n- 缓存命中率断崖式下降，Prompt Caching 的优化效果被完全抵消。\n\n### 4. 工程影响与成本反噬\n文档指出，稳定的大系统提示实际成本反而更低，因为 `“写入成本只付一次，后续每次调用读取的折扣可以达到 90%”`。频繁变更工具定义不仅无法享受该折扣，还会带来：\n- **延迟增加**：每次都要重新计算长前缀的 Attention；\n- **Token 成本上升**：失去缓存折扣后，按原价计费；\n- **上下文污染**：违背“常驻层短而稳定”的分层设计原则，加剧 Context Rot。\n\n### 💡 架构建议（基于文档实践）\n为保护 Prompt Caching 效果，在构建 Agent 循环时应遵循：\n1. **保持工具定义稳定**：合并重叠工具、明确命名空间，避免运行时频繁增改；\n2. **动态内容后置**：将当前时间、用户输入、工具调用结果等动态信息放在稳定前缀之后；\n3. **按需加载**：采用 Skills 延迟加载机制，将非核心工具或场景化工具追加在稳定前缀之后，不破坏主缓存区。\n\n综上，Prompt Caching 的优化收益高度依赖输入前缀的**稳定性**。工具定义作为前缀的重要组成部分，其频繁变更会直接触发缓存失效机制，使系统退回全量计算状态，从而严重削弱缓存带来的性能与成本优势。"
     ],
     "retrieved_contexts": [
       [
@@ -139,36 +145,36 @@
       "Prompt Caching的底层机制依赖于输入前缀的精确Token级匹配，系统提示词和工具定义通常构成请求的稳定前缀。如果工具定义频繁变动，会导致每次请求的前缀发生变化，从而破坏缓存匹配条件，迫使LLM重新计算所有KV对。保持工具定义稳定能确保前缀命中率，使得即使系统提示较长，也能享受高达90%的读取折扣，显著降低边际推理成本。"
     ],
     "faithfulness": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      0.6666666666666666,
+      1.0,
+      0.5555555555555556,
+      1.0,
+      0.868421052631579,
+      0.4
     ],
     "answer_relevancy": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      0.9653657833836305,
+      0.8653334216735131,
+      0.9450890047993991,
+      0.9204912843380552,
+      0.7715677686406819,
+      0.8732890005964342
     ],
     "llm_context_precision_with_reference": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      0.99999999995,
+      0.49999999995,
+      0.7499999999625,
+      0.9999999999,
+      0.9999999999,
+      0.9999999999
     ],
     "context_recall": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.5,
+      1.0
     ]
   }
 }

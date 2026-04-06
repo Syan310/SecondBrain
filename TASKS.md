@@ -88,7 +88,7 @@
 
 ## Step 8: 评估 & 优化
 
-评估方法：RAG 用 RAGAS 框架（业界标准），Agent 用任务驱动评估。Judge 模型默认走 OpenAI（通过 `judge_api_key/judge_base_url/judge_model` 配置），避免 Qwen 自评偏差。
+评估方法：RAG 用 RAGAS 框架（业界标准），Agent 用任务驱动评估。Judge 模型默认走 Moonshot/Kimi（通过 `judge_api_key/judge_base_url/judge_model` 配置，当前默认 `kimi-k2.5` 非 thinking 模式），避免 Qwen 自评偏差。
 
 ### 8.1 评估数据集生成（半自动）
 - [x] 数据集生成脚本 `evaluation/generate_dataset.py` — 从 Milvus chunks 用 LLM 生成 QA 候选
@@ -113,7 +113,10 @@
 - [x] RAGAS 逐指标执行 + 错误显式记录 — 输出 `ragas_metric_status`，避免整批静默 `NaN`
 - [x] 评测分档 — `smoke=4单跳+2多跳`、`standard=10单跳+5多跳`、`full=全量30`
 - [x] 子集采样去偏 — QA 档位由“取前 N 条”改为按来源文档/来源组合的稳定 round-robin 分层采样
-- [x] GPT-5.4 Judge 兼容 — RAGAS judge 默认对齐 `gpt-5.4` 参数契约，避免 GPT-5 系列参数不兼容
+- [x] Kimi K2.5 Judge 兼容 — RAGAS judge 默认切换到 `kimi-k2.5` 非 thinking 路径，并按官方文档使用 `AsyncOpenAI` + `llm_factory` + `aevaluate()`；同时显式覆盖 Kimi 固定参数约束
+- [x] RAGAS 公开 API 迁移 — metrics 改用 `Faithfulness` / `AnswerRelevancy` 等公开类名；`BaseRagasEmbeddings` 从 `ragas.embeddings` 导入；所有 RAGAS 导入延迟到函数内部
+- [x] 消除隐式状态 — RAG 中间结果改用独立 `rag_results_map` dict，不再向 dataset item 注入 `_rag_result`
+- [x] RAGAS 结构重构 — 新增 `evaluation/ragas_runner.py` 承接官方评测接入流，`eval_rag.py` 仅保留项目评测逻辑和结果编排
 
 ### 8.3 Agent 评估（任务驱动）— `evaluation/eval_agent.py`
 
@@ -123,12 +126,15 @@
 
 已实现指标：
 - [x] Intent Classification Acc — 直接评估真实 `plan_node` 单意图规划结果
-- [x] QA E2E Task Success — 分层 QA 子集 + 独立会话 + GPT-5.4 LLM-as-Judge (pass/partial/fail/error)
+- [x] QA E2E Task Success — 分层 QA 子集 + 独立会话 + LLM-as-Judge（当前默认 `kimi-k2.5` 非 thinking，pass/partial/fail/error）
 - [x] Intent 子集去偏 — `smoke / standard / full` 改为按 `qa / quiz / gap_analysis` 均衡抽样，而非取数据集前缀
-- [x] GPT-5.4 Judge 兼容 — Agent judge 请求统一按 `gpt-5.4` reasoning 参数构造
+- [x] Kimi K2.5 Judge 兼容 — Agent judge 请求统一按 `kimi-k2.5` 非 thinking 口径构造，直连 Chat Completions 并显式带 `thinking={"type":"disabled"}`
 - [x] E2E Latency P50/P95 — 每条 QA 的端到端耗时
 - [x] Judge Error 分离统计 — `judge_error_rate` / `pass_rate_evaluated`
 - [x] 评测分档 — Intent: `smoke=6` / `standard=15` / `full=30`；QA: `smoke=3单跳+1多跳` / `standard=10单跳+5多跳` / `full=全量`
+- [x] classify_intent 异常保护 — plan_node 失败时记录 error 并继续，不中断整个 Intent 评测
+- [x] Orchestrator 120s 超时 — `asyncio.wait_for` 防止单条 QA 卡死整个评测
+- [x] Latency 成功/全量分离统计 — `latency_p50/p95_ms` 仅含成功 case；`latency_p50/p95_ms_all` 含全部
 
 未实现（待结果分析后决定是否补充）：
 - [ ] Tool Selection Acc — 需记录 orchestrator trajectory 对比预期工具调用
@@ -137,11 +143,69 @@
 - [ ] Gap Detection Precision — 需 Gap 评估集 + 人工/LLM 抽检
 
 ### 8.4 辅助模块
-- [x] `evaluation/judge_client.py` — GPT-5.4 Judge 客户端 (OpenAI-compatible)
+- [x] `evaluation/judge_client.py` — Kimi K2.5 Judge 客户端 (OpenAI-compatible)
+- [x] `evaluation/eval_utils.py` — 共享工具（logging 配置、P50/P95、时区常量）
 - [x] `evaluation/__init__.py`
+- [x] `requirements.txt` — 提升 `ragas` 依赖下限到 `0.4.3`，与当前官方文档/API 对齐
 
-### 8.5 收尾
-- [ ] 评估结果分析 & 优化建议
+### 8.5 基准测试结果 (2026-04-06, smoke profile, judge=kimi-k2.5)
+
+基准数据文件：
+- RAG: `evaluation/results/rag/rag_eval_20260406_142834.json`
+- Agent: `evaluation/results/agent/agent_eval_20260406_144031.json`
+
+#### RAG 基准 (6 samples: 4 单跳 + 2 多跳)
+
+| 指标 | 得分 | 目标 | 状态 |
+|---|---|---|---|
+| Recall@K | 1.000 | ≥ 0.85 | 达标 |
+| MRR | 1.000 | ≥ 0.70 | 达标 |
+| Faithfulness | 0.748 | — | 偏低 |
+| Answer Relevancy | 0.890 | — | ✅ 良好 |
+| Context Precision | 0.875 | — | ✅ 良好 |
+| Context Recall | 0.917 | — | ✅ 良好 |
+| Reranker Lift | 0.000 | > 0 | 无增益 |
+| Multi-hop Lift | -0.171 | > 0 | 不达标 |
+| Latency P50 | 37,256 ms | — | 严重超标 |
+| Latency P95 | 38,007 ms | < 500 ms | 超标 76x |
+
+#### Agent 基准 (6 intent + 4 QA E2E)
+
+| 指标 | 得分 | 目标 | 状态 |
+|---|---|---|---|
+| Intent Accuracy | 100% (6/6) | ≥ 95% | 达标 |
+| QA Pass Rate | 25% (1/4) | ≥ 80% | 严重不达标 |
+| Orchestrator Error | 75% (3/4 超时) | 0% | |
+| Judge Error | 0% | — | ✅ |
+| E2E Latency P50 (成功) | 89,833 ms | < 2,000 ms | 超标 45x |
+
+### 8.6 已识别问题 (按优先级排序)
+
+#### P0: Reranker CPU 推理延迟 — 全局瓶颈
+- **现象**: 单次 rerank 耗时 18-29s，占 RAG 总延迟的 60-75%
+- **影响**: RAG 延迟超标 76x；Agent 3/4 QA 因累计 rerank 耗时导致 120s 超时
+- **根因**: BGE-reranker-v2-m3 在 CPU 上运行 cross-encoder，15 候选 passage 串行推理
+- **关联**: 直接导致 P1
+
+#### P1: Agent E2E 超时率 75%
+- **现象**: 4 个 QA 中 3 个超时 (120s)，唯一完成的是简单单跳问题
+- **影响**: QA Pass Rate 仅 25%，远低于 80% 目标
+- **根因**: QA Agent 内部多步分解 (plan_node ~20s + qa_planner ~35s + N×rag_search ~20-30s/次) 叠加，总耗时轻松超 120s
+- **关联**: P0 解决后此问题大幅缓解
+
+#### P2: Multi-hop Faithfulness 低 (0.634) & 负 Lift
+- **现象**: 单跳 faithfulness=0.806，多跳=0.634，lift=-0.171
+- **影响**: 多跳问题约 37% 内容无法被检索上下文支持（幻觉）
+- **根因**: LLM 在综合多个 chunk 时倾向"过度推理"，生成超出上下文的内容
+
+#### P3: Reranker Lift = 0，无法验证 reranker 价值
+- **现象**: MRR_raw = MRR_reranked = 1.0
+- **根因**: smoke profile 仅 4 个单跳问题，文档主题区分度高，raw search 已完美命中
+- **待验**: 需在 standard/full profile 下确认
+
+### 8.7 收尾
+- [ ] 基于 8.6 问题列表执行优化
+- [ ] 优化后跑 standard profile 对比基准
 - [ ] Prompt 调优（基于评估结果）
 - [ ] Docker 化部署
 - [ ] README + 项目文档（含评估结果）

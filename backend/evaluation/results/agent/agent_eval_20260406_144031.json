@@ -1,0 +1,209 @@
+{
+  "meta": {
+    "run_log_file": "/app/evaluation/results/agentlog/eval_agent_20260406_144031.log",
+    "timezone": "America/Los_Angeles",
+    "started_at": "2026-04-06T14:40:31.106648-07:00",
+    "finished_at": "2026-04-06T14:49:30.298737-07:00",
+    "profile": "smoke",
+    "output_file": "/app/evaluation/results/agent/agent_eval_20260406_144031.json"
+  },
+  "intent_classification": {
+    "metric_scope": "single-intent plan_node accuracy",
+    "subset": {
+      "intent_limit": 6,
+      "intent_selected": 6,
+      "intent_group_counts": {
+        "qa": 10,
+        "quiz": 10,
+        "gap_analysis": 10
+      }
+    },
+    "accuracy": 1.0,
+    "correct": 6,
+    "total": 6,
+    "error_count": 0,
+    "details": [
+      {
+        "query": "Transformer里的自注意力机制是怎么算的？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "帮我出几道题考考我，看看我最近复习得咋样。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "帮我看看我这些复习材料里，哪些地方最容易考或者最容易出错？",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "RAG架构中检索器和生成器是如何协同工作的？能详细讲讲向量检索和重排序的区别吗？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请基于《Transformer 复习.md》的内容，生成一套包含5道选择题和3道简答题的测试卷。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请分析《Transformer 复习.md》中的知识体系，指出初学者通常容易忽略的薄弱环节。",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      }
+    ]
+  },
+  "qa_e2e_task_success": {
+    "metric_scope": "isolated QA subset E2E + configured OpenAI judge",
+    "subset": {
+      "single_hop_limit": 3,
+      "multi_hop_limit": 1,
+      "single_hop_selected": 3,
+      "multi_hop_selected": 1,
+      "total_selected": 4,
+      "single_hop_group_counts": {
+        "Transformer 复习.md": 5,
+        "RAG复习.md": 5,
+        "你不知道的Agent-原理架构与工程实践.md": 5,
+        "Agent 复习.md": 5
+      },
+      "multi_hop_group_counts": {
+        "('RAG复习.md | RAG 分块（Chunking）/切块方法', 'RAG复习.md | 存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解')": 1,
+        "('你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销', '你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式')": 1,
+        "('你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/7. 多 Agent 组织', 'Agent 复习.md | Multi-Agent 通信方式/1. 共享 State（Shared State）')": 1,
+        "('RAG复习.md | RAG 分块（Chunking）/切块大小如何选择？', 'Agent 复习.md | Agent 评估体系/常用评估框架')": 1,
+        "('Transformer 复习.md | 2. Token Embedding', 'Transformer 复习.md | 8. Layer Normalization')": 1,
+        "('RAG复习.md | 向量数据库的 Metadata Filter/典型元数据字段', 'RAG复习.md | 存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解')": 1,
+        "('你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式', 'Agent 复习.md | Parallel Tool Call（并行工具调用）/优势与注意点')": 1,
+        "('Transformer 复习.md | 1. BPE 分词器', '你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销')": 1,
+        "('你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/7. 多 Agent 组织', 'Agent 复习.md | LangGraph 深入：State Reducer 机制/基本用法')": 1,
+        "('Transformer 复习.md | 6. Feed Forward Network（FFN）', 'RAG复习.md | RAG 分块（Chunking）/切块方法')": 1
+      }
+    },
+    "pass_rate_all": 0.25,
+    "partial_rate_all": 0.0,
+    "fail_rate_all": 0.75,
+    "judge_error_rate": 0.0,
+    "pass_rate_evaluated": 0.25,
+    "partial_rate_evaluated": 0.0,
+    "fail_rate_evaluated": 0.75,
+    "verdicts": {
+      "pass": 1,
+      "partial": 0,
+      "fail": 3,
+      "error": 0
+    },
+    "evaluated_total": 4,
+    "judge_error_total": 0,
+    "orchestrator_error_total": 3,
+    "latency_p50_ms": 89833.4094149759,
+    "latency_p95_ms": 89833.4094149759,
+    "latency_p50_ms_all": 120035.84072197555,
+    "latency_p95_ms_all": 120058.09251201572,
+    "total": 4,
+    "details": [
+      {
+        "sample_id": "qa_eval_001",
+        "question": "原始 Transformer 使用什么函数生成位置编码？这些编码在训练过程中是否参与梯度更新？",
+        "question_type": "factual",
+        "ground_truth": "使用正余弦函数生成，且不参与梯度更新。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120035.84072197555,
+        "user_id": "qa_eval_001_user",
+        "session_id": "qa_eval_001_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_002",
+        "question": "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为哪三个步骤？",
+        "question_type": "factual",
+        "ground_truth": "索引 → 检索 → 生成",
+        "answer": "根据检索结果，Naive RAG（朴素 RAG）的标准处理流程固定为以下三个步骤：\n\n1. **索引（Indexing）**：包含文档解析、分块、Embedding 向量化，最终存入向量数据库。\n2. **检索（Retrieval）**：将用户 Query 向量化后进行相似度检索，获取 Top-K 相关文档。\n3. **生成（Generation）**：将检索到的结果拼接到 Prompt 中，送入大语言模型（LLM）生成最终回答。",
+        "verdict": "pass",
+        "reason": "AI助手准确回答了Naive RAG的三个标准步骤（索引→检索→生成），与参考答案完全一致，且对每个步骤进行了合理的补充说明，关键信息无遗漏。",
+        "latency_ms": 89833.4094149759,
+        "user_id": "qa_eval_002_user",
+        "session_id": "qa_eval_002_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_003",
+        "question": "在 Agent 的记忆系统设计中，MEMORY.md 对应的是哪一种记忆类型？",
+        "question_type": "factual",
+        "ground_truth": "语义记忆。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120014.10155597841,
+        "user_id": "qa_eval_003_user",
+        "session_id": "qa_eval_003_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_004",
+        "question": "在RAG系统中，如果采用递归切分（Recursive Splitting）策略并设置重叠窗口，这对IVF索引检索时`nprobe`参数的选择有何影响？为什么？",
+        "question_type": "multi-hop",
+        "ground_truth": "递归切分配合重叠窗口能有效保留块边界的上下文语义，使生成的向量表征更完整、区分度更高。在IVF检索中，`nprobe`控制搜索的簇数量以平衡召回率与速度。由于高质量切分提升了向量本身的语义完整性，通常无需设置过大的`nprobe`即可保证较高的召回率，从而在维持检索精度的同时避免速度显著下降；反之，若切分丢失上下文，则需增大`nprobe`来补偿召回损失。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120058.09251201572,
+        "user_id": "qa_eval_004_user",
+        "session_id": "qa_eval_004_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      }
+    ]
+  }
+}

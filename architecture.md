@@ -83,7 +83,14 @@ Step 1: Services → Step 2: Ingestion → Step 3: Tools → Step 4: SubAgents
   - Intent 子集按 `qa / quiz / gap_analysis` 标签均衡抽样，保证 `smoke / standard` 档位都覆盖三类路由
 - `eval_rag.py` 与 `eval_agent.py` 均通过 `--profile {smoke|standard|full}` 选择档位，并在结果 `meta` 中记录本次 profile；每轮各只落盘一份 JSON（`results/rag/rag_eval_*.json`、`results/agent/agent_eval_*.json`），文件名与 `meta.started_at` / `meta.finished_at` 为 **洛杉矶时间**（`America/Los_Angeles`），`meta.output_file` 为绝对路径
 - 评测日志按任务拆分目录落盘：RAG 写入 `results/logs_rag/eval_rag_*.log`，Agent 写入 `results/agentlog/eval_agent_*.log`；两类结果 JSON 的 `meta.run_log_file` 均记录对应日志绝对路径，便于回查
-- Judge LLM 默认使用 OpenAI `gpt-5.4`（由 `settings.judge_api_key / settings.judge_base_url / settings.judge_model` 配置），评测脚本按 GPT-5.4 reasoning 模型口径传参：
-  - Chat Completions 使用 `max_completion_tokens`
-  - 温度固定按 GPT-5 reasoning 约束处理
-  - RAGAS 侧复用其 OpenAI adapter 的 GPT-5 参数映射能力
+- Judge LLM 默认使用 Moonshot `kimi-k2.5`（由 `settings.judge_api_key / settings.judge_base_url / settings.judge_model` 配置，默认 `https://api.moonshot.ai/v1`）：
+  - Agent judge 走 Kimi 非 thinking 路径，请求显式带 `thinking={"type":"disabled"}`
+  - RAGAS 侧仍按官方文档使用 `AsyncOpenAI` + `llm_factory` + `aevaluate()`，但会显式覆盖 Kimi K2.5 的固定参数约束
+  - Kimi judge 口径默认使用 `temperature=0.6`、`top_p=0.95`、`max_tokens=32768`（RAGAS 路径），避免被 `ragas` 默认值覆盖后触发 Kimi 参数错误或过早截断
+- 评测工程质量（已完成重构）：
+  - `evaluation/eval_utils.py` 提取共享工具（logging 配置、P50/P95 计算、时区常量），消除 `eval_rag.py` / `eval_agent.py` 间的重复代码
+  - RAGAS 导入全部延迟到函数内部，模块级别不依赖 ragas，避免未安装 ragas 时整个 evaluation 包不可导入
+  - RAGAS metrics 使用公开 API（`Faithfulness` / `AnswerRelevancy` / `LLMContextPrecisionWithReference` / `LLMContextRecall`），不依赖下划线前缀私有类
+  - `evaluation/ragas_runner.py` 将 RAGAS 官方接入流与项目评测主流程解耦，`eval_rag.py` 仅保留数据集采样、RAG 执行、IR 指标与结果落盘逻辑
+  - `eval_agent.py` — `classify_intent` 异常保护 + orchestrator 120s 超时 + latency 仅统计成功 case（`latency_p50/p95_ms` = success-only；`latency_p50/p95_ms_all` = 含失败）
+  - `requirements.txt` 已提升到 `ragas>=0.4.3`，与当前官方文档和 async eval API 对齐

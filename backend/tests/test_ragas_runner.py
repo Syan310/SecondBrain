@@ -1,0 +1,67 @@
+from evaluation.ragas_runner import (
+    build_ragas_samples,
+    build_ragas_judge_llm_kwargs,
+    compute_multi_hop_lift,
+    compute_ragas_means,
+)
+
+
+def test_build_ragas_samples_skips_missing_rag_results():
+    qa_subset = [
+        {"question": "q1", "ground_truth": "a1"},
+        {"question": "q2", "ground_truth": "a2"},
+    ]
+    rag_results_map = {
+        "q1": {
+            "answer": "resp1",
+            "context_texts": ["ctx1", "ctx2"],
+        }
+    }
+
+    assert build_ragas_samples(qa_subset, rag_results_map) == [
+        {
+            "user_input": "q1",
+            "response": "resp1",
+            "retrieved_contexts": ["ctx1", "ctx2"],
+            "reference": "a1",
+        }
+    ]
+
+
+def test_compute_ragas_means_ignores_non_numeric_columns_and_nan():
+    ragas_results = {
+        "user_input": ["q1", "q2"],
+        "response": ["a", "b"],
+        "faithfulness": [0.5, 1.0],
+        "answer_relevancy": [float("nan"), 0.8],
+    }
+
+    assert compute_ragas_means(ragas_results) == {
+        "faithfulness": 0.75,
+        "answer_relevancy": 0.8,
+    }
+
+
+def test_compute_multi_hop_lift_uses_only_valid_faithfulness_values():
+    qa_subset = [
+        {"question": "q1", "question_type": "factual"},
+        {"question": "q2", "question_type": "multi-hop"},
+        {"question": "q3", "question_type": "factual"},
+    ]
+
+    result = compute_multi_hop_lift(qa_subset, [0.4, 0.9, float("nan")])
+
+    assert result == {
+        "single_hop_faithfulness": 0.4,
+        "multi_hop_faithfulness": 0.9,
+        "lift": 0.5,
+    }
+
+
+def test_build_ragas_judge_llm_kwargs_disable_kimi_thinking():
+    assert build_ragas_judge_llm_kwargs("kimi-k2.5") == {
+        "extra_body": {"thinking": {"type": "disabled"}},
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "max_tokens": 8192,
+    }

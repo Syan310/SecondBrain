@@ -382,3 +382,85 @@ RAG/Agent 评测由「子目录时间戳 JSON + results 根目录 latest」双�
 - QA 评测按 single-hop / multi-hop 分桶后，再按来源文档或来源组合做稳定轮转，避免结果被数据集排序污染。
 - Intent 评测按 qa / quiz / gap_analysis 三类均衡抽样，确保 smoke 与 standard 档位都覆盖完整路由面。
 - Judge 评测链路统一收口到 OpenAI GPT-5.4，并按 reasoning 模型参数契约构造请求；Agent judge 直接使用 max_completion_tokens，RAGAS judge 复用其 OpenAI adapter 的 GPT-5 参数映射。
+
+## 2026-04-06 评测脚本全面审查与修复
+
+### 背景
+对 `eval_rag.py` 和 `eval_agent.py` 进行全方位代码审查，发现 3 类严重问题 + 4 类重要问题 + 5 类代码质量问题。
+
+### 严重问题修复
+1. **RAGAS 依赖未声明** → `requirements.txt` 添加 `ragas>=0.2.5`
+2. **RAGAS 模块级导入阻止模块加载** → 所有 RAGAS 导入（`BaseRagasEmbeddings`、metrics、`llm_factory`）全部延迟到 `run_ragas_evaluation()` / `_build_bge_ragas_embeddings()` 函数内部；`BGEm3RagasEmbeddings` 类也移入工厂函数
+3. **RAGAS 私有 API 使用** → `_Faithfulness` 等下划线前缀类替换为公开 API：`Faithfulness`, `AnswerRelevancy`, `LLMContextPrecisionWithReference`, `LLMContextRecall`（确认 `llm_factory` 是 RAGAS 官方推荐方式，`LangchainLLMWrapper` 反而已被废弃）
+
+### 健壮性修复
+1. **classify_intent 无异常处理** → try/except 包裹 plan_node，失败时返回 error 字段并继续评测
+2. **Orchestrator 无超时** → `asyncio.wait_for(run_orchestrator(...), timeout=120)` + 超时计入 orchestrator_error
+3. **Latency 含错误 case** → 拆分 `ok_latencies` / `all_latencies`，P50/P95 默认仅用成功 case；报告同时输出 `_all` 版本供参考
+
+### 代码质量修复
+1. **重复代码** → 提取 `evaluation/eval_utils.py`（`configure_run_logging` + `safe_p50` + `safe_p95` + `EVAL_TZ`）
+2. **P95 计算不一致** → 统一使用 `safe_p95`（含 `min(..., len-1)` 安全边界）
+3. **隐式状态传递** → `eval_rag.py` 中 `item["_rag_result"]` 修改 dataset dict 的做法改为独立 `rag_results_map` dict
+4. **PEP8** → 修复 `eval_agent.py` 常量与函数定义间缺少空行
+
+## 2026-04-06 — Judge model switched to gpt-5.4-mini with reasoning disabled
+
+- Decision: evaluation judge default changed from `gpt-5.4` to `gpt-5.4-mini`.
+- Rationale: judge workloads are rubric-following and structured-output oriented; prefer lower cost and fewer parameter-compatibility issues over additional reasoning depth.
+- Request shape: use OpenAI Chat Completions with `reasoning={"effort": "none"}`.
+- Robustness rule: direct judge calls should avoid explicit max token caps unless a concrete truncation issue appears in eval logs.
+- RAGAS compatibility: keep a local OpenAI compat proxy so third-party `max_tokens` defaults are rewritten to `max_completion_tokens` for GPT-5 models.
+- Correction: the decision above means `gpt-5.4` -> `gpt-5.4-mini`.
+- Implementation note: in the RAGAS path, the OpenAI compatibility proxy must wrap the Instructor client returned by `llm_factory`, not the raw OpenAI client passed into `llm_factory`; otherwise Instructor patching can yield a broken client object.
+
+## 2026-04-06 — eval_rag returned to the official ragas integration path
+
+- Decision: stop layering project-specific OpenAI compatibility proxies into the RAGAS path.
+- New structure: keep project eval orchestration in `evaluation/eval_rag.py`, and move RAGAS-specific wiring into `evaluation/ragas_runner.py`.
+- Official integration path: `AsyncOpenAI` + `ragas.llms.llm_factory(...)` + `ragas.aevaluate(...)`.
+- Compatibility stance: align runtime dependency with the docs-backed API by raising the floor to `ragas>=0.4.3`.
+- Goal: preserve current eval outputs (`ragas_metric_status`, per-sample rows, multi-hop lift, IR metrics) while making the judge setup simpler and easier to debug.
+- Correction: the new structure keeps project eval orchestration in `evaluation/eval_rag.py` and moves RAGAS-specific wiring into `evaluation/ragas_runner.py`.
+
+## 2026-04-06 — Judge default changed to gpt-4.1 for compatibility
+
+- Decision: switch the default evaluation judge from `gpt-5.4-mini` to `gpt-4.1`.
+- Reason: `ragas 0.4.3` does not correctly detect dotted GPT-5 model names like `gpt-5.4-mini`, which leaves its internal `max_tokens` mapping inactive and causes OpenAI 400 errors.
+- Request policy: non-GPT-5 judges use standard Chat Completions params; GPT-5-only fields such as `reasoning` should not be sent on the `gpt-4.1` path.
+- Goal: prioritize judge reliability over reasoning-specific behavior in the evaluation stack.
+- Correction: the switch is `gpt-5.4-mini` -> `gpt-4.1`.
+
+## 2026-04-06 — evaluation judge moved to Kimi K2.5 non-thinking mode
+
+- Decision: switch the shared evaluation judge to `kimi-k2.5` and stop using OpenAI models for the current eval stack.
+- Agent judge policy: send `thinking={"type":"disabled"}` and otherwise keep the request on the plain Chat Completions path.
+- RAGAS judge policy: keep the official `AsyncOpenAI` + `llm_factory(...)` + `aevaluate(...)` flow, but override `ragas` defaults with Kimi-compatible kwargs: `thinking={"type":"disabled"}`, `temperature=0.6`, `top_p=0.95`, `max_tokens=32768`.
+- Rationale: Kimi accepts `max_tokens` on the non-thinking path, while the recent OpenAI path kept failing on model/provider parameter contract mismatches.
+- Correction: the shared evaluation judge was switched to `kimi-k2.5`.
+
+---
+
+## 2026-04-06: 基准测试完成 & 问题识别
+
+### 背景
+完成 Judge 模型从 ChatGPT 到 Kimi K2.5 的全面迁移后，首次跑通 RAG + Agent smoke profile 评估，建立基准数据集。
+
+### Judge 模型迁移要点
+- OpenAI SDK 不支持 `thinking` 顶层参数 → 改用 `extra_body` 传入
+- RAGAS `InstructorModelArgs` 默认 `temperature=0.01` 被 kimi-k2.5 拒绝 → 显式传 `temperature=0.6, top_p=0.95`
+- RAGAS 默认 `max_tokens=1024` 导致结构化 JSON 截断 → 提升到 `8192`
+- `judge_base_url` 从 `api.moonshot.ai` 更正为官方 `api.moonshot.cn`
+
+### 基准结果
+- RAG: 检索质量优秀 (Recall@K=1.0, MRR=1.0)，但延迟严重超标 (P95=38s vs 目标<500ms)，faithfulness 偏低 (0.748)
+- Agent: Intent 100% 正确，但 QA E2E 仅 25% pass (3/4 超时)
+
+### 识别的核心问题 (P0-P3)
+- P0: Reranker CPU 推理 18-29s/query，占 RAG 延迟 60-75%
+- P1: Agent 120s 超时率 75%，根因是 P0 + QA Agent 多步分解叠加
+- P2: Multi-hop faithfulness=0.634，多跳幻觉率高
+- P3: Reranker lift=0，smoke profile 样本太少无法验证
+
+### 决策
+以当前结果作为基准，清理历史测试数据，进入优化阶段。

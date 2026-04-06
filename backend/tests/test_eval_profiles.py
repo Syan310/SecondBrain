@@ -137,16 +137,29 @@ def test_intent_subset_balances_labels_instead_of_head_slice():
     }
 
 
-def test_judge_request_kwargs_match_gpt_54_reasoning_contract():
+def test_judge_request_kwargs_match_kimi_k25_non_thinking_contract():
     kwargs = build_judge_request_kwargs(
-        model="gpt-5.4",
+        model="kimi-k2.5",
+        messages=[{"role": "user", "content": "judge this"}],
+    )
+
+    assert kwargs == {
+        "model": "kimi-k2.5",
+        "messages": [{"role": "user", "content": "judge this"}],
+        "extra_body": {"thinking": {"type": "disabled"}},
+    }
+
+
+def test_judge_request_kwargs_use_max_completion_tokens_for_kimi():
+    kwargs = build_judge_request_kwargs(
+        model="kimi-k2.5",
         messages=[{"role": "user", "content": "judge this"}],
         max_completion_tokens=512,
     )
 
     assert kwargs == {
-        "model": "gpt-5.4",
+        "model": "kimi-k2.5",
         "messages": [{"role": "user", "content": "judge this"}],
-        "temperature": 1,
+        "extra_body": {"thinking": {"type": "disabled"}},
         "max_completion_tokens": 512,
     }

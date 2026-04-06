@@ -10,8 +10,8 @@ class Settings(BaseSettings):
 
     # Judge LLM (for evaluation)
     judge_api_key: str = ""
-    judge_base_url: str = "https://api.openai.com/v1"
-    judge_model: str = "gpt-5.4"
+    judge_base_url: str = "https://api.moonshot.cn/v1"
+    judge_model: str = "kimi-k2.5"
 
     # Embedding (bge-m3: 1024-dim, multilingual Chinese/English)
     embedding_model_path: str = "./models/bge-m3"

@@ -25,7 +25,6 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 from typing import Any
 
 from app.config import settings
@@ -34,7 +33,14 @@ from app.services.milvus_client import milvus_service
 from app.services.reranker import reranker_service
 from app.services.llm_client import llm_client
 from app.agent.tools.rag_search import rag_search
+from evaluation.eval_utils import EVAL_TZ, configure_run_logging, safe_p50, safe_p95
 from evaluation.profiles import build_stratified_subset, get_eval_profile
+from evaluation.ragas_runner import (
+    build_ragas_samples,
+    compute_multi_hop_lift,
+    compute_ragas_means,
+    run_ragas_evaluation,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,33 +48,6 @@ DATASET_DIR = Path(__file__).parent / "datasets"
 OUTPUT_DIR = Path(__file__).parent / "results"
 RAG_OUTPUT_DIR = OUTPUT_DIR / "rag"
 RAG_LOG_DIR = OUTPUT_DIR / "logs_rag"
-EVAL_TZ = ZoneInfo("America/Los_Angeles")
-RAGAS_JUDGE_TEMPERATURE = 1.0
-
-_LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
-_LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
-
-
-def _configure_run_logging(log_file: Path) -> None:
-    """Console + one UTF-8 file per run (root logger, captures httpx/sqlalchemy/app)."""
-    log_file.parent.mkdir(parents=True, exist_ok=True)
-    root = logging.getLogger()
-    root.handlers.clear()
-    root.setLevel(logging.INFO)
-
-    formatter = logging.Formatter(_LOG_FORMAT, datefmt=_LOG_DATEFMT)
-
-    fh = logging.FileHandler(log_file, encoding="utf-8")
-    fh.setLevel(logging.INFO)
-    fh.setFormatter(formatter)
-    root.addHandler(fh)
-
-    sh = logging.StreamHandler(sys.stderr)
-    sh.setLevel(logging.INFO)
-    sh.setFormatter(formatter)
-    root.addHandler(sh)
-
-
 # ── 1. Run RAG pipeline per question ──────────────────────────
 
 
@@ -172,145 +151,38 @@ def compute_reranker_lift(question: str, top_k: int = 5) -> dict:
 # ── 3. RAGAS evaluation ───────────────────────────────────────
 
 
-from ragas.embeddings.base import BaseRagasEmbeddings
+def _build_bge_ragas_embeddings():
+    """Build a RAGAS-compatible embedding wrapper around our BGE-m3 service.
 
-
-class BGEm3RagasEmbeddings(BaseRagasEmbeddings):
-    """Wrapper around our BGE-m3 embedding service for RAGAS."""
-
-    def __init__(self):
-        from app.services.embedding import embedding_service
-        self._svc = embedding_service
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        output = self._svc.encode(texts, return_sparse=False)
-        return output.dense.tolist()
-
-    def embed_query(self, text: str) -> list[float]:
-        output = self._svc.encode_query(text)
-        return output.dense.tolist()
-
-    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
-        return self.embed_documents(texts)
-
-    async def aembed_query(self, text: str) -> list[float]:
-        return self.embed_query(text)
-
-    def set_run_config(self, *args, **kwargs):
-        pass
-
-
-async def run_ragas_evaluation(samples: list[dict]) -> dict:
-    """Run RAGAS metrics using external judge model.
-
-    Each sample: {user_input, response, retrieved_contexts, reference}
+    All RAGAS imports are deferred here so the module stays importable without
+    ragas installed.
     """
-    from ragas import evaluate, EvaluationDataset, SingleTurnSample
-    from ragas.metrics import (
-        _Faithfulness,
-        _AnswerRelevancy,
-        _LLMContextPrecisionWithReference,
-        _LLMContextRecall,
-    )
-    from ragas.llms import llm_factory
-    from openai import OpenAI
+    from ragas.embeddings import BaseRagasEmbeddings
 
-    # Build RAGAS samples
-    ragas_samples = [
-        SingleTurnSample(
-            user_input=s["user_input"],
-            response=s["response"],
-            retrieved_contexts=s["retrieved_contexts"],
-            reference=s["reference"],
-        )
-        for s in samples
-    ]
-    dataset = EvaluationDataset(samples=ragas_samples)
+    class BGEm3RagasEmbeddings(BaseRagasEmbeddings):
+        """Wrapper around our BGE-m3 embedding service for RAGAS."""
 
-    merged_results: dict[str, list[Any]] = {
-        "user_input": [s["user_input"] for s in samples],
-        "response": [s["response"] for s in samples],
-        "retrieved_contexts": [s["retrieved_contexts"] for s in samples],
-        "reference": [s["reference"] for s in samples],
-    }
-    metric_status: dict[str, dict[str, Any]] = {}
+        def __init__(self):
+            self._svc = embedding_service
 
-    try:
-        client = OpenAI(api_key=settings.judge_api_key, base_url=settings.judge_base_url)
-        # RAGAS 0.4.x InstructorModelArgs defaults max_tokens=1024; its
-        # _map_openai_params auto-converts max_tokens → max_completion_tokens
-        # for GPT-5/o-series. We must pass max_tokens here (not
-        # max_completion_tokens) so the override takes effect before mapping.
-        judge_llm_kwargs: dict[str, Any] = {
-            "client": client,
-            "temperature": RAGAS_JUDGE_TEMPERATURE,
-            "max_tokens": 16384,
-        }
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            output = self._svc.encode(texts, return_sparse=False)
+            return output.dense.tolist()
 
-        judge_llm = llm_factory(settings.judge_model, **judge_llm_kwargs)
-        bge_embeddings = BGEm3RagasEmbeddings()
-    except Exception as e:
-        logger.exception("Failed to initialize RAGAS judge/embeddings: %s", e)
-        for metric_name in (
-            "faithfulness",
-            "answer_relevancy",
-            "llm_context_precision_with_reference",
-            "context_recall",
-        ):
-            merged_results[metric_name] = [None] * len(samples)
-            metric_status[metric_name] = {
-                "status": "error",
-                "error_type": type(e).__name__,
-                "error": str(e),
-            }
-        return {"results": merged_results, "metric_status": metric_status}
+        def embed_query(self, text: str) -> list[float]:
+            output = self._svc.encode_query(text)
+            return output.dense.tolist()
 
-    metric_builders = [
-        ("faithfulness", lambda: _Faithfulness(llm=judge_llm)),
-        ("answer_relevancy", lambda: _AnswerRelevancy(llm=judge_llm, embeddings=bge_embeddings)),
-        ("llm_context_precision_with_reference", lambda: _LLMContextPrecisionWithReference(llm=judge_llm)),
-        ("context_recall", lambda: _LLMContextRecall(llm=judge_llm)),
-    ]
+        async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+            return self.embed_documents(texts)
 
-    logger.info(
-        "Running RAGAS evaluation with %d samples. Metrics run one-by-one for clearer failure reporting.",
-        len(ragas_samples),
-    )
+        async def aembed_query(self, text: str) -> list[float]:
+            return self.embed_query(text)
 
-    for metric_name, builder in metric_builders:
-        try:
-            metric = builder()
-            logger.info(
-                "Running RAGAS metric=%s with judge config temperature=%.2f max_tokens=%d (mapped to max_completion_tokens by RAGAS)",
-                metric_name,
-                RAGAS_JUDGE_TEMPERATURE,
-                judge_llm_kwargs["max_tokens"],
-            )
-            result = evaluate(
-                dataset=dataset,
-                metrics=[metric],
-                embeddings=bge_embeddings,
-                raise_exceptions=True,
-                show_progress=False,
-            )
-            metric_values = result.to_pandas().to_dict(orient="list").get(metric_name, [])
-            merged_results[metric_name] = metric_values
-            valid_count = sum(1 for v in metric_values if isinstance(v, (int, float)) and v == v)
-            metric_status[metric_name] = {
-                "status": "ok",
-                "valid_count": valid_count,
-                "sample_count": len(metric_values),
-            }
-        except Exception as e:
-            logger.exception("RAGAS metric failed: %s", metric_name)
-            merged_results[metric_name] = [None] * len(samples)
-            metric_status[metric_name] = {
-                "status": "error",
-                "error_type": type(e).__name__,
-                "error": str(e),
-            }
+        def set_run_config(self, *args, **kwargs):
+            pass
 
-    return {"results": merged_results, "metric_status": metric_status}
+    return BGEm3RagasEmbeddings()
 
 
 def _rag_report_path(run_ts: str) -> Path:
@@ -369,6 +241,9 @@ async def main(run_log_file: Path, profile_name: str):
         qa_subset_meta["multi_hop_selected"],
     )
 
+    # Intermediate results keyed by question text to avoid mutating dataset items
+    rag_results_map: dict[str, dict] = {}
+
     # ── Phase 1: Classic IR metrics (single-hop only, have source_doc ground truth) ──
     logger.info("=== Phase 1: Classic IR Metrics ===")
     recall_scores = []
@@ -400,8 +275,7 @@ async def main(run_log_file: Path, profile_name: str):
         mrr_raw_scores.append(mrr_raw)
         mrr_reranked_scores.append(mrr_reranked)
 
-        # Store for RAGAS
-        item["_rag_result"] = result
+        rag_results_map[question] = result
 
     ir_metrics = {
         "recall_at_k": sum(recall_scores) / len(recall_scores) if recall_scores else 0,
@@ -413,8 +287,8 @@ async def main(run_log_file: Path, profile_name: str):
             if mrr_raw_scores
             else 0
         ),
-        "latency_p50_ms": sorted(latencies)[len(latencies) // 2] if latencies else 0,
-        "latency_p95_ms": sorted(latencies)[int(len(latencies) * 0.95)] if latencies else 0,
+        "latency_p50_ms": safe_p50(latencies),
+        "latency_p95_ms": safe_p95(latencies),
     }
     logger.info("IR Metrics: %s", json.dumps(ir_metrics, indent=2))
 
@@ -424,64 +298,33 @@ async def main(run_log_file: Path, profile_name: str):
         question = item["question"]
         logger.info("  [%d/%d] %s", i + 1, len(multi_hop), question[:60])
         result = await run_rag_pipeline(question)
-        item["_rag_result"] = result
+        rag_results_map[question] = result
 
     # ── Phase 3: RAGAS evaluation (all items) ──
     logger.info("=== Phase 3: RAGAS Evaluation ===")
-    ragas_samples = []
-    for item in qa_subset:
-        rag_result = item.get("_rag_result")
-        if not rag_result:
-            continue
-        ragas_samples.append({
-            "user_input": item["question"],
-            "response": rag_result["answer"],
-            "retrieved_contexts": rag_result["context_texts"],
-            "reference": item.get("ground_truth", ""),
-        })
-
-    ragas_eval = await run_ragas_evaluation(ragas_samples)
+    ragas_samples = build_ragas_samples(qa_subset, rag_results_map)
+    ragas_eval = await run_ragas_evaluation(
+        ragas_samples,
+        judge_model=settings.judge_model,
+        judge_api_key=settings.judge_api_key,
+        judge_base_url=settings.judge_base_url,
+        embeddings=_build_bge_ragas_embeddings(),
+    )
     ragas_results = ragas_eval["results"]
     ragas_metric_status = ragas_eval["metric_status"]
 
     # Compute means
-    ragas_means = {}
-    for key, values in ragas_results.items():
-        if key in ("user_input", "response", "retrieved_contexts", "reference"):
-            continue
-        numeric = [v for v in values if isinstance(v, (int, float)) and v == v]
-        if numeric:
-            ragas_means[key] = sum(numeric) / len(numeric)
+    ragas_means = compute_ragas_means(ragas_results)
 
     logger.info("RAGAS Means: %s", json.dumps(ragas_means, indent=2))
     logger.info("RAGAS Metric Status: %s", json.dumps(ragas_metric_status, ensure_ascii=False, indent=2))
 
     # ── Phase 4: Multi-hop Lift ──
     logger.info("=== Phase 4: Multi-hop Lift ===")
-    single_faithfulness = []
-    multi_faithfulness = []
-    faithfulness_values = ragas_results.get("faithfulness", [])
-    for i, item in enumerate(qa_subset):
-        if i >= len(faithfulness_values):
-            break
-        v = faithfulness_values[i]
-        if not (isinstance(v, (int, float)) and v == v):
-            continue
-        if item.get("question_type") == "multi-hop":
-            multi_faithfulness.append(v)
-        else:
-            single_faithfulness.append(v)
-
-    multi_hop_lift = {
-        "single_hop_faithfulness": (
-            sum(single_faithfulness) / len(single_faithfulness) if single_faithfulness else None
-        ),
-        "multi_hop_faithfulness": (
-            sum(multi_faithfulness) / len(multi_faithfulness) if multi_faithfulness else None
-        ),
-    }
-    if multi_hop_lift["single_hop_faithfulness"] is not None and multi_hop_lift["multi_hop_faithfulness"] is not None:
-        multi_hop_lift["lift"] = multi_hop_lift["multi_hop_faithfulness"] - multi_hop_lift["single_hop_faithfulness"]
+    multi_hop_lift = compute_multi_hop_lift(
+        qa_subset,
+        ragas_results.get("faithfulness", []),
+    )
     logger.info("Multi-hop Lift: %s", json.dumps(multi_hop_lift, indent=2))
 
     # ── Save results ──
@@ -538,7 +381,7 @@ if __name__ == "__main__":
     args = parse_args()
     _ts = datetime.now(EVAL_TZ).strftime("%Y%m%d_%H%M%S")
     _log_path = RAG_LOG_DIR / f"eval_rag_{_ts}.log"
-    _configure_run_logging(_log_path)
+    configure_run_logging(_log_path)
     try:
         asyncio.run(main(_log_path, args.profile))
     except Exception:
