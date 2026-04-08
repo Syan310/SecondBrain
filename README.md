@@ -1,141 +1,79 @@
 # SecondBrain
 
-基于个人笔记的 RAG + Quiz + 知识盲区诊断系统。上传你的学习文档，让 AI 帮你问答、出题、找出你的知识盲区。
+A RAG + quiz + knowledge gap diagnosis system built on personal notes. Upload your study materials and let the AI answer questions, generate quizzes, and identify your weak points.
 
-## 系统架构
+## Core Features
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  Frontend (React 19 + Vite + TypeScript + Tailwind v4)               │
-│    ChatPanel (Markdown/LaTeX) │ QuizModal │ FileUpload               │
-└───────────────────────────┬──────────────────────────────────────────┘
-                            │ HTTP (JSON / SSE)
-┌───────────────────────────▼──────────────────────────────────────────┐
-│  FastAPI Backend                                                      │
-│    /api/chat (+ /stream + /history)                                   │
-│    /api/quiz/answer                                                   │
-│    /api/ingest/upload · /documents · DELETE                           │
-├───────────────────────────────────────────────────────────────────────┤
-│  LangGraph Orchestrator (Plan → Execute → Replan)                     │
-│    ┌─────────────┐   ┌──────────────┐   ┌──────────────┐            │
-│    │ QA SubAgent  │   │ Quiz SubAgent│   │ Gap SubAgent │            │
-│    │ ReAct +      │   │ RAG 出题     │   │ 规则分类 +    │            │
-│    │ Reflection   │   │ 2 道 MCQ     │   │ LLM 报告     │            │
-│    └──────┬───────┘   └──────┬───────┘   └──────┬───────┘            │
-│           └──────────────────┼──────────────────┘                    │
-│                              ▼                                        │
-│    Tools: rag_search │ read_mastery │ update_mastery │ search_concepts│
-├───────────────────────────────────────────────────────────────────────┤
-│  Services                                                             │
-│    BGE-m3 Embedding (dense + sparse) │ Qwen3-Plus LLM (tool-calling)│
-├───────────────────────────────────────────────────────────────────────┤
-│  Storage                                                              │
-│    Milvus (文档向量 + 长期对话记忆) │ SQLite (掌握度/概念/短期对话)    │
-└───────────────────────────────────────────────────────────────────────┘
-```
+| Feature | Description |
+| --- | --- |
+| **Question Answering (QA)** | Document-grounded RAG QA for complex questions such as comparison, causality, and parallel analysis, using a ReAct + Reflection workflow. |
+| **Quiz Generation** | Generates multiple-choice questions from document content and user weak points, then updates mastery in real time with a time-decay model. |
+| **Knowledge Gap Diagnosis** | Compares knowledge base concepts with user mastery and produces a report with four levels: unseen, weak, needs reinforcement, and mastered. |
+| **Document Management** | Supports PDF, Word, and Markdown upload, then automatically parses, chunks, extracts concepts, and writes vectors. |
+| **Conversation Memory** | Uses short-term SQLite memory plus long-term Milvus memory with automatic consolidation and context injection. |
 
-## 核心功能
+## Tech Stack
 
-| 功能 | 说明 |
-|------|------|
-| **智能问答 (QA)** | 基于文档的 RAG 问答，支持对比/因果/并列类复杂问题；ReAct + Reflection 架构，自动检索验证 |
-| **出题测验 (Quiz)** | 根据文档内容和用户薄弱点生成 MCQ 选择题，答题后实时更新掌握度（时间衰减模型） |
-| **知识盲区诊断 (Gap)** | 对比知识库概念与用户掌握度，按"未接触/薄弱/需巩固/已掌握"四级分类生成诊断报告 |
-| **文档管理** | 支持 PDF / Word / Markdown 上传，自动解析 → 分块 → 概念抽取 → 向量化写入 |
-| **对话记忆** | 短期 SQLite + 长期 Milvus 双轨记忆，自动整合与上下文注入 |
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19 + Vite + TypeScript + Tailwind CSS v4 |
+| Backend | FastAPI + LangGraph + Python 3.11 |
+| Embedding | BGE-m3 (1024 dimensions, bilingual, dense + sparse dual encoding with heading augmentation) |
+| LLM | Qwen3-Plus (chat / stream / tool-calling) |
+| Vector Store | Milvus Standalone (HNSW + SPARSE_INVERTED_INDEX with RRF hybrid retrieval) |
+| Database | SQLite (aiosqlite + SQLAlchemy Async, WAL mode) |
+| PDF Parsing | magic-pdf (MinerU) |
+| Deployment | Docker Compose (Milvus + etcd + MinIO + Backend) |
 
-## 技术栈
+## Quick Start
 
-| 层次 | 技术 |
-|------|------|
-| 前端 | React 19 + Vite + TypeScript + Tailwind CSS v4 |
-| 后端 | FastAPI + LangGraph + Python 3.11 |
-| Embedding | BGE-m3（1024 维，中英文多语言，dense + sparse 双编码 + Heading Augmentation） |
-| LLM | Qwen3-Plus（chat / stream / tool-calling） |
-| 向量库 | Milvus Standalone（HNSW + SPARSE_INVERTED_INDEX，RRF 混合检索） |
-| 数据库 | SQLite（aiosqlite + SQLAlchemy Async，WAL 模式） |
-| PDF 解析 | magic-pdf（MinerU） |
-| 部署 | Docker Compose（Milvus + etcd + MinIO + Backend） |
+### Prerequisites
 
-## 技术亮点
+- Docker and Docker Compose
+- Node.js 18+ for local frontend development
+- Local model files under `backend/models/`
 
-### RAG Pipeline
+### 1. Create `backend/.env`
 
-- **Hybrid Retrieval**：Dense + Sparse 混合检索，RRF（Reciprocal Rank Fusion）融合
-- **Heading Augmentation**：Embedding 编码时拼接文档标题路径到 chunk 文本前，解决"关键词只在标题中"的检索失败问题
-- **数据驱动的 Reranker 决策**：通过控制变量 A/B 实验发现 Cross-Encoder Reranker 在高质量 embedding 下为负增益，关闭后检索精度和延迟均显著改善
+This repository currently does not include `backend/.env.example`, so create `backend/.env` manually.
 
-### 多 Agent 编排
-
-- **Plan & Execute with Replan**：LangGraph 状态图驱动，支持 DAG 依赖调度、并发执行（Semaphore 限流）、失败隔离
-- **单步优化**：单步 plan 自动跳过 replan 节点，减少无效 LLM 调用
-- **架构做减法**：QA SubAgent 从四阶段 pipeline 重构为 ReAct + Reflection 两阶段，LLM 调用从 5-10 次降至 2-4 次
-
-## 目录结构
-
-```
-SecondBrain/
-├── backend/
-│   ├── app/
-│   │   ├── main.py                # FastAPI 入口 + lifespan
-│   │   ├── config.py              # 配置（读取 .env）
-│   │   ├── api/routes/            # chat / quiz / ingest / gap 路由
-│   │   ├── agent/
-│   │   │   ├── graph.py           # LangGraph 状态图编译与运行
-│   │   │   ├── state.py           # OverallState TypedDict
-│   │   │   ├── nodes/             # orchestrator (plan/execute/replan) + memory_manager
-│   │   │   ├── subagents/         # qa_agent / quiz_agent / gap_agent
-│   │   │   └── tools/             # rag_search / read_mastery / update_mastery / search_concepts
-│   │   ├── services/              # embedding / reranker / llm_client / milvus_client / doc_processor
-│   │   └── db/                    # SQLite 模型 & CRUD
-│   ├── evaluation/                # RAGAS & Agent 评估框架
-│   ├── tests/                     # 单元 & 集成测试
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/            # ChatPanel / QuizModal / FileUpload / Layout
-│   │   ├── services/api.ts        # API 客户端
-│   │   └── App.tsx
-│   └── package.json
-├── docker-compose.yml             # Milvus + etcd + MinIO + Backend
-└── README.md
-```
-
-## 快速启动
-
-### 前置条件
-
-- Docker & Docker Compose
-- Node.js 18+（仅本地开发前端时需要）
-- 下载 BGE 模型到 `backend/models/`（见[模型准备](#模型准备)）
-
-### 1. 配置环境变量
-
-复制并填写 backend 的环境变量：
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-编辑 `backend/.env`，至少填写以下字段：
+Minimum required:
 
 ```env
-# 通义千问 API Key（https://dashscope.aliyuncs.com）
 LLM_API_KEY=sk-xxxx
 ```
 
-### 2. 模型准备
+Recommended local settings:
 
-将以下模型下载到 `backend/models/` 目录：
+```env
+LLM_API_KEY=sk-xxxx
+LLM_BASE_URL=https://dashscope-us.aliyuncs.com/compatible-mode/v1
+LLM_MODEL=qwen3.6-plus
 
+EMBEDDING_MODEL_PATH=./models/bge-m3
+RERANKER_MODEL_PATH=./models/bge-reranker-v2-m3
+ENABLE_RERANKER=false
+
+MILVUS_HOST=milvus
+MILVUS_PORT=19530
+SQLITE_DB_PATH=./data/secondbrain.db
+
+APP_HOST=0.0.0.0
+APP_PORT=8000
+APP_ENV=development
 ```
+
+### 2. Prepare Models
+
+Place the following models under `backend/models/`:
+
+```text
 backend/models/
-├── bge-m3/               # Embedding 模型（BAAI/bge-m3）
-└── bge-reranker-v2-m3/   # Reranker 模型（BAAI/bge-reranker-v2-m3）
+├── bge-m3/
+└── bge-reranker-v2-m3/
 ```
 
-可通过 Hugging Face 下载：
+Example download via Hugging Face:
 
 ```bash
 pip install huggingface_hub
@@ -147,22 +85,21 @@ snapshot_download('BAAI/bge-reranker-v2-m3', local_dir='backend/models/bge-reran
 "
 ```
 
-### 3. 启动后端服务（Docker Compose）
+### 3. Start Backend Services with Docker Compose
 
 ```bash
-# 启动 Milvus（etcd + minio + milvus）+ FastAPI Backend
-docker compose up -d
-
-# 查看日志
+docker compose --profile backend up -d
 docker compose logs -f backend
 ```
 
-服务启动后：
-- **Backend API**：http://localhost:18080
-- **API 文档**：http://localhost:18080/docs
-- **Milvus**：localhost:19530
+After startup:
 
-### 4. 启动前端（本地开发）
+- Backend API: `http://localhost:18080`
+- API Docs: `http://localhost:18080/docs`
+- Health Check: `http://localhost:18080/health`
+- Milvus: `localhost:19530`
+
+### 4. Start the Frontend for Local Development
 
 ```bash
 cd frontend
@@ -170,47 +107,81 @@ npm install
 npm run dev
 ```
 
-前端开发服务器启动后访问：http://localhost:5173
+Open `http://localhost:5173`.
 
-> 前端已配置 Vite dev proxy，`/api` 请求默认自动转发到 `localhost:18080`。
-> 如需改为本地直跑后端，可在 `frontend/.env.local` 设置 `VITE_PROXY_TARGET=http://localhost:8000`。
+The frontend uses a Vite dev proxy, so `/api` requests go to `localhost:18080` by default.
+If you want to run the backend locally instead of in Docker, set `VITE_PROXY_TARGET=http://localhost:8000` in `frontend/.env.local`.
 
-### 5. 生产部署（前端构建）
+### 5. Build the Frontend
 
 ```bash
 cd frontend
 npm run build
-# 构建产物位于 frontend/dist/，可用 nginx 等静态服务器托管
 ```
 
----
+The build output is generated in `frontend/dist/`.
 
-## 本地开发（不使用 Docker）
+## Local Development Without Docker
 
-### 启动 Milvus
+### Start Milvus Only
 
 ```bash
-# 仅启动基础设施（不启动 backend 容器）
 docker compose up -d etcd minio milvus
 ```
 
-### 启动 Backend
+### Start the Backend Locally
 
 ```bash
 cd backend
 pip install -r requirements.txt
-
-# 设置 Milvus 连接地址（本地开发时 host 为 localhost）
 export MILVUS_HOST=localhost
-
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
----
+### Start the Frontend Locally
 
-## 使用说明
+```bash
+cd frontend
+npm install
+VITE_PROXY_TARGET=http://localhost:8000 npm run dev
+```
 
-1. **上传文档**：在「文档管理」面板上传 PDF、Word 或 Markdown 文件，系统自动解析并写入向量库。
-2. **智能问答**：在聊天框输入问题，系统自动检索相关知识并回答。
-3. **出题测验**：输入「帮我出题」或「quiz」触发 Quiz 模式，系统出 2 道选择题并实时反馈掌握度变化。
-4. **知识盲区诊断**：输入「分析我的知识盲区」，系统结合你的历史掌握度数据生成诊断报告。
+## Main API Endpoints
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/chat/` | Main chat entry for QA, quiz triggering, and gap-analysis requests |
+| `POST` | `/api/chat/stream` | Streaming chat response |
+| `GET` | `/api/chat/history` | Load conversation history |
+| `POST` | `/api/quiz/answer` | Submit a quiz answer and update mastery |
+| `POST` | `/api/gap/analyze` | Run gap analysis directly |
+| `POST` | `/api/ingest/upload` | Upload and ingest documents |
+| `GET` | `/api/ingest/documents` | List uploaded documents |
+| `DELETE` | `/api/ingest/documents/{filename}` | Delete a document and its indexed data |
+| `GET` | `/health` | Service health check |
+
+## Usage
+
+1. Upload PDF, Word, or Markdown files in the document panel.
+2. Ask a question in chat for document-grounded QA.
+3. Type `quiz` to generate 2 MCQs and update mastery from your answers.
+4. Ask for a knowledge gap analysis to get a diagnosis based on your materials and mastery history.
+
+## Troubleshooting
+
+- `backend/.env.example` not found:
+  Create `backend/.env` manually. The repository does not currently ship an example file.
+- Backend container does not start:
+  Check `docker compose logs -f backend` and confirm `backend/models/` contains both BGE models.
+- Backend cannot connect to Milvus in local mode:
+  Set `MILVUS_HOST=localhost` before starting `uvicorn`.
+- API works but frontend requests fail:
+  Check `VITE_PROXY_TARGET` and make sure the frontend is pointing to the same backend port you started.
+- First request is slow:
+  Initial model loading for embedding and reranker can take noticeable time, especially on CPU.
+
+## Current Status
+
+- Core QA, quiz, gap analysis, ingestion, and memory flows are implemented.
+- Frontend and backend are both runnable locally.
+- Evaluation tooling for RAG and agent performance exists under `backend/evaluation/`.
