@@ -1,0 +1,44 @@
+[
+  {
+    "scenario_id": "gap_01",
+    "description": "全部未接触 — 无任何 mastery 记录，所有 KB topic 都应是盲区",
+    "mastery_preset": [],
+    "scope": null,
+    "expected_gap_mode": "all_gap"
+  },
+  {
+    "scenario_id": "gap_02",
+    "description": "全部已掌握 — 所有 KB topic 都有高分 mastery，不应有盲区",
+    "mastery_preset": "__all_mastered__",
+    "scope": null,
+    "expected_gap_mode": "no_gap"
+  },
+  {
+    "scenario_id": "gap_03",
+    "description": "混合场景 — 一半高分一半低分",
+    "mastery_preset": "__half_weak__",
+    "scope": null,
+    "expected_gap_mode": "partial_gap"
+  },
+  {
+    "scenario_id": "gap_04",
+    "description": "全部薄弱 — 所有 topic score < 0.3",
+    "mastery_preset": "__all_weak__",
+    "scope": null,
+    "expected_gap_mode": "all_gap"
+  },
+  {
+    "scenario_id": "gap_05",
+    "description": "Scope 过滤 — 只分析 Transformer 文档",
+    "mastery_preset": [],
+    "scope": "Transformer 复习.md",
+    "expected_gap_mode": "all_gap"
+  },
+  {
+    "scenario_id": "gap_06",
+    "description": "混合 + Scope — 部分掌握，scope 限定 RAG",
+    "mastery_preset": "__half_weak__",
+    "scope": "RAG复习.md",
+    "expected_gap_mode": "partial_gap"
+  }
+]

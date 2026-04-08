@@ -17,7 +17,7 @@ class OverallState(TypedDict, total=False):
 
     Plan & Execute with Replan loop:
     - plan_node: LLM generates execution plan (steps with depends_on)
-    - execute_step: executes ONE step per iteration, calling QA/Gap/Quiz SubAgents
+    - execute_batch: concurrently executes all ready steps (deps satisfied)
     - replan_node: reviews step result, decides continue/revise/finish
     - synthesize_node: merges multiple step results (skipped for single-step)
     """
@@ -31,7 +31,7 @@ class OverallState(TypedDict, total=False):
 
     # Plan & Execute fields
     plan: list[dict]              # execution steps: [{step, intent, params, depends_on}]
-    step_results: list[dict]      # [{step, intent, result}]
+    step_results: list[dict]      # [{step, intent, status, result, error?}]
 
     # Replan loop fields
     current_step_index: int       # index into plan[] for next step to execute, starts at 0

@@ -3,6 +3,7 @@ from __future__ import annotations
 """Reranker service using BAAI/bge-reranker-v2-m3 (cross-encoder)."""
 
 import logging
+import threading
 from dataclasses import dataclass
 
 from FlagEmbedding import FlagReranker
@@ -26,13 +27,22 @@ class RerankerService:
 
     def __init__(self) -> None:
         self._model: FlagReranker | None = None
+        self._lock = threading.Lock()
 
     def _load_model(self) -> FlagReranker:
         if self._model is None:
-            logger.info("Loading reranker model from %s ...", settings.reranker_model_path)
-            self._model = FlagReranker(settings.reranker_model_path, use_fp16=True)
-            logger.info("Reranker model loaded.")
+            with self._lock:
+                if self._model is None:  # double-check after acquiring lock
+                    logger.info("Loading reranker model from %s ...", settings.reranker_model_path)
+                    self._model = FlagReranker(
+                        settings.reranker_model_path, use_fp16=True, devices="cuda:0",
+                    )
+                    logger.info("Reranker model loaded.")
         return self._model
+
+    def warmup(self) -> None:
+        """Pre-load model single-threaded before concurrent access."""
+        self._load_model()
 
     def rerank(
         self,
@@ -56,7 +66,8 @@ class RerankerService:
         model = self._load_model()
 
         pairs = [[query, p] for p in passages]
-        scores = model.compute_score(pairs, normalize=True)
+        with self._lock:
+            scores = model.compute_score(pairs, normalize=True)
 
         # compute_score returns a single float when there's only one pair
         if isinstance(scores, (float, int)):

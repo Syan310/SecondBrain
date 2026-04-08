@@ -33,6 +33,81 @@ def configure_run_logging(log_file: Path) -> None:
     root.addHandler(sh)
 
 
+async def warmup_and_health_check(
+    *,
+    check_db: bool = False,
+    _logger: logging.Logger | None = None,
+) -> list[str]:
+    """Pre-flight: warm up GPU models + verify infrastructure.
+
+    Returns a list of issues (empty means all checks passed).
+    Raises nothing — callers decide whether to abort.
+    """
+    log = _logger or logging.getLogger(__name__)
+    issues: list[str] = []
+
+    # 1. Warm up embedding model (single-threaded, prevents concurrent first-load)
+    try:
+        from app.services.embedding import embedding_service
+        log.info("Health check: warming up embedding model...")
+        embedding_service.warmup()
+        log.info("Health check: embedding model OK")
+    except Exception as e:
+        issues.append(f"embedding warmup failed: {e}")
+        log.error("Health check FAIL: embedding — %s", e)
+
+    # 2. Warm up reranker model
+    try:
+        from app.services.reranker import reranker_service
+        log.info("Health check: warming up reranker model...")
+        reranker_service.warmup()
+        log.info("Health check: reranker model OK")
+    except Exception as e:
+        issues.append(f"reranker warmup failed: {e}")
+        log.error("Health check FAIL: reranker — %s", e)
+
+    # 3. Milvus collection has data
+    try:
+        from app.services.embedding import embedding_service
+        from app.services.milvus_client import milvus_service
+        test_out = embedding_service.encode_query("health check")
+        results = milvus_service.hybrid_search(
+            query_vector=test_out.dense.tolist(),
+            sparse_vector=test_out.sparse[0],
+            top_k=1,
+        )
+        if not results:
+            issues.append("Milvus collection is empty (0 chunks)")
+            log.error("Health check FAIL: Milvus collection empty")
+        else:
+            log.info("Health check: Milvus collection has data")
+    except Exception as e:
+        issues.append(f"Milvus health check failed: {e}")
+        log.error("Health check FAIL: Milvus — %s", e)
+
+    # 4. knowledge_concepts > 0 (only needed for agent eval)
+    if check_db:
+        try:
+            from app.db.database import async_session_factory
+            from app.agent.tools.search_concepts import search_concepts
+            async with async_session_factory() as session:
+                concepts = await search_concepts(session, scope=None, keyword=None)
+                if not concepts:
+                    issues.append("knowledge_concepts table is empty")
+                    log.error("Health check FAIL: knowledge_concepts empty")
+                else:
+                    log.info("Health check: %d knowledge concepts found", len(concepts))
+        except Exception as e:
+            issues.append(f"knowledge_concepts check failed: {e}")
+            log.error("Health check FAIL: knowledge_concepts — %s", e)
+
+    if issues:
+        log.warning("Health check completed with %d issue(s)", len(issues))
+    else:
+        log.info("Health check: ALL PASSED")
+    return issues
+
+
 def safe_p50(values: list[float]) -> float:
     """Return the median value, or 0 for empty lists."""
     if not values:

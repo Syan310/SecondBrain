@@ -62,6 +62,7 @@ def _make_rerank_results(
 # ── Tests ────────────────────────────────────────────────────
 
 
+@patch.object(_rag_mod.settings, "enable_reranker", True)
 @patch.object(_rag_mod, "reranker_service")
 @patch.object(_rag_mod, "milvus_service")
 @patch.object(_rag_mod, "embedding_service")
@@ -105,6 +106,7 @@ def test_rag_search_basic(mock_embed, mock_milvus, mock_reranker):
     assert mock_reranker.rerank.call_args.kwargs["top_n"] == 5
 
 
+@patch.object(_rag_mod.settings, "enable_reranker", True)
 @patch.object(_rag_mod, "reranker_service")
 @patch.object(_rag_mod, "milvus_service")
 @patch.object(_rag_mod, "embedding_service")
@@ -122,6 +124,7 @@ def test_rag_search_empty_results(mock_embed, mock_milvus, mock_reranker):
     mock_reranker.rerank.assert_not_called()
 
 
+@patch.object(_rag_mod.settings, "enable_reranker", True)
 @patch.object(_rag_mod, "reranker_service")
 @patch.object(_rag_mod, "milvus_service")
 @patch.object(_rag_mod, "embedding_service")
@@ -145,6 +148,7 @@ def test_rag_search_fewer_candidates_than_topk(mock_embed, mock_milvus, mock_rer
     assert all(isinstance(r, RankedChunk) for r in results)
 
 
+@patch.object(_rag_mod.settings, "enable_reranker", True)
 @patch.object(_rag_mod, "reranker_service")
 @patch.object(_rag_mod, "milvus_service")
 @patch.object(_rag_mod, "embedding_service")
@@ -178,6 +182,7 @@ def test_rag_search_metadata_preserved(mock_embed, mock_milvus, mock_reranker):
     assert results[1].rerank_score == 0.80
 
 
+@patch.object(_rag_mod.settings, "enable_reranker", True)
 @patch.object(_rag_mod, "reranker_service")
 @patch.object(_rag_mod, "milvus_service")
 @patch.object(_rag_mod, "embedding_service")
@@ -196,3 +201,25 @@ def test_rag_search_with_filter_expr(mock_embed, mock_milvus, mock_reranker):
 
     call_kwargs = mock_milvus.hybrid_search.call_args.kwargs
     assert call_kwargs["expr"] == 'source_doc == "notes.pdf"'
+
+
+@patch.object(_rag_mod.settings, "enable_reranker", False)
+@patch.object(_rag_mod, "reranker_service")
+@patch.object(_rag_mod, "milvus_service")
+@patch.object(_rag_mod, "embedding_service")
+def test_rag_search_without_reranker_keeps_top_k(mock_embed, mock_milvus, mock_reranker):
+    """When reranker is disabled, return Milvus top_k directly without changing count."""
+    mock_embed.encode_query.return_value = EmbeddingOutput(
+        dense=np.random.randn(1024).astype(np.float32),
+        sparse=[{1: 0.5}],
+    )
+
+    candidates = _make_search_results(6)
+    mock_milvus.hybrid_search.return_value = candidates
+
+    results = rag_search("test", top_k=2)
+
+    assert len(results) == 2
+    assert [r.child_id for r in results] == ["child_0", "child_1"]
+    assert [r.rerank_score for r in results] == [candidates[0].score, candidates[1].score]
+    mock_reranker.rerank.assert_not_called()

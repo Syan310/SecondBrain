@@ -1,0 +1,52 @@
+[
+  {
+    "topic": "Self-Attention 机制",
+    "query": "关于 Self-Attention 机制，帮我出几道选择题",
+    "source_doc": "Transformer 复习.md"
+  },
+  {
+    "topic": "Multi-Head Attention",
+    "query": "考考我 Multi-Head Attention 的知识",
+    "source_doc": "Transformer 复习.md"
+  },
+  {
+    "topic": "Positional Encoding",
+    "query": "出几道关于位置编码的题",
+    "source_doc": "Transformer 复习.md"
+  },
+  {
+    "topic": "Layer Normalization",
+    "query": "帮我出关于 Layer Normalization 的选择题",
+    "source_doc": "Transformer 复习.md"
+  },
+  {
+    "topic": "Feed Forward Network",
+    "query": "考考我 FFN 相关的知识点",
+    "source_doc": "Transformer 复习.md"
+  },
+  {
+    "topic": "RAG 架构与流程",
+    "query": "出几道关于 RAG 架构的选择题",
+    "source_doc": "RAG复习.md"
+  },
+  {
+    "topic": "向量检索与混合搜索",
+    "query": "考考我向量检索和混合搜索的知识",
+    "source_doc": "RAG复习.md"
+  },
+  {
+    "topic": "Embedding 模型",
+    "query": "帮我出关于 Embedding 模型的题",
+    "source_doc": "RAG复习.md"
+  },
+  {
+    "topic": "Agent 规划与工具调用",
+    "query": "出几道 Agent 规划和工具调用的选择题",
+    "source_doc": "Agent 复习.md"
+  },
+  {
+    "topic": "ReAct 与 Reflexion 框架",
+    "query": "考考我 ReAct 和 Reflexion 框架的区别",
+    "source_doc": "Agent 复习.md"
+  }
+]

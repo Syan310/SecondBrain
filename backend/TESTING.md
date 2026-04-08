@@ -1,5 +1,52 @@
 # Testing Log
 
+## 2026-04-07 — reranker default switched to off
+
+- Scope:
+  - `app/config.py`
+  - `tests/test_rag_search.py`
+  - `docs/tools.md`
+  - `TASKS.md`
+
+- Commands:
+  - `PYTHONDONTWRITEBYTECODE=1 /home/syan/miniconda3/envs/llm/bin/python -m pytest -q backend/tests/test_rag_search.py`
+
+- Results:
+  - `backend/tests/test_rag_search.py`: `6 passed`
+
+- Problems found:
+  - Existing `rag_search` tests assumed reranker was enabled by default, so changing the default config caused two test failures even though runtime behavior was correct.
+
+- Fixes applied:
+  - Changed `enable_reranker` default from `True` to `False`.
+  - Updated reranker-on unit tests to patch `settings.enable_reranker = True` explicitly, so each test now declares the mode it depends on.
+  - Updated tool docs and task tracking to reflect the new default strategy.
+
+## 2026-04-07 — rag_search supports disabling reranker without changing final chunk count
+
+- Scope:
+  - `app/config.py`
+  - `app/agent/tools/rag_search.py`
+  - `tests/test_rag_search.py`
+  - `docs/tools.md`
+
+- Commands:
+  - `PYTHONDONTWRITEBYTECODE=1 /home/syan/miniconda3/envs/llm/bin/python - <<'PY' ... compile(...) ... PY`
+  - `/home/syan/miniconda3/envs/llm/bin/python -m pytest -q backend/tests/test_rag_search.py`
+
+- Results:
+  - Syntax check passed for modified config/tool/test files.
+  - `backend/tests/test_rag_search.py`: `6 passed`
+
+- Problems found:
+  - The default system `python3` environment did not include `pytest`.
+  - Writing `.pyc` files under `backend/app/__pycache__` hit a local permission issue, so syntax validation was run with `PYTHONDONTWRITEBYTECODE=1`.
+
+- Fixes applied:
+  - Added `enable_reranker` config to gate reranker usage explicitly.
+  - Updated `rag_search` so disabling reranker returns Milvus original ranking capped at `top_k`, keeping the downstream LLM context size unchanged for fair A/B evaluation.
+  - Added a regression test to verify reranker-off mode does not call the reranker and still returns exactly `top_k` chunks.
+
 ## 2026-04-06 — Judge switched to Kimi K2.5 non-thinking mode
 
 - Scope:

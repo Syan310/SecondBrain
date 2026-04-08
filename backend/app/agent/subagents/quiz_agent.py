@@ -24,6 +24,7 @@ from app.agent.tools.rag_search import rag_search as _rag_search_sync
 from app.agent.tools.read_mastery import read_mastery as _read_mastery
 from app.agent.tools.search_concepts import search_concepts as _search_concepts
 from app.services.llm_client import llm_client
+from app.services.tracing import observe
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,7 @@ GENERATE_QUESTIONS_PROMPT = """\
 # ── Topic selection ─────────────────────────────────────────
 
 
+@observe(name="quiz_select_topics")
 async def _select_topics_by_mastery(
     session: AsyncSession,
     user_id: str,
@@ -115,6 +117,7 @@ async def _select_topics_by_mastery(
 # ── RAG retrieval for question material ─────────────────────
 
 
+@observe(name="quiz_retrieve")
 async def _retrieve_question_material(topics: list[str]) -> dict[str, str]:
     """Retrieve knowledge content for each topic via RAG search.
 
@@ -150,6 +153,7 @@ def _parse_json(text: str) -> list | dict:
     return json.loads(text)
 
 
+@observe(name="quiz_generate")
 async def _generate_questions(
     materials: dict[str, str],
     num_questions: int = 2,
@@ -184,16 +188,12 @@ async def _generate_questions(
         logger.error("Failed to parse quiz questions: %s", e)
         return []
 
+    # Attach all retrieval materials to every question — avoids topic-matching
+    # drift where LLM-generated topic doesn't match retrieval key.
+    all_material = list(materials.values())
+
     questions = []
     for q in raw_questions:
-        topic = q.get("topic", "")
-        # Find source chunks for this topic
-        source_chunks = []
-        for t, content in materials.items():
-            if t == topic or topic in content:
-                source_chunks.append(content)
-                break
-
         questions.append(
             QuizQuestion(
                 topic=q.get("topic", ""),
@@ -201,7 +201,7 @@ async def _generate_questions(
                 choices=q.get("choices", []),
                 correct_answer=q.get("correct_answer", ""),
                 explanation=q.get("explanation", ""),
-                source_chunks=source_chunks,
+                source_chunks=all_material,
             )
         )
 
@@ -211,6 +211,7 @@ async def _generate_questions(
 # ── Main entry point ────────────────────────────────────────
 
 
+@observe(name="quiz_agent")
 async def run_quiz_agent(
     session: AsyncSession,
     user_id: str,

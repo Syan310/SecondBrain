@@ -43,6 +43,7 @@
 - **前端**: React + Vite + TypeScript + Tailwind CSS v4
 - **PDF 解析**: `magic-pdf`（import 名 `magic_pdf`），与 PyPI 包 `mineru` 2.x 无模块级兼容；后端依赖以 `requirements.txt` 为准
 - **部署**: Docker Compose (etcd + minio + milvus + backend)
+- **本地联调端口**: Docker Compose 后端默认暴露到 `localhost:18080`；前端 Vite dev proxy 需指向该端口，若后端本地直跑则改为 `localhost:8000`
 
 ## 文档索引
 

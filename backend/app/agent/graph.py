@@ -3,12 +3,17 @@
 Graph structure:
   START → memory → plan → route_after_plan
     ├── no_steps → empty_response → END
-    └── has_steps → execute_step → replan_node → route
-                        ▲                          ├── execute → ──┘
-                        └──────────────────────────
-                                                   └── finish → route_to_output
-                                                                  ├── single → passthrough → END
-                                                                  └── multi  → synthesize → END
+    └── has_steps → execute_batch → route_after_execute
+                        ▲              ├── single-step → passthrough → END
+                        │              └── multi-step → replan_node → route
+                        │                                 ├── execute → ──┘
+                        └─────────────────────────────────
+                                                          └── finish → route_to_output
+                                                                         ├── single → passthrough → END
+                                                                         └── multi  → synthesize → END
+
+execute_batch: concurrently dispatches all steps whose dependencies are
+satisfied (asyncio.gather), reducing total latency for parallel plans.
 
 Usage:
     from app.agent.graph import build_graph
@@ -30,17 +35,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.state import OverallState
 from app.agent.nodes.orchestrator import (
     plan_node,
-    execute_step,
+    execute_batch,
     replan_node,
     synthesize_node,
     passthrough_node,
     route_after_plan,
+    route_after_execute,
     route_after_replan,
     route_to_output,
     build_synthesize_messages,
 )
 from app.agent.nodes.memory_manager import load_memory_context, save_conversation
 from app.services.llm_client import llm_client
+from app.services.tracing import observe, langfuse_client, get_callback_handler
 
 logger = logging.getLogger(__name__)
 
@@ -71,16 +78,16 @@ def build_graph(session: AsyncSession) -> StateGraph:
         )
         return {"memory_context": memory_context}
 
-    # Wrap execute_step to bind session
-    async def _execute_step(state: OverallState) -> dict:
-        return await execute_step(state, session)
+    # Wrap execute_batch to bind session
+    async def _execute_batch(state: OverallState) -> dict:
+        return await execute_batch(state, session)
 
     graph = StateGraph(OverallState)
 
     # Add nodes
     graph.add_node("memory", _memory_node)
     graph.add_node("plan", plan_node)
-    graph.add_node("execute_step", _execute_step)
+    graph.add_node("execute_batch", _execute_batch)
     graph.add_node("replan", replan_node)
     graph.add_node("synthesize", synthesize_node)
     graph.add_node("passthrough", passthrough_node)
@@ -96,12 +103,19 @@ def build_graph(session: AsyncSession) -> StateGraph:
         route_after_plan,
         {
             "no_steps": "empty_response",
-            "has_steps": "execute_step",
+            "has_steps": "execute_batch",
         },
     )
 
-    # execute_step → replan (always)
-    graph.add_edge("execute_step", "replan")
+    # execute_batch → route: single-step skips replan, multi-step goes to replan
+    graph.add_conditional_edges(
+        "execute_batch",
+        route_after_execute,
+        {
+            "direct_output": "passthrough",
+            "needs_replan": "replan",
+        },
+    )
 
     # replan → route (3-way: execute / single / multi)
     def _replan_routing(state: OverallState) -> str:
@@ -115,7 +129,7 @@ def build_graph(session: AsyncSession) -> StateGraph:
         "replan",
         _replan_routing,
         {
-            "execute": "execute_step",
+            "execute": "execute_batch",
             "single": "passthrough",
             "multi": "synthesize",
         },
@@ -129,6 +143,7 @@ def build_graph(session: AsyncSession) -> StateGraph:
     return graph.compile()
 
 
+@observe(name="orchestrator")
 async def run_orchestrator(
     user_query: str,
     user_id: str,
@@ -148,13 +163,21 @@ async def run_orchestrator(
           - final_answer (str): The response to show the user.
           - step_results (list[dict]): Individual step results for debugging.
     """
+    langfuse_client.update_current_span(
+        user_id=user_id,
+        session_id=session_id,
+        input=user_query,
+    )
+
     graph = build_graph(session)
 
-    result = await graph.ainvoke({
-        "user_query": user_query,
-        "user_id": user_id,
-        "messages": [],
-    })
+    handler = get_callback_handler()
+    invoke_config = {"callbacks": [handler]} if handler else {}
+
+    result = await graph.ainvoke(
+        {"user_query": user_query, "user_id": user_id, "messages": []},
+        config=invoke_config,
+    )
 
     final_answer = result.get("final_answer", "")
 
@@ -170,6 +193,9 @@ async def run_orchestrator(
     return {
         "final_answer": final_answer,
         "step_results": result.get("step_results", []),
+        "plan": result.get("plan", []),
+        "replan_count": result.get("replan_count", 0),
+        "replan_action": result.get("replan_action", ""),
     }
 
 
@@ -203,6 +229,8 @@ def _describe_step_start(step: dict, current: int, total: int) -> str:
 def _describe_step_done(step_result: dict) -> str:
     intent = step_result.get("intent")
     step = step_result.get("step")
+    if step_result.get("status") == "failed":
+        return f"第 {step} 步执行失败：{str(step_result.get('error', ''))[:80]}"
     if intent == "qa":
         return f"第 {step} 步已完成：问答结果已生成"
     if intent == "gap_analysis":
@@ -264,25 +292,65 @@ async def run_orchestrator_stream(
     )
 
     while True:
-        current_index = state.get("current_step_index", 0)
         plan = state.get("plan", [])
+        completed_steps = {r["step"] for r in state.get("step_results", [])}
+        remaining = [s for s in plan if s["step"] not in completed_steps]
 
-        if current_index < len(plan):
-            current_step = plan[current_index]
-            yield _make_status_event(
-                "execute",
-                _describe_step_start(current_step, current_index + 1, len(plan)),
-                step=current_step.get("step"),
-                intent=current_step.get("intent"),
+        if remaining:
+            # Find executable batch (deps satisfied)
+            executable = [
+                s for s in remaining
+                if all(d in completed_steps for d in s.get("depends_on", []))
+            ]
+            if executable:
+                if len(executable) == 1:
+                    step = executable[0]
+                    yield _make_status_event(
+                        "execute",
+                        _describe_step_start(step, len(completed_steps) + 1, len(plan)),
+                        step=step.get("step"),
+                        intent=step.get("intent"),
+                    )
+                else:
+                    step_nums = [s["step"] for s in executable]
+                    yield _make_status_event(
+                        "execute",
+                        f"正在并发执行第 {', '.join(map(str, step_nums))} 步（共 {len(executable)} 个并行任务）",
+                    )
+
+                prev_count = len(state.get("step_results", []))
+                state.update(await execute_batch(state, session))
+                new_results = state.get("step_results", [])[prev_count:]
+
+                for r in new_results:
+                    yield _make_status_event(
+                        "execute",
+                        _describe_step_done(r),
+                        step=r.get("step"),
+                        intent=r.get("intent"),
+                    )
+
+        # Skip replan for single-step plans — go directly to output
+        if len(plan) <= 1:
+            final_answer = (await passthrough_node(state))["final_answer"]
+            yield _make_status_event("output", "正在输出最终回答...")
+            async for chunk in _stream_text_chunks(final_answer):
+                yield {"type": "token", "text": chunk}
+
+            await save_conversation(
+                session=session,
+                user_id=user_id,
+                session_id=session_id,
+                user_message=user_query,
+                assistant_message=final_answer,
             )
-            state.update(await execute_step(state, session))
-            latest_step = state.get("step_results", [])[-1]
-            yield _make_status_event(
-                "execute",
-                _describe_step_done(latest_step),
-                step=latest_step.get("step"),
-                intent=latest_step.get("intent"),
-            )
+
+            yield {
+                "type": "final",
+                "answer": final_answer,
+                "step_results": state.get("step_results", []),
+            }
+            return
 
         yield _make_status_event("replan", "正在检查是否需要调整后续步骤...")
         replan_update = await replan_node(state)
@@ -292,8 +360,10 @@ async def run_orchestrator_stream(
         if action == "continue":
             yield _make_status_event("replan", "后续步骤无需调整，继续执行")
         elif action == "revise":
-            remaining = max(len(state.get("plan", [])) - state.get("current_step_index", 0), 0)
-            yield _make_status_event("replan", f"已调整执行计划，剩余 {remaining} 步待执行")
+            updated_plan = state.get("plan", [])
+            updated_completed = {r["step"] for r in state.get("step_results", [])}
+            remaining_count = len([s for s in updated_plan if s["step"] not in updated_completed])
+            yield _make_status_event("replan", f"已调整执行计划，剩余 {remaining_count} 步待执行")
         else:
             yield _make_status_event("replan", "执行阶段完成，正在整理最终回答")
 

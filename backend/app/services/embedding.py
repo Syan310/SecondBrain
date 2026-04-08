@@ -7,6 +7,7 @@ Uses BGEM3FlagModel instead of SentenceTransformer to unlock sparse retrieval.
 """
 
 import logging
+import threading
 from dataclasses import dataclass
 from typing import Union
 
@@ -33,15 +34,22 @@ class EmbeddingService:
 
     def __init__(self) -> None:
         self._model: BGEM3FlagModel | None = None
+        self._lock = threading.Lock()
 
     def _load_model(self) -> BGEM3FlagModel:
         if self._model is None:
-            logger.info("Loading BGE-m3 model from %s ...", settings.embedding_model_path)
-            self._model = BGEM3FlagModel(
-                settings.embedding_model_path, use_fp16=True,
-            )
-            logger.info("BGE-m3 model loaded. dense_dim=%d, sparse=enabled", self.DIMENSION)
+            with self._lock:
+                if self._model is None:  # double-check after acquiring lock
+                    logger.info("Loading BGE-m3 model from %s ...", settings.embedding_model_path)
+                    self._model = BGEM3FlagModel(
+                        settings.embedding_model_path, use_fp16=True,
+                    )
+                    logger.info("BGE-m3 model loaded. dense_dim=%d, sparse=enabled", self.DIMENSION)
         return self._model
+
+    def warmup(self) -> None:
+        """Pre-load model single-threaded before concurrent access."""
+        self._load_model()
 
     # ── Full output (dense + sparse) ────────────────────────────
 

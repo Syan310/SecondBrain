@@ -25,10 +25,18 @@ class LLMClient:
 
     def _get_client(self) -> AsyncOpenAI:
         if self._client is None:
-            self._client = AsyncOpenAI(
-                api_key=settings.llm_api_key,
-                base_url=settings.llm_base_url,
-            )
+            if settings.langfuse_public_key and settings.langfuse_secret_key:
+                from langfuse.openai import AsyncOpenAI as TracedAsyncOpenAI
+
+                self._client = TracedAsyncOpenAI(
+                    api_key=settings.llm_api_key,
+                    base_url=settings.llm_base_url,
+                )
+            else:
+                self._client = AsyncOpenAI(
+                    api_key=settings.llm_api_key,
+                    base_url=settings.llm_base_url,
+                )
         return self._client
 
     async def chat(

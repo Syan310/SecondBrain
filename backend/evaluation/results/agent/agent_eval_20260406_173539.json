@@ -1,0 +1,889 @@
+{
+  "meta": {
+    "run_log_file": "/home/syan/SecondBrian/backend/evaluation/results/agentlog/eval_agent_20260406_173539.log",
+    "timezone": "America/Los_Angeles",
+    "started_at": "2026-04-06T17:35:39.207847-07:00",
+    "finished_at": "2026-04-06T18:40:43.229683-07:00",
+    "profile": "full",
+    "output_file": "/home/syan/SecondBrian/backend/evaluation/results/agent/agent_eval_20260406_173539.json"
+  },
+  "intent_classification": {
+    "metric_scope": "single-intent plan_node accuracy",
+    "subset": {
+      "intent_limit": null,
+      "intent_selected": 30,
+      "intent_group_counts": {
+        "qa": 10,
+        "quiz": 10,
+        "gap_analysis": 10
+      }
+    },
+    "accuracy": 0.9666666666666667,
+    "correct": 29,
+    "total": 30,
+    "error_count": 0,
+    "details": [
+      {
+        "query": "Transformer里的自注意力机制是怎么算的？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "帮我出几道题考考我，看看我最近复习得咋样。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "帮我看看我这些复习材料里，哪些地方最容易考或者最容易出错？",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "RAG架构中检索器和生成器是如何协同工作的？能详细讲讲向量检索和重排序的区别吗？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请基于《Transformer 复习.md》的内容，生成一套包含5道选择题和3道简答题的测试卷。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请分析《Transformer 复习.md》中的知识体系，指出初学者通常容易忽略的薄弱环节。",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请阐述多智能体系统中基于角色的任务分配机制及其优缺点。",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "针对RAG这块儿，给我出几个面试题练练手呗。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "基于全部提供的文档，请评估当前知识覆盖的完整性，并列出潜在的知识盲区。",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "位置编码在Transformer里到底起啥作用啊？不用它行不行？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请根据提供的复习文档，设计一份综合知识测验，涵盖核心概念与原理。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "RAG这部分我总觉得学得有点虚，能帮我挑出重点难点和容易踩坑的地方吗？",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "在工程实践中，Agent调用外部工具时常见的延迟和超时问题一般怎么解决？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "关于Agent的工程实践部分，能不能出几道场景题让我模拟一下？",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请针对《你不知道的Agent-原理架构与工程实践.md》进行深度剖析，找出工程落地阶段常见的认知盲区。",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "RAG的全称是什么？主要解决大模型的什么问题？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请依据《Agent 复习.md》生成一份随堂小测，重点考察记忆与规划模块。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "结合这几份文档，给我做个知识体检，看看我还有啥没掌握透的。",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请解释Transformer模型中多头注意力机制的数学表达及其并行计算优势。",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "随机抽10个知识点考考我，难度中等就行。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请对《Agent 复习.md》进行结构化拆解，识别出逻辑链条中最薄弱的关联节点。",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "Agent里的ReAct框架到底是个啥逻辑？能举个简单的例子说明下吗？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请结合RAG与Transformer的相关文档，生成一份交叉知识点的问答题测验。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "Transformer和RAG结合起来看的话，有哪些知识点是容易搞混或者遗漏的？帮我列一下。",
+        "expected": "gap_analysis",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": false,
+        "error": null
+      },
+      {
+        "query": "当RAG遇到检索内容与问题不相关或者存在知识冲突时，模型通常采用哪些策略来保证生成质量？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "就Agent的原理架构这块，给我整一套快速自测题，带答案解析的。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请综合评估所有复习文档，构建知识图谱并标注出当前内容中缺乏深度讲解或易产生误解的模块。",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "对比Plan-and-Execute与ReAct两种Agent架构，它们在任务规划与执行流程上有何本质差异？",
+        "expected": "qa",
+        "predicted": "qa",
+        "predicted_step_intents": [
+          "qa"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "请生成一份涵盖所有复习文档的阶段性考核试卷，题型不限。",
+        "expected": "quiz",
+        "predicted": "quiz",
+        "predicted_step_intents": [
+          "quiz"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      },
+      {
+        "query": "就Agent的原理这块，你觉得我复习的时候最容易在哪些概念上钻牛角尖或者理解不到位？",
+        "expected": "gap_analysis",
+        "predicted": "gap_analysis",
+        "predicted_step_intents": [
+          "gap_analysis"
+        ],
+        "plan_length": 1,
+        "correct": true,
+        "error": null
+      }
+    ]
+  },
+  "qa_e2e_task_success": {
+    "metric_scope": "isolated QA subset E2E + configured OpenAI judge",
+    "subset": {
+      "single_hop_limit": null,
+      "multi_hop_limit": null,
+      "single_hop_selected": 20,
+      "multi_hop_selected": 10,
+      "total_selected": 30,
+      "single_hop_group_counts": {
+        "Transformer 复习.md": 5,
+        "RAG复习.md": 5,
+        "你不知道的Agent-原理架构与工程实践.md": 5,
+        "Agent 复习.md": 5
+      },
+      "multi_hop_group_counts": {
+        "('RAG复习.md | RAG 分块（Chunking）/切块方法', 'RAG复习.md | 存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解')": 1,
+        "('你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销', '你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式')": 1,
+        "('你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/7. 多 Agent 组织', 'Agent 复习.md | Multi-Agent 通信方式/1. 共享 State（Shared State）')": 1,
+        "('RAG复习.md | RAG 分块（Chunking）/切块大小如何选择？', 'Agent 复习.md | Agent 评估体系/常用评估框架')": 1,
+        "('Transformer 复习.md | 2. Token Embedding', 'Transformer 复习.md | 8. Layer Normalization')": 1,
+        "('RAG复习.md | 向量数据库的 Metadata Filter/典型元数据字段', 'RAG复习.md | 存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解')": 1,
+        "('你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式', 'Agent 复习.md | Parallel Tool Call（并行工具调用）/优势与注意点')": 1,
+        "('Transformer 复习.md | 1. BPE 分词器', '你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销')": 1,
+        "('你不知道的Agent-原理架构与工程实践.md | 你不知道的 Agent：原理、架构与工程实践/7. 多 Agent 组织', 'Agent 复习.md | LangGraph 深入：State Reducer 机制/基本用法')": 1,
+        "('Transformer 复习.md | 6. Feed Forward Network（FFN）', 'RAG复习.md | RAG 分块（Chunking）/切块方法')": 1
+      }
+    },
+    "pass_rate_all": 0.36666666666666664,
+    "partial_rate_all": 0.0,
+    "fail_rate_all": 0.6,
+    "judge_error_rate": 0.03333333333333333,
+    "pass_rate_evaluated": 0.3793103448275862,
+    "partial_rate_evaluated": 0.0,
+    "fail_rate_evaluated": 0.6206896551724138,
+    "verdicts": {
+      "pass": 11,
+      "partial": 0,
+      "fail": 18,
+      "error": 1
+    },
+    "evaluated_total": 29,
+    "judge_error_total": 1,
+    "orchestrator_error_total": 18,
+    "latency_p50_ms": 86972.37794500143,
+    "latency_p95_ms": 115752.5858150002,
+    "latency_p50_ms_all": 120004.95058100023,
+    "latency_p95_ms_all": 120060.59212699984,
+    "total": 30,
+    "details": [
+      {
+        "sample_id": "qa_eval_001",
+        "question": "原始 Transformer 使用什么函数生成位置编码？这些编码在训练过程中是否参与梯度更新？",
+        "question_type": "factual",
+        "ground_truth": "使用正余弦函数生成，且不参与梯度更新。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120060.59212699984,
+        "user_id": "qa_eval_001_user",
+        "session_id": "qa_eval_001_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_002",
+        "question": "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为哪三个步骤？",
+        "question_type": "factual",
+        "ground_truth": "索引 → 检索 → 生成",
+        "answer": "根据检索到的文档内容，Naive RAG（朴素 RAG）架构的标准处理流程固定为以下三个步骤：\n\n1. **索引**：文档解析 → 分块 → Embedding → 存入向量数据库\n2. **检索**：用户 Query 向量化后做相似度检索，取 Top-K\n3. **生成**：将检索结果拼入 Prompt，送入 LLM 生成回答",
+        "verdict": "pass",
+        "reason": "AI助手的回答准确识别了Naive RAG的三个标准步骤：索引、检索、生成，与参考答案完全一致，且对每个步骤进行了合理的展开说明，信息完整无遗漏。",
+        "latency_ms": 54857.007107000754,
+        "user_id": "qa_eval_002_user",
+        "session_id": "qa_eval_002_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_003",
+        "question": "在 Agent 的记忆系统设计中，MEMORY.md 对应的是哪一种记忆类型？",
+        "question_type": "factual",
+        "ground_truth": "语义记忆。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120029.06789500048,
+        "user_id": "qa_eval_003_user",
+        "session_id": "qa_eval_003_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_004",
+        "question": "LangGraph 的 Checkpointer 机制主要提供哪四种核心能力？",
+        "question_type": "factual",
+        "ground_truth": "跨会话记忆、Human-in-the-Loop（人工介入/暂停确认）、错误恢复、时间旅行（Time Travel）。",
+        "answer": "根据检索到的文档，LangGraph 的 Checkpointer 机制主要提供以下四种核心能力：\n\n1. **跨会话记忆**：在同一用户下次对话时恢复上次的 State，无需重新开始。\n2. **Human-in-the-Loop**：在执行到某一步时暂停，等待人工确认后再继续执行。\n3. **错误恢复**：当发生错误时，可以从最后一个成功的 Checkpoint 重新执行，而无需从头开始。\n4. **时间旅行（Time Travel）**：允许回退到历史某个 State，并从中重新分叉执行。",
+        "verdict": "pass",
+        "reason": "AI助手的回答准确、完整地列出了LangGraph Checkpointer机制的四种核心能力，与参考答案完全一致，且描述清晰准确。",
+        "latency_ms": 55569.60729599996,
+        "user_id": "qa_eval_004_user",
+        "session_id": "qa_eval_004_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_005",
+        "question": "为什么多头注意力（Multi-Head Attention）机制在增加 head 数量的同时不会增加整体计算量？",
+        "question_type": "conceptual",
+        "ground_truth": "因为整个 d_model 维度被按 head 数量均分，每个 head 仅在低维子空间中独立计算注意力，最后将所有 head 的输出拼接回原始维度，因此总计算量保持不变。",
+        "answer": "多头注意力机制通过**维度均分**策略，在增加 head 数量的同时保持整体计算量不变。\n\n1.  **原理**：将模型总维度 $d_{model}$ 按 head 数量 $h$ 进行均分，使得每个 head 的维度降为 $d_k = d_{model} / h$。\n2.  **复杂度分析**：\n    *   **线性投影**：单头注意力的权重矩阵大小为 $d_{model} \\times d_{model}$，计算量正比于 $d_{model}^2$。多头注意力包含 $h$ 个权重矩阵，每个大小为 $d_{model} \\times d_k$，总计算量正比于 $h \\cdot (d_{model} \\cdot d_k) = h \\cdot d_{model} \\cdot (d_{model}/h) = d_{model}^2$。\n    *   **注意力计算**：单头复杂度为 $O(n^2 d_{model})$。多头总复杂度为 $h \\cdot O(n^2 d_k) = h \\cdot O(n^2 d_{model}/h) = O(n^2 d_{model})$。\n\n**结论**：增加 head 数量带来的并行计算开销被每个 head 维度的降低所抵消，因此整体计算量与单头注意力保持一致。",
+        "verdict": "pass",
+        "reason": "回答准确完整，从维度均分原理和复杂度分析两个角度解释了多头注意力不增加计算量的原因，与参考答案核心观点一致，且补充了详细的数学推导。",
+        "latency_ms": 115752.5858150002,
+        "user_id": "qa_eval_005_user",
+        "session_id": "qa_eval_005_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_006",
+        "question": "为什么 E5 系列模型不能混用 query 和 document 的编码策略？",
+        "question_type": "conceptual",
+        "ground_truth": "因为这类模型在训练时使用了不对称训练（asymmetric training），混用会导致向量空间不对齐，相似度计算失准。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120071.02197800123,
+        "user_id": "qa_eval_006_user",
+        "session_id": "qa_eval_006_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_007",
+        "question": "根据文档，Workflow 和 Agent 的核心区别是什么？",
+        "question_type": "comparison",
+        "ground_truth": "核心区别在于控制权掌握在谁手里。Workflow 的执行路径由代码预先写死，而 Agent 的下一步由 LLM 动态决定。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120019.87039499909,
+        "user_id": "qa_eval_007_user",
+        "session_id": "qa_eval_007_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_008",
+        "question": "相比原始的 ReAct 框架，Reflexion 框架的核心优势是什么？",
+        "question_type": "conceptual",
+        "ground_truth": "对中间结果的质量做显式检查，允许 Agent 从失败中学习并在同一任务内自我纠错。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120003.77324300098,
+        "user_id": "qa_eval_008_user",
+        "session_id": "qa_eval_008_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_009",
+        "question": "Pre-Norm 和 Post-Norm 在 Layer Normalization 的放置位置上有何区别？为什么现代大模型普遍采用 Pre-Norm？",
+        "question_type": "comparison",
+        "ground_truth": "Post-Norm 将 LayerNorm 放在残差连接之后，而 Pre-Norm 将其放在残差连接之前。现代模型采用 Pre-Norm 是因为它能保持残差路径通畅，使梯度回传更稳定，训练更容易收敛。",
+        "answer": "Pre-Norm 与 Post-Norm 的核心区别在于 LayerNorm 在残差结构中的位置：**Post-Norm** 将归一化置于残差相加**之后**，对融合后的输出进行缩放；**Pre-Norm** 则将其置于子层（Attention/FFN）**之前**，先归一化输入再计算，残差路径保持直接相加。\n\n现代大模型普遍采用 Pre-Norm 的原因在于：\n1. **梯度传播更稳定**：Pre-Norm 保留了恒等残差路径的完整性，避免了 Post-Norm 对残差路径的梯度缩放，有效防止训练初期的梯度消失或爆炸。\n2. **优化更顺畅**：通畅的残差连接使深层网络梯度回传更高效，模型更易收敛，且通常无需依赖 Warm-up 预热策略，大幅提升了大规模训练的稳定性与效率。",
+        "verdict": "pass",
+        "reason": "回答准确区分了Pre-Norm和Post-Norm的位置差异（残差前vs残差后），并正确解释了Pre-Norm的优势：保持残差路径通畅、梯度传播稳定、训练易收敛。关键信息与参考答案一致，表述完整清晰。",
+        "latency_ms": 103057.70084100004,
+        "user_id": "qa_eval_009_user",
+        "session_id": "qa_eval_009_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_010",
+        "question": "OpenAI 的 text-embedding 系列模型与 E5 系列模型在处理输入前缀时有什么主要区别？",
+        "question_type": "comparison",
+        "ground_truth": "OpenAI 的 text-embedding 系列不需要加前缀，对称使用即可；而 E5 系列需要分别为 query 添加 'query: ' 前缀，为 document 添加 'passage: ' 前缀。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120012.20505400124,
+        "user_id": "qa_eval_010_user",
+        "session_id": "qa_eval_010_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_011",
+        "question": "为什么在上下文分层管理中强调“别把确定性逻辑放进上下文”？正确的处理方式是什么？",
+        "question_type": "conceptual",
+        "ground_truth": "因为将确定性逻辑放入上下文会降低信息密度，使模型难以注意到真正有用的部分。正确的处理方式是将其交给外部系统（如 Hooks、代码规则或工具约束）来处理，而不是让模型反复读取。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120015.29293699969,
+        "user_id": "qa_eval_011_user",
+        "session_id": "qa_eval_011_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_012",
+        "question": "在 LangGraph 中实现 Function Call 时，为什么推荐使用“独立 Tool 节点”而非“共享 Tool 节点”？",
+        "question_type": "comparison",
+        "ground_truth": "独立 Tool 节点逻辑清晰且维护简单；而共享 Tool 节点需要额外编写路由逻辑来判断工具归属并正确返回结果，实现复杂度更高，因此一般不推荐。",
+        "answer": "在 LangGraph 中实现 Function Call 时，推荐使用**独立 Tool 节点**的核心原因如下：\n\n1. **架构清晰，维护简单**：采用 1:1 的 Agent-Tool 映射，每个 Sub-Agent 配备专属节点。职责单一，图拓扑直观，无需处理跨节点状态共享。\n2. **消除复杂路由机制**：共享节点需依赖条件边编写动态路由逻辑，以识别工具归属并将结果精准回传至对应 Agent。该机制显著增加实现复杂度，且极易引发路由错配或状态混乱。\n\n综上，独立 Tool 节点通过固化调用链路、规避动态路由判断，以最低的架构成本实现了高稳定性与可维护性，是 LangGraph 中的最佳实践。",
+        "verdict": "error",
+        "reason": "judge_exception: RateLimitError: Error code: 429 - {'error': {'message': 'The engine is currently overloaded, please try again later', 'type': 'engine_overloaded_error'}}",
+        "latency_ms": 106281.44742699988,
+        "user_id": "qa_eval_012_user",
+        "session_id": "qa_eval_012_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": true,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_013",
+        "question": "在训练用于文本生成的 Decoder 模型时，为了防止模型“偷看答案”，应在注意力分数矩阵的哪个具体区域填充 -∞？这属于哪种 Mask 机制？",
+        "question_type": "application",
+        "ground_truth": "应在注意力分数矩阵（Q·Kᵀ 之后、Softmax 之前）的右上三角区域填充 -∞。这属于 Causal Mask（因果掩码）机制。",
+        "answer": "根据检索到的文档内容：\n\n1.  **Mask 机制名称**：这属于 **Causal Mask**（因果掩码），仅用于 Decoder。\n2.  **填充区域**：应在注意力分数矩阵（Q·Kᵀ 之后、Softmax 之前）的**右上三角**区域填充 **-∞**。\n\n这样做的目的是确保当前 token 只能看到自身及之前已生成的 token，无法看到未来的 token，从而防止模型在训练时“偷看答案”。",
+        "verdict": "pass",
+        "reason": "回答准确完整，正确指出了应在注意力分数矩阵的右上三角区域填充-∞，并正确识别了Causal Mask（因果掩码）机制，关键信息无遗漏。",
+        "latency_ms": 90313.36399400061,
+        "user_id": "qa_eval_013_user",
+        "session_id": "qa_eval_013_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_014",
+        "question": "在实际工程中，如果缺乏历史数据来评估 RAG 系统，文档推荐的最常用构建测试集方案是什么？",
+        "question_type": "application",
+        "ground_truth": "利用 LLM 自动生成测试集，即直接让 LLM 从已有文档中生成问题-答案对。",
+        "answer": "业界文档推荐的最常用方案是**利用 LLM 自动生成测试集**。\n\n具体流程为：设计 Prompt 让 LLM 阅读现有文档片段（Chunk），从中生成具有代表性的“问题-答案”对（QA Pairs）。这种方法能有效解决冷启动阶段缺乏真实交互数据的问题，生成的测试集可直接用于初期评估分块质量和检索准确度。\n\n此外，建议辅以**少量人工标注**（20-50 对）来校准自动评估的可靠性，或结合**A/B 测试**对比不同分块策略的效果。",
+        "verdict": "pass",
+        "reason": "回答准确且完整地回应了用户问题，明确指出最常用的方案是利用LLM自动生成测试集，并补充了具体流程和额外建议，核心内容与参考答案一致。",
+        "latency_ms": 89117.79770199973,
+        "user_id": "qa_eval_014_user",
+        "session_id": "qa_eval_014_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_015",
+        "question": "根据 Harness 的关键结论，若要让 Agent 在开发任务中发挥最大效能，团队应如何调整任务属性并设定验收标准？",
+        "question_type": "application",
+        "ground_truth": "应将任务推进到“目标明确、结果可以自动验证”的右上角区域。验收标准应设定为机器可执行的判断标准，以替代人工审查，从而突破吞吐量天花板。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120007.08731799932,
+        "user_id": "qa_eval_015_user",
+        "session_id": "qa_eval_015_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_016",
+        "question": "当 Agent 运行出现“上下文爆炸（Context Overflow）”问题时，文档推荐了哪些具体解法？",
+        "question_type": "application",
+        "ground_truth": "使用滑动窗口或摘要压缩策略；将中间结果存入长期记忆而非全部保留在上下文中。",
+        "answer": "文档推荐的解法主要包括：\n\n1.  **历史管理**：采用滑动窗口或摘要压缩策略控制消息长度；将中间结果存入长期记忆，避免全量保留在上下文中。\n2.  **动态上下文发现**：工具结果写入文件供 Agent 按需读取；压缩时将完整历史存为文件并在摘要中引用路径，实现可追溯的有损压缩。\n3.  **监控机制**：监控 Token 用量，超阈值自动触发处理。\n4.  **结构优化**：知识库导致提示过长时，将知识移至 Skills；实施上下文分层管理。",
+        "verdict": "pass",
+        "reason": "回答准确涵盖了参考答案中的两个核心解法（滑动窗口/摘要压缩策略、中间结果存入长期记忆），并补充了文档中其他相关优化措施（动态上下文发现、监控机制、结构优化），内容完整且准确。",
+        "latency_ms": 86972.37794500143,
+        "user_id": "qa_eval_016_user",
+        "session_id": "qa_eval_016_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_017",
+        "question": "Feed Forward Network (FFN) 在处理数据时，其内部维度的标准变化流程是怎样的？",
+        "question_type": "factual",
+        "ground_truth": "先将 d_model 维升维到高维（通常为 4 × d_model），在高维空间应用非线性激活函数后，再降维投射回 d_model 维。",
+        "answer": "Transformer 中 Feed Forward Network (FFN) 的内部维度标准变化流程如下：\n\n1.  **输入维度**：接收来自多头注意力层的输出，维度为 **$d_{model}$**。\n2.  **升维**：通过线性变换将维度投射到更高维度，通常为 **$4 \\times d_{model}$**。\n3.  **非线性激活**：在高维空间中应用 **ReLU** 或 **GELU** 激活函数，以学习更丰富的语义表示。\n4.  **降维**：再次通过线性变换将维度投射回 **$d_{model}$**。\n5.  **输出维度**：最终输出维度恢复为 **$d_{model}$**，以便与原始输入进行残差连接。",
+        "verdict": "pass",
+        "reason": "AI助手的回答准确、完整地描述了FFN的内部维度变化流程，包括升维到4×d_model、应用非线性激活、再降维回d_model的关键步骤，与参考答案完全一致，且补充了残差连接等合理细节。",
+        "latency_ms": 76715.7740019993,
+        "user_id": "qa_eval_017_user",
+        "session_id": "qa_eval_017_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_018",
+        "question": "在计算 RAGAS 的 Faithfulness（忠实度）指标时，具体的计算公式是什么？",
+        "question_type": "factual",
+        "ground_truth": "Faithfulness = 可被上下文支持的陈述数 / 总陈述数",
+        "answer": "根据检索到的文档，RAGAS 框架中 **Faithfulness（忠实度）** 的具体计算逻辑和公式如下：\n\n1. **拆解陈述**：将模型生成的回答拆解为若干原子性陈述（atomic claims）。\n2. **逐一验证**：对每个陈述，使用 LLM 判断其是否可以从检索到的上下文中推断出来（类似自然语言推断 NLI 的判断）。\n3. **计算公式**：\n   `Faithfulness = 可被上下文支持的陈述数 / 总陈述数`\n\n该指标主要用于衡量生成的回答是否忠实于检索到的上下文，以及是否存在幻觉。",
+        "verdict": "pass",
+        "reason": "AI助手的回答准确给出了Faithfulness的计算公式（可被上下文支持的陈述数 / 总陈述数），并补充了计算流程（拆解陈述、逐一验证），与参考答案一致且信息完整。",
+        "latency_ms": 57830.516574000285,
+        "user_id": "qa_eval_018_user",
+        "session_id": "qa_eval_018_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_019",
+        "question": "在工具设计的第三代演进中，采用“Programmatic Tool Calling（代码编排）”方式后，token 消耗大约能从多少降低到多少？",
+        "question_type": "factual",
+        "ground_truth": "token 消耗可从约 150,000 降到约 2,000。",
+        "answer": "在工具设计的第三代演进中，采用“Programmatic Tool Calling（代码编排）”方式后，token 消耗大约能从 **150,000** 降低到 **2,000**。\n\n该方式通过让模型用代码编排多个工具调用，使中间结果在执行环境中流转而不进入 LLM 上下文，从而大幅减少 token 消耗。",
+        "verdict": "pass",
+        "reason": "回答准确完整，token消耗数据（150,000降到2,000）与参考答案完全一致，并正确解释了降低原因。",
+        "latency_ms": 56840.68381700126,
+        "user_id": "qa_eval_019_user",
+        "session_id": "qa_eval_019_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_020",
+        "question": "根据文档中的正反示例对比，一个“好的工具描述”应当包含哪些关键要素？",
+        "question_type": "application",
+        "ground_truth": "应明确说明工具的具体用途、输入格式（如字符串）、输出内容（如返回的文档数量和字段），以及清晰的使用边界或限制条件（如仅适用于特定场景，不适用于其他场景）。",
+        "answer": "根据文档中的正反示例对比，一个“好的工具描述”应当包含以下关键要素：\n\n1.  **明确的功能与场景**：清晰说明工具的具体用途和适用场景（如“在公司内部知识库中搜索技术文档”）。\n2.  **输入参数说明**：指明需要输入的参数及其类型（如“输入关键词（字符串）”）。\n3.  **输出结果说明**：描述工具返回的具体内容和格式（如“返回最相关的 5 篇文档标题和摘要”）。\n4.  **适用边界与限制**：明确工具的能力范围和不适用的场景（如“仅用于查询内部文档，不适用于搜索互联网信息”）。",
+        "verdict": "pass",
+        "reason": "AI助手的回答完整涵盖了参考答案中的所有关键要素：具体用途、输入格式、输出内容、使用边界/限制条件。回答结构清晰，表述准确，无遗漏。",
+        "latency_ms": 56429.09162199976,
+        "user_id": "qa_eval_020_user",
+        "session_id": "qa_eval_020_session",
+        "orchestrator_failed": false,
+        "timeout_exceeded": false,
+        "judge_call_failed": false,
+        "judge_skipped": false
+      },
+      {
+        "sample_id": "qa_eval_021",
+        "question": "在RAG系统中，如果采用递归切分（Recursive Splitting）策略并设置重叠窗口，这对IVF索引检索时`nprobe`参数的选择有何影响？为什么？",
+        "question_type": "multi-hop",
+        "ground_truth": "递归切分配合重叠窗口能有效保留块边界的上下文语义，使生成的向量表征更完整、区分度更高。在IVF检索中，`nprobe`控制搜索的簇数量以平衡召回率与速度。由于高质量切分提升了向量本身的语义完整性，通常无需设置过大的`nprobe`即可保证较高的召回率，从而在维持检索精度的同时避免速度显著下降；反之，若切分丢失上下文，则需增大`nprobe`来补偿召回损失。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120001.92113100093,
+        "user_id": "qa_eval_021_user",
+        "session_id": "qa_eval_021_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_022",
+        "question": "在构建Agent循环时，为什么频繁变更工具定义（Tool Definitions）会严重削弱Prompt Caching的优化效果？结合缓存底层原理说明原因。",
+        "question_type": "multi-hop",
+        "ground_truth": "Prompt Caching的底层机制依赖于输入前缀的精确Token级匹配，系统提示词和工具定义通常构成请求的稳定前缀。如果工具定义频繁变动，会导致每次请求的前缀发生变化，从而破坏缓存匹配条件，迫使LLM重新计算所有KV对。保持工具定义稳定能确保前缀命中率，使得即使系统提示较长，也能享受高达90%的读取折扣，显著降低边际推理成本。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120014.18824999928,
+        "user_id": "qa_eval_022_user",
+        "session_id": "qa_eval_022_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_023",
+        "question": "对比多Agent系统中的「统筹者（Orchestrator）模式」与LangGraph的「共享State」通信机制，它们在上下文隔离和状态管理上各有什么特点？",
+        "question_type": "multi-hop",
+        "ground_truth": "统筹者模式采用异步委派和结构化协议（如JSONL inbox）通信，子Agent上下文严格隔离，仅向主Agent回传摘要，有效防止上下文污染且适合复杂并行任务；而LangGraph的共享State机制通过读写同一State对象（如使用`operator.add`追加消息）实现间接通信，实现简单且天然契合图架构，但字段设计需谨慎，过多字段易导致状态混乱。前者强隔离、高扩展，后者紧耦合、易实现。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120005.00157500028,
+        "user_id": "qa_eval_023_user",
+        "session_id": "qa_eval_023_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_024",
+        "question": "若要科学地确定RAG系统的最佳分块大小（如128、256、512 token），应如何结合文中提到的评估框架与测试指标进行验证？",
+        "question_type": "multi-hop",
+        "ground_truth": "首先按不同量级切块并存入向量库，然后针对用户提问生成回复。评估时可结合RAGAS框架或自定义LLM-as-Judge，重点使用“忠诚度测试（Loyalty/Faithfulness）”和“相关性测试（Relevance）”对不同块大小的回复进行打分。忠诚度测试确保生成内容不脱离切块原文，相关性测试验证回答是否精准匹配问题。LangSmith可用于记录完整评估轨迹以便调试，最终综合得分选出最优量级。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120008.20898299935,
+        "user_id": "qa_eval_024_user",
+        "session_id": "qa_eval_024_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_025",
+        "question": "在Transformer架构中，Token Embedding为什么要乘以√d_model？这一操作与后续的Layer Normalization在数值稳定性上如何协同工作？",
+        "question_type": "multi-hop",
+        "ground_truth": "乘以√d_model是为了放大Embedding的数值尺度，防止其被位置编码的数值淹没，确保两者相加时语义和位置信息权重均衡。相加后的向量会输入LayerNorm进行标准化（均值0、方差1）。Embedding的预缩放操作实际上为LayerNorm提供了更合理的初始分布，避免极端值导致梯度消失或爆炸，两者协同保障了深层网络训练时的数值稳定性与特征表达能力。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120003.06088700017,
+        "user_id": "qa_eval_025_user",
+        "session_id": "qa_eval_025_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_026",
+        "question": "在基于IVF索引的向量检索中，如何结合Metadata Filter（如`doc_type`或`created_at`）来优化检索效率与精度？",
+        "question_type": "multi-hop",
+        "ground_truth": "IVF检索时仅在`nprobe`个最近簇内进行精确搜索。若结合Metadata Filter，可在簇内精确搜索阶段或之前应用过滤条件（预过滤），直接排除不符合元数据（如特定文档类型或时间范围）的向量。这种组合避免了全量暴力过滤，大幅缩小候选集规模，在保持IVF速度优势的同时，通过元数据约束提升了最终Top-K结果的业务相关性与检索精度。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120004.95058100023,
+        "user_id": "qa_eval_026_user",
+        "session_id": "qa_eval_026_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_027",
+        "question": "引入并行工具调用（Parallel Tool Call）是否会破坏Agent主循环的稳定性？请结合主循环的运转阶段与并行调用的实现条件进行分析。",
+        "question_type": "multi-hop",
+        "ground_truth": "不会破坏。Agent主循环（感知->决策->行动->反馈）的核心控制流非常稳定，新增能力通常叠加在循环外部而非改动内部。并行工具调用是在“行动”阶段对独立工具执行的优化（使用`asyncio.gather`等并发逻辑），前提是工具间无数据依赖。它仅缩短了单次循环的RTT（往返时间），并未改变循环的状态流转与反馈机制，因此完全符合“主循环稳定、能力外扩”的架构原则。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120009.56272400072,
+        "user_id": "qa_eval_027_user",
+        "session_id": "qa_eval_027_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_028",
+        "question": "为什么在生产环境中使用稳定的BPE分词器（如tiktoken）对提升Prompt Caching的命中率至关重要？",
+        "question_type": "multi-hop",
+        "ground_truth": "Prompt Caching的触发条件是输入前缀的精确Token级匹配。BPE分词器通过合并高频字符对生成Token，其词表和合并规则直接决定了文本的Token化结果。如果分词器不稳定或动态内容导致Token边界变化，前缀匹配就会失败，缓存失效。使用tiktoken等成熟且固定的BPE工具，能确保系统提示和长文档等静态内容在多轮请求中生成完全一致的Token序列，从而保障前缀稳定性，最大化缓存命中率。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120013.01241799956,
+        "user_id": "qa_eval_028_user",
+        "session_id": "qa_eval_028_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_029",
+        "question": "在多Agent协作中，如何结合「深度限制（Depth Limit）」与LangGraph的「State Reducer」机制来安全地处理递归调用与消息累积？",
+        "question_type": "multi-hop",
+        "ground_truth": "深度限制作为硬性约束，直接防止子Agent无限递归调用导致系统崩溃。同时，利用State Reducer机制（如将`messages`字段配置为`operator.add`追加模式），可以在递归过程中安全地累积交互历史而不覆盖旧状态。两者结合既通过深度限制控制了调用栈的边界，又通过追加型Reducer保留了完整的上下文轨迹，实现了递归过程的安全可控与状态可追溯。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120007.48340599966,
+        "user_id": "qa_eval_029_user",
+        "session_id": "qa_eval_029_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      },
+      {
+        "sample_id": "qa_eval_030",
+        "question": "Transformer中的FFN层旨在通过高维非线性变换学习更丰富的语义表示，这与RAG中的「语义切块（Semantic Chunking）」策略在目标上有何内在联系？",
+        "question_type": "multi-hop",
+        "ground_truth": "FFN层的作用是对注意力机制的输出进行非线性映射，提取并强化更抽象、丰富的语义特征。语义切块策略则是通过计算句子间相似度，将语义连贯的内容合并、不连贯的切开，旨在保证输入模型的每个文本块本身就是一个完整的语义单元。两者在目标上高度一致：FFN在模型内部通过数学变换增强语义表征能力，而语义切块在数据预处理阶段通过结构划分确保输入信息的语义完整性，共同提升模型对复杂语义的理解与检索效果。",
+        "answer": "Error: TimeoutError: exceeded 120s",
+        "verdict": "fail",
+        "reason": "orchestrator_exception: assistant pipeline failed before judge",
+        "latency_ms": 120026.93363000071,
+        "user_id": "qa_eval_030_user",
+        "session_id": "qa_eval_030_session",
+        "orchestrator_failed": true,
+        "timeout_exceeded": true,
+        "judge_call_failed": false,
+        "judge_skipped": true
+      }
+    ]
+  }
+}

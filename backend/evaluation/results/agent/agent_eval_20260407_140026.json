@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "run_log_file": "/home/syan/SecondBrian/backend/evaluation/results/agentlog/eval_agent_20260407_140026.log",
+    "timezone": "America/Los_Angeles",
+    "started_at": "2026-04-07T14:00:26.822180-07:00",
+    "finished_at": "2026-04-07T14:00:30.851979-07:00",
+    "profile": "standard",
+    "output_file": "/home/syan/SecondBrian/backend/evaluation/results/agent/agent_eval_20260407_140026.json",
+    "status": "invalid",
+    "health_issues": [
+      "knowledge_concepts table is empty"
+    ],
+    "completed_phases": []
+  }
+}

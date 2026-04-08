@@ -40,6 +40,30 @@
     "expected_intent": "qa"
   },
   {
+    "query": "帮我看看我这些复习材料里，哪些地方最容易考或者最容易出错？",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "请分析《Transformer 复习.md》中的知识体系，指出初学者通常容易忽略的薄弱环节。",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "请针对《你不知道的Agent-原理架构与工程实践.md》进行深度剖析，找出工程落地阶段常见的认知盲区。",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "请对《Agent 复习.md》进行结构化拆解，识别出逻辑链条中最薄弱的关联节点。",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "Transformer和RAG结合起来看的话，有哪些知识点是容易搞混或者遗漏的？帮我列一下。",
+    "expected_intent": "qa"
+  },
+  {
+    "query": "请综合评估所有复习文档，构建知识图谱并标注出当前内容中缺乏深度讲解或易产生误解的模块。",
+    "expected_intent": "qa"
+  },
+  {
     "query": "帮我出几道题考考我，看看我最近复习得咋样。",
     "expected_intent": "quiz"
   },
@@ -80,14 +104,6 @@
     "expected_intent": "quiz"
   },
   {
-    "query": "帮我看看我这些复习材料里，哪些地方最容易考或者最容易出错？",
-    "expected_intent": "gap_analysis"
-  },
-  {
-    "query": "请分析《Transformer 复习.md》中的知识体系，指出初学者通常容易忽略的薄弱环节。",
-    "expected_intent": "gap_analysis"
-  },
-  {
     "query": "基于全部提供的文档，请评估当前知识覆盖的完整性，并列出潜在的知识盲区。",
     "expected_intent": "gap_analysis"
   },
@@ -96,27 +112,35 @@
     "expected_intent": "gap_analysis"
   },
   {
-    "query": "请针对《你不知道的Agent-原理架构与工程实践.md》进行深度剖析，找出工程落地阶段常见的认知盲区。",
-    "expected_intent": "gap_analysis"
-  },
-  {
     "query": "结合这几份文档，给我做个知识体检，看看我还有啥没掌握透的。",
     "expected_intent": "gap_analysis"
   },
   {
-    "query": "请对《Agent 复习.md》进行结构化拆解，识别出逻辑链条中最薄弱的关联节点。",
-    "expected_intent": "gap_analysis"
-  },
-  {
-    "query": "Transformer和RAG结合起来看的话，有哪些知识点是容易搞混或者遗漏的？帮我列一下。",
-    "expected_intent": "gap_analysis"
-  },
-  {
-    "query": "请综合评估所有复习文档，构建知识图谱并标注出当前内容中缺乏深度讲解或易产生误解的模块。",
-    "expected_intent": "gap_analysis"
-  },
-  {
     "query": "就Agent的原理这块，你觉得我复习的时候最容易在哪些概念上钻牛角尖或者理解不到位？",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "我最近学了Transformer和RAG，帮我看看我目前的掌握情况怎么样？",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "我这些知识点里哪些是我还没接触过的？帮我列出来。",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "我的Transformer部分掌握得如何？有哪些概念我还比较薄弱？",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "帮我检查一下我Agent方面的学习进度，哪些主题我还没学到？",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "我觉得我对RAG的理解有些欠缺，能帮我诊断一下具体薄弱在哪几个知识点吗？",
+    "expected_intent": "gap_analysis"
+  },
+  {
+    "query": "根据我的学习记录，看看我整体掌握情况如何，还有多少知识盲区？",
     "expected_intent": "gap_analysis"
   }
 ]
