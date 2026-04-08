@@ -17,7 +17,10 @@ async def lifespan(app: FastAPI):
     milvus_service.init_collection()
     memory_milvus_service.init_collection()
     yield
-    # Shutdown: 清理资源（预留）
+    # Shutdown
+    from app.services.tracing import flush as flush_tracing
+
+    flush_tracing()
 
 
 app = FastAPI(

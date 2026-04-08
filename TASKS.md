@@ -33,17 +33,18 @@
 ## Step 4: SubAgents
 
 - [x] `state.py` — OverallState + QAState + QuizState + GapState, 各 SubAgent 独立 State
-- [x] `qa_agent.py` — Plan & Execute + ReAct 混合架构: Planner(结构化JSON plan) → Executor(ReAct loop per step) → Synthesize → QC(max 2 retries, 不通过带反馈重规划)
+- [x] `qa_agent.py` — ReAct (max 2轮) + Reflection 架构: ReAct loop(rag_search tool-calling) → Reflection(质量审查, pass/fail) → fail 时带反馈再跑 1 轮 ReAct; 查询拆解由 Orchestrator plan_node 负责
 - [x] `quiz_agent.py` — Agent 驱动 10 题 Quiz, tool-calling (rag_search + read_mastery + update_mastery + search_concepts), 多轮对话 message_history 传递, 启发式判断 session 结束
 - [x] `gap_agent.py` — Agent 驱动诊断, tool-calling (read_mastery + search_concepts), LLM 执行 cross compare 规则 + 生成报告, 支持 scope 过滤
 
 ## Step 5: Orchestrator
 
-- [x] `state.py` 扩展 — OverallState 增加 plan, step_results, current_step_index, replan_action, replan_count 字段
-- [x] `orchestrator.py` — Plan & Execute with Replan 架构: plan_node (LLM few-shot 意图识别+计划生成, 支持 qa/gap_analysis/quiz 三种意图) + execute_step (单步执行) + replan_node (LLM 审视结果, continue/revise/finish) + synthesize_node (多结果汇总) + passthrough_node (单结果直传)
-- [x] `graph.py` — LangGraph StateGraph: plan → route → execute_step → replan → route(execute/single/multi) → execute_step|passthrough|synthesize → END
+- [x] `state.py` 扩展 — OverallState 增加 plan, step_results, current_step_index, replan_action, replan_count 字段; step_results 结构含 status/error 字段
+- [x] `orchestrator.py` — Plan & Execute with Replan 架构: plan_node (原子任务拆解: 三步流程识别意图→检查可拆性→确定依赖, 每个step满足单一检索意图+单一概念聚焦+独立可回答, 支持 qa/gap_analysis/quiz 三种意图) + execute_batch (批量并发执行, Semaphore(2) 全局限流) + replan_node (LLM 审视结果, continue/revise/finish) + synthesize_node (多结果汇总) + passthrough_node (单结果直传)
+- [x] `orchestrator.py` — 健壮性四项加固: ① execute_batch 全局 Semaphore(2) 跨请求并发限流; ② rewrite_params 输出按 intent schema 校验, 不合法回退原始 params; ③ 单步失败隔离 (status=ok/failed + error 字段), 不影响同批其他步; ④ plan 执行前结构校验 (_validate_plan: 编号唯一/依赖合法/Kahn 检环/params schema), replan revised_steps 同等校验 (_is_plan_structure_valid + params)
+- [x] `graph.py` — LangGraph StateGraph: plan → route → execute_batch → replan → route(execute/single/multi) → execute_batch|passthrough|synthesize → END; streaming 路径支持 step 失败状态展示
 - [x] `quiz_agent.py` 重构 — 从 10 题多轮 session 改为单次出 2 道选择题（RAG 检索出题）, 作为 orchestrator plan 的普通 step
-- [x] 测试 — 39 个单元测试 + 集成测试全部通过 (含 replan continue/revise/finish、quiz dispatch、graph flow)
+- [x] 测试 — 65 个单元测试 + 集成测试全部通过 (含 execute_batch 并发/失败隔离、plan 结构校验、replan cycle/params 校验、streaming flow)
 
 ## Step 5.5: Agent 记忆机制
 
@@ -112,11 +113,12 @@
 - [x] RAGAS 评测稳健性修复 — Kimi judge 显式参数适配（`temperature=1`, `top_p=0.95`）
 - [x] RAGAS 逐指标执行 + 错误显式记录 — 输出 `ragas_metric_status`，避免整批静默 `NaN`
 - [x] 评测分档 — `smoke=4单跳+2多跳`、`standard=10单跳+5多跳`、`full=全量30`
-- [x] 子集采样去偏 — QA 档位由“取前 N 条”改为按来源文档/来源组合的稳定 round-robin 分层采样
+- [x] 子集采样去偏 — QA 档位由”取前 N 条”改为按来源文档/来源组合的稳定 round-robin 分层采样
 - [x] Kimi K2.5 Judge 兼容 — RAGAS judge 默认切换到 `kimi-k2.5` 非 thinking 路径，并按官方文档使用 `AsyncOpenAI` + `llm_factory` + `aevaluate()`；同时显式覆盖 Kimi 固定参数约束
 - [x] RAGAS 公开 API 迁移 — metrics 改用 `Faithfulness` / `AnswerRelevancy` 等公开类名；`BaseRagasEmbeddings` 从 `ragas.embeddings` 导入；所有 RAGAS 导入延迟到函数内部
 - [x] 消除隐式状态 — RAG 中间结果改用独立 `rag_results_map` dict，不再向 dataset item 注入 `_rag_result`
 - [x] RAGAS 结构重构 — 新增 `evaluation/ragas_runner.py` 承接官方评测接入流，`eval_rag.py` 仅保留项目评测逻辑和结果编排
+- [x] Phase 1 (Classic IR) 并行化 — 逐条 RAG pipeline + reranker lift 改为 `asyncio.gather` + `Semaphore(concurrency)` 并发执行；`compute_reranker_lift` 用 `asyncio.to_thread` 包装避免阻塞事件循环
 
 ### 8.3 Agent 评估（任务驱动）— `evaluation/eval_agent.py`
 
@@ -128,84 +130,68 @@
 - [x] Intent Classification Acc — 直接评估真实 `plan_node` 单意图规划结果
 - [x] QA E2E Task Success — 分层 QA 子集 + 独立会话 + LLM-as-Judge（当前默认 `kimi-k2.5` 非 thinking，pass/partial/fail/error）
 - [x] Intent 子集去偏 — `smoke / standard / full` 改为按 `qa / quiz / gap_analysis` 均衡抽样，而非取数据集前缀
-- [x] Kimi K2.5 Judge 兼容 — Agent judge 请求统一按 `kimi-k2.5` 非 thinking 口径构造，直连 Chat Completions 并显式带 `thinking={"type":"disabled"}`
+- [x] Kimi K2.5 Judge 兼容 — Agent judge 请求统一按 `kimi-k2.5` 非 thinking 口径构造，直连 Chat Completions 并显式带 `thinking={“type”:”disabled”}`
 - [x] E2E Latency P50/P95 — 每条 QA 的端到端耗时
 - [x] Judge Error 分离统计 — `judge_error_rate` / `pass_rate_evaluated`
 - [x] 评测分档 — Intent: `smoke=6` / `standard=15` / `full=30`；QA: `smoke=3单跳+1多跳` / `standard=10单跳+5多跳` / `full=全量`
 - [x] classify_intent 异常保护 — plan_node 失败时记录 error 并继续，不中断整个 Intent 评测
 - [x] Orchestrator 120s 超时 — `asyncio.wait_for` 防止单条 QA 卡死整个评测
 - [x] Latency 成功/全量分离统计 — `latency_p50/p95_ms` 仅含成功 case；`latency_p50/p95_ms_all` 含全部
+- [x] Intent ‖ QA E2E 并行 — `main()` 中两个 phase 用 `asyncio.gather` 同时启动
+- [x] QA E2E case 级并行 — `_run_one_qa()` + `asyncio.gather` + `Semaphore(concurrency)`，日志加 `[qa N/M]` 前缀
+- [x] Intent case 级并行 — `_classify_one()` + `asyncio.gather` + `Semaphore(concurrency)`，日志加 `[intent N/M]` 前缀
 
-未实现（待结果分析后决定是否补充）：
-- [ ] Tool Selection Acc — 需记录 orchestrator trajectory 对比预期工具调用
-- [ ] Replan Efficiency — 需提取 replan_count 统计
-- [ ] Quiz Question Quality — 需 Quiz 评估集 + LLM-as-Judge 评分
-- [ ] Gap Detection Precision — 需 Gap 评估集 + 人工/LLM 抽检
+新增指标：
+- [x] Replan Efficiency（附加在 QA E2E 上）— `run_orchestrator` 暴露 `plan`/`replan_count`/`replan_action`，QA E2E 每条 case 收集 replan 统计，汇总 `replan_avg` / `replan_rate` / `replan_action_distribution`
+- [x] Quiz Question Quality — 10 组 topic 场景 (`quiz_eval_dataset.json`)，调 `run_quiz_agent` 直接生成题目，规则校验结构 + LLM-as-Judge 二元 pass/fail → `quiz_valid_rate`
+- [x] Gap Detection Precision — 6 组 mastery 预设场景 (`gap_eval_dataset.json`)，SQLite 写入预设 mastery → 调 `run_gap_agent` → LLM 提取报告中识别的 gap → 集合覆盖比较 → `coverage_rate` + `false_positive_rate`
+- [x] ~~四路并行~~ — 已改为顺序执行（见下方稳定性修复）
+
+稳定性修复：
+- [x] 模型加载线程锁 — `embedding.py` / `reranker.py` 的 `_load_model()` 加 `threading.Lock` 双重检查，防止并发首次加载；新增 `warmup()` 方法
+- [x] 评测 phase 顺序执行 — `eval_agent` 四个 phase 从 `asyncio.gather` 改为 intent → QA → quiz → gap 顺序执行，避免跨 phase GPU/SQLite 抢占（各 phase 内部仍保留 case 级并发）
+- [x] SQLite WAL + busy_timeout — `database.py` 通过 SQLAlchemy connect 事件设置 `PRAGMA journal_mode=WAL` 和 `busy_timeout=5000`
+- [x] 评测预检 (health check) — `eval_utils.py` 新增 `warmup_and_health_check()`：单线程预热 embedding/reranker、验证 Milvus 非空、检查 knowledge_concepts > 0；失败直接标记 run invalid 并中止
+- [x] Partial save — `eval_agent` / `eval_rag` 每完成一个 phase 即写入 JSON（原子 rename），中途异常已完成 phase 结果不丢失；report 含 `meta.status` / `meta.completed_phases` / `meta.health_issues`
+
+已分析后决定不实现：
+- ~~Tool Selection Acc~~ — subagent dispatch 是确定性映射（plan intent → subagent），和 Intent Acc 重复，砍掉
 
 ### 8.4 辅助模块
 - [x] `evaluation/judge_client.py` — Kimi K2.5 Judge 客户端 (OpenAI-compatible)
 - [x] `evaluation/eval_utils.py` — 共享工具（logging 配置、P50/P95、时区常量）
 - [x] `evaluation/__init__.py`
 - [x] `requirements.txt` — 提升 `ragas` 依赖下限到 `0.4.3`，与当前官方文档/API 对齐
+- [x] `evaluation/eval_all.py` — RAG + Agent 并行运行入口，子进程同时启动，输出加 `[RAG]`/`[AGENT]` 前缀
+- [x] `evaluation/profiles.py` — `EvalProfile` 新增 `concurrency` 字段（smoke=3, standard=5, full=8）
 
-### 8.5 基准测试结果 (2026-04-06, smoke profile, judge=kimi-k2.5)
+### 8.4.1 评估运行方式汇总
 
-基准数据文件：
-- RAG: `evaluation/results/rag/rag_eval_20260406_142834.json`
-- Agent: `evaluation/results/agent/agent_eval_20260406_144031.json`
+```bash
+# 单独运行 RAG 评估（Phase 1 IR 指标内部已并行）
+cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag --profile {smoke|standard|full}
 
-#### RAG 基准 (6 samples: 4 单跳 + 2 多跳)
+# 单独运行 Agent 评估（Intent ‖ QA E2E 并行，case 级并发）
+cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile {smoke|standard|full}
 
-| 指标 | 得分 | 目标 | 状态 |
-|---|---|---|---|
-| Recall@K | 1.000 | ≥ 0.85 | 达标 |
-| MRR | 1.000 | ≥ 0.70 | 达标 |
-| Faithfulness | 0.748 | — | 偏低 |
-| Answer Relevancy | 0.890 | — | ✅ 良好 |
-| Context Precision | 0.875 | — | ✅ 良好 |
-| Context Recall | 0.917 | — | ✅ 良好 |
-| Reranker Lift | 0.000 | > 0 | 无增益 |
-| Multi-hop Lift | -0.171 | > 0 | 不达标 |
-| Latency P50 | 37,256 ms | — | 严重超标 |
-| Latency P95 | 38,007 ms | < 500 ms | 超标 76x |
+# RAG + Agent 全部并行（推荐）
+cd backend && MILVUS_HOST=localhost python -m evaluation.eval_all --profile {smoke|standard|full}
+```
 
-#### Agent 基准 (6 intent + 4 QA E2E)
+并发度由 profile 控制：smoke=3, standard=5, full=8。API 限制（Kimi 50并发/200RPM, Qwen 30K RPM）远高于实际并发数，瓶颈在单条 orchestrator 内部 LLM 调用链。
 
-| 指标 | 得分 | 目标 | 状态 |
-|---|---|---|---|
-| Intent Accuracy | 100% (6/6) | ≥ 95% | 达标 |
-| QA Pass Rate | 25% (1/4) | ≥ 80% | 严重不达标 |
-| Orchestrator Error | 75% (3/4 超时) | 0% | |
-| Judge Error | 0% | — | ✅ |
-| E2E Latency P50 (成功) | 89,833 ms | < 2,000 ms | 超标 45x |
+### 8.5 测试结果与优化迭代
 
-### 8.6 已识别问题 (按优先级排序)
+详见 [`EVAL_ITERATIONS.md`](EVAL_ITERATIONS.md) — 按迭代轮次记录测试结果、问题分析、改进方案。
 
-#### P0: Reranker CPU 推理延迟 — 全局瓶颈
-- **现象**: 单次 rerank 耗时 18-29s，占 RAG 总延迟的 60-75%
-- **影响**: RAG 延迟超标 76x；Agent 3/4 QA 因累计 rerank 耗时导致 120s 超时
-- **根因**: BGE-reranker-v2-m3 在 CPU 上运行 cross-encoder，15 候选 passage 串行推理
-- **关联**: 直接导致 P1
+- [x] 迭代 0 (Baseline): Smoke + Full 基准测试完成
+- [x] 迭代 1: QA SubAgent 架构重构 + Prompt grounding 强化 → Faithfulness 0.819→0.934 (+11.5%)
+- [x] 迭代 2: Embedding Heading Augmentation — embedding 时拼接 heading_path 提升检索精度; 已重新 ingest 并完成 full profile，对比见 `EVAL_ITERATIONS.md`
 
-#### P1: Agent E2E 超时率 75%
-- **现象**: 4 个 QA 中 3 个超时 (120s)，唯一完成的是简单单跳问题
-- **影响**: QA Pass Rate 仅 25%，远低于 80% 目标
-- **根因**: QA Agent 内部多步分解 (plan_node ~20s + qa_planner ~35s + N×rag_search ~20-30s/次) 叠加，总耗时轻松超 120s
-- **关联**: P0 解决后此问题大幅缓解
-
-#### P2: Multi-hop Faithfulness 低 (0.634) & 负 Lift
-- **现象**: 单跳 faithfulness=0.806，多跳=0.634，lift=-0.171
-- **影响**: 多跳问题约 37% 内容无法被检索上下文支持（幻觉）
-- **根因**: LLM 在综合多个 chunk 时倾向"过度推理"，生成超出上下文的内容
-
-#### P3: Reranker Lift = 0，无法验证 reranker 价值
-- **现象**: MRR_raw = MRR_reranked = 1.0
-- **根因**: smoke profile 仅 4 个单跳问题，文档主题区分度高，raw search 已完美命中
-- **待验**: 需在 standard/full profile 下确认
-
-### 8.7 收尾
-- [ ] 基于 8.6 问题列表执行优化
-- [ ] 优化后跑 standard profile 对比基准
+### 8.6 收尾
+- [x] 迭代 2 测试结果对比迭代 1
+- [x] 迭代 3: Reranker Off 公平 A/B — 已完成 full profile；关闭 reranker 时保持最终传给 LLM 的 chunk 数仍为 `top_k`，结果见 `EVAL_ITERATIONS.md`
+- [x] 默认策略调整：`enable_reranker` 默认值改为关闭；保留环境变量开关以便后续手动启用对照
 - [ ] Prompt 调优（基于评估结果）
 - [ ] Docker 化部署
 - [ ] README + 项目文档（含评估结果）

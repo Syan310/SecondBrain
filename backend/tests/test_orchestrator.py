@@ -59,7 +59,7 @@ sys.modules["app.agent.nodes.memory_manager"] = _mock_memory
 from app.agent.state import OverallState  # noqa: E402
 from app.agent.nodes.orchestrator import (  # noqa: E402
     plan_node,
-    execute_step,
+    execute_batch,
     replan_node,
     synthesize_node,
     passthrough_node,
@@ -68,6 +68,9 @@ from app.agent.nodes.orchestrator import (  # noqa: E402
     route_to_output,
     MAX_REPLAN_COUNT,
     _parse_json,
+    _validate_params,
+    _validate_plan,
+    _is_plan_valid,
 )
 
 # ── Cleanup: restore sys.modules so other test files see real modules ──
@@ -255,10 +258,10 @@ class TestPlanNode:
             assert "Transformer" in system_msg
 
 
-# ── execute_step tests ──────────────────────────────────────
+# ── execute_batch tests ─────────────────────────────────────
 
 
-class TestExecuteStep:
+class TestExecuteBatch:
     @pytest.mark.asyncio
     async def test_single_qa_step(self):
         mock_session = AsyncMock()
@@ -268,45 +271,42 @@ class TestExecuteStep:
 
             state: OverallState = {
                 "plan": [{"step": 1, "intent": "qa", "params": {"query": "什么是Transformer?"}, "depends_on": []}],
-                "current_step_index": 0,
                 "step_results": [],
                 "user_query": "什么是Transformer?",
                 "user_id": "test",
             }
 
-            result = await execute_step(state, mock_session)
+            result = await execute_batch(state, mock_session)
 
             assert len(result["step_results"]) == 1
             assert result["step_results"][0]["intent"] == "qa"
+            assert result["step_results"][0]["status"] == "ok"
             assert "Transformer" in result["step_results"][0]["result"]
-            assert result["current_step_index"] == 1
 
     @pytest.mark.asyncio
     async def test_quiz_step_dispatches_to_quiz_agent(self):
         mock_session = AsyncMock()
         quiz_result = {"questions": [{"topic": "NLP", "question": "Q?"}], "topics": ["NLP"]}
 
-        with patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz:
+        with patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz, \
+             patch("app.agent.nodes.orchestrator.async_session_factory", return_value=AsyncMock()):
             mock_quiz.return_value = quiz_result
 
             state: OverallState = {
                 "plan": [{"step": 1, "intent": "quiz", "params": {"topics": ["NLP"]}, "depends_on": []}],
-                "current_step_index": 0,
                 "step_results": [],
                 "user_query": "来几道NLP的题",
                 "user_id": "test",
             }
 
-            result = await execute_step(state, mock_session)
+            result = await execute_batch(state, mock_session)
 
             assert len(result["step_results"]) == 1
             assert result["step_results"][0]["intent"] == "quiz"
-            mock_quiz.assert_called_once_with(
-                session=mock_session, user_id="test", topics=["NLP"], prior_context=None,
-            )
+            assert result["step_results"][0]["status"] == "ok"
 
     @pytest.mark.asyncio
-    async def test_second_step_with_dependency_rewrite(self):
+    async def test_dependency_step_rewrite(self):
         mock_session = AsyncMock()
         rewrite_response = json.dumps({"query": "讲解Attention机制"})
 
@@ -318,36 +318,64 @@ class TestExecuteStep:
 
             state: OverallState = {
                 "plan": [
-                    {"step": 1, "intent": "gap_analysis", "params": {"scope": None}, "depends_on": []},
+                    {"step": 1, "intent": "gap_analysis", "params": {"scope": None, "keyword": None}, "depends_on": []},
                     {"step": 2, "intent": "qa", "params": {"query": "讲解最弱概念"}, "depends_on": [1]},
                 ],
-                "current_step_index": 1,
-                "step_results": [{"step": 1, "intent": "gap_analysis", "result": "最弱主题: Attention"}],
+                "step_results": [
+                    {"step": 1, "intent": "gap_analysis", "status": "ok", "result": "最弱主题: Attention"},
+                ],
                 "user_query": "分析盲区然后讲讲",
                 "user_id": "test",
             }
 
-            result = await execute_step(state, mock_session)
+            result = await execute_batch(state, mock_session)
 
             assert len(result["step_results"]) == 2
-            assert result["current_step_index"] == 2
             mock_qa.assert_called_once_with(query="讲解Attention机制", user_id="test")
 
     @pytest.mark.asyncio
-    async def test_index_beyond_plan_is_noop(self):
+    async def test_all_completed_is_noop(self):
         mock_session = AsyncMock()
 
         state: OverallState = {
             "plan": [{"step": 1, "intent": "qa", "params": {"query": "test"}, "depends_on": []}],
-            "current_step_index": 1,
-            "step_results": [{"step": 1, "intent": "qa", "result": "done"}],
+            "step_results": [{"step": 1, "intent": "qa", "status": "ok", "result": "done"}],
             "user_query": "test",
             "user_id": "test",
         }
 
-        result = await execute_step(state, mock_session)
+        result = await execute_batch(state, mock_session)
         assert len(result["step_results"]) == 1
-        assert result["current_step_index"] == 1
+
+    @pytest.mark.asyncio
+    async def test_step_failure_isolated(self):
+        """One step fails, another succeeds — both in results."""
+        mock_session = AsyncMock()
+
+        with patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
+             patch("app.agent.nodes.orchestrator.async_session_factory", return_value=AsyncMock()):
+            mock_qa.return_value = {"answer": "Success", "confidence": "high", "plan": {}, "sources": []}
+            mock_gap.side_effect = RuntimeError("DB error")
+
+            state: OverallState = {
+                "plan": [
+                    {"step": 1, "intent": "qa", "params": {"query": "q1"}, "depends_on": []},
+                    {"step": 2, "intent": "gap_analysis", "params": {"scope": None, "keyword": None}, "depends_on": []},
+                ],
+                "step_results": [],
+                "user_query": "test",
+                "user_id": "test",
+            }
+
+            result = await execute_batch(state, mock_session)
+
+            assert len(result["step_results"]) == 2
+            statuses = {r["step"]: r["status"] for r in result["step_results"]}
+            assert statuses[1] == "ok"
+            assert statuses[2] == "failed"
+            failed = next(r for r in result["step_results"] if r["step"] == 2)
+            assert "DB error" in failed["error"]
 
 
 # ── replan_node tests ────────────────────────────────────────
@@ -409,7 +437,7 @@ class TestReplanNode:
 
             result = await replan_node(state)
             assert result["replan_action"] == "continue"
-            assert result["replan_count"] == 1
+            assert result["replan_count"] == 0  # continue doesn't increment
             assert "plan" not in result
 
     @pytest.mark.asyncio
@@ -530,6 +558,57 @@ class TestReplanNode:
             result = await replan_node(state)
             assert result["replan_action"] == "finish"
 
+    @pytest.mark.asyncio
+    async def test_revise_with_cycle_falls_back_to_finish(self):
+        """Revised steps forming a cycle with completed plan → finish."""
+        replan_response = json.dumps({
+            "action": "revise",
+            "revised_steps": [
+                {"step": 2, "intent": "qa", "params": {"query": "a"}, "depends_on": [3]},
+                {"step": 3, "intent": "qa", "params": {"query": "b"}, "depends_on": [2]},
+            ],
+            "reason": "test",
+        })
+
+        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
+            mock_llm.chat = AsyncMock(return_value=_make_llm_response(replan_response))
+
+            state: OverallState = {
+                "plan": [{"step": 1, "intent": "qa", "params": {"query": "test"}, "depends_on": []}],
+                "current_step_index": 1,
+                "step_results": [{"step": 1, "intent": "qa", "result": "done"}],
+                "user_query": "test",
+                "replan_count": 0,
+            }
+
+            result = await replan_node(state)
+            assert result["replan_action"] == "finish"
+
+    @pytest.mark.asyncio
+    async def test_revise_with_bad_params_falls_back_to_finish(self):
+        """Revised steps with missing required params → finish."""
+        replan_response = json.dumps({
+            "action": "revise",
+            "revised_steps": [
+                {"step": 2, "intent": "qa", "params": {"query": ""}, "depends_on": [1]},
+            ],
+            "reason": "test",
+        })
+
+        with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm:
+            mock_llm.chat = AsyncMock(return_value=_make_llm_response(replan_response))
+
+            state: OverallState = {
+                "plan": [{"step": 1, "intent": "qa", "params": {"query": "test"}, "depends_on": []}],
+                "current_step_index": 1,
+                "step_results": [{"step": 1, "intent": "qa", "result": "done"}],
+                "user_query": "test",
+                "replan_count": 0,
+            }
+
+            result = await replan_node(state)
+            assert result["replan_action"] == "finish"
+
 
 # ── synthesize_node / passthrough_node tests ─────────────────
 
@@ -584,11 +663,25 @@ class TestRouting:
         assert route_after_plan(state) == "no_steps"
 
     def test_route_after_replan_continue(self):
-        state: OverallState = {"replan_action": "continue"}
+        state: OverallState = {
+            "replan_action": "continue",
+            "plan": [
+                {"step": 1, "intent": "qa", "params": {"query": "t"}, "depends_on": []},
+                {"step": 2, "intent": "qa", "params": {"query": "t2"}, "depends_on": []},
+            ],
+            "step_results": [{"step": 1, "intent": "qa", "status": "ok", "result": "done"}],
+        }
         assert route_after_replan(state) == "execute"
 
     def test_route_after_replan_revise(self):
-        state: OverallState = {"replan_action": "revise"}
+        state: OverallState = {
+            "replan_action": "revise",
+            "plan": [
+                {"step": 1, "intent": "qa", "params": {"query": "t"}, "depends_on": []},
+                {"step": 2, "intent": "qa", "params": {"query": "t2"}, "depends_on": []},
+            ],
+            "step_results": [{"step": 1, "intent": "qa", "status": "ok", "result": "done"}],
+        }
         assert route_after_replan(state) == "execute"
 
     def test_route_after_replan_finish(self):
@@ -671,6 +764,7 @@ class TestGraphIntegration:
 
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz, \
+             patch("app.agent.nodes.orchestrator.async_session_factory", return_value=AsyncMock()) as _, \
              patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
              patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
@@ -722,6 +816,7 @@ class TestGraphIntegration:
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
              patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.nodes.orchestrator.async_session_factory", return_value=AsyncMock()) as _, \
              patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
              patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
@@ -774,6 +869,7 @@ class TestGraphIntegration:
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
              patch("app.agent.nodes.orchestrator.run_quiz_agent", new_callable=AsyncMock) as mock_quiz, \
+             patch("app.agent.nodes.orchestrator.async_session_factory", return_value=AsyncMock()) as _, \
              patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
              patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
@@ -800,9 +896,12 @@ class TestGraphIntegration:
         """Replan revise: plan(1 gap) → exec → replan(revise +2 qa) → exec qa1 → replan(continue) → exec qa2 → replan(finish) → synthesize."""
         mock_session = AsyncMock()
 
+        # Initial plan has 2 steps (multi-step) so replan is triggered.
+        # After executing step 1, replan revises to add a 3rd step.
         plan_response = json.dumps({
             "steps": [
                 {"step": 1, "intent": "gap_analysis", "params": {"scope": None, "keyword": "DL"}, "depends_on": []},
+                {"step": 2, "intent": "qa", "params": {"query": "讲解盲区内容"}, "depends_on": [1]},
             ],
         })
 
@@ -812,7 +911,7 @@ class TestGraphIntegration:
                 {"step": 2, "intent": "qa", "params": {"query": "讲解Attention"}, "depends_on": [1]},
                 {"step": 3, "intent": "qa", "params": {"query": "讲解LSTM"}, "depends_on": [1]},
             ],
-            "reason": "发现2个盲区",
+            "reason": "发现2个盲区，拆分为2个讲解步骤",
         })
 
         rewrite_1 = json.dumps({"query": "讲解Attention"})
@@ -843,6 +942,7 @@ class TestGraphIntegration:
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
              patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.nodes.orchestrator.async_session_factory", return_value=AsyncMock()) as _, \
              patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
              patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
 
@@ -871,7 +971,7 @@ class TestGraphIntegration:
         plan_response = json.dumps({
             "steps": [
                 {"step": 1, "intent": "qa", "params": {"query": "什么是Transformer?"}, "depends_on": []},
-                {"step": 2, "intent": "gap_analysis", "params": {"scope": None}, "depends_on": []},
+                {"step": 2, "intent": "gap_analysis", "params": {"scope": None, "keyword": None}, "depends_on": [1]},
             ],
         })
 
@@ -985,6 +1085,7 @@ class TestGraphIntegration:
         with patch("app.agent.nodes.orchestrator.llm_client") as mock_llm, \
              patch("app.agent.nodes.orchestrator.run_gap_agent", new_callable=AsyncMock) as mock_gap, \
              patch("app.agent.nodes.orchestrator.run_qa_agent", new_callable=AsyncMock) as mock_qa, \
+             patch("app.agent.nodes.orchestrator.async_session_factory", return_value=AsyncMock()) as _, \
              patch("app.agent.graph.llm_client.stream_chat", mock_stream_chat), \
              patch("app.agent.graph.load_memory_context", new_callable=AsyncMock, return_value="") as _, \
              patch("app.agent.graph.save_conversation", new_callable=AsyncMock) as _:
@@ -1008,3 +1109,104 @@ class TestGraphIntegration:
             assert any("汇总多个子任务结果" in msg for msg in status_messages)
             assert token_text == "综合：盲区在Attention。"
             assert final_event["answer"] == "综合：盲区在Attention。"
+
+
+# ── _validate_params / _validate_plan tests ─────────────────
+
+
+class TestValidateParams:
+    def test_qa_valid(self):
+        assert _validate_params("qa", {"query": "什么是Transformer?"}) is True
+
+    def test_qa_empty_query(self):
+        assert _validate_params("qa", {"query": ""}) is False
+
+    def test_qa_missing_query(self):
+        assert _validate_params("qa", {}) is False
+
+    def test_gap_valid(self):
+        assert _validate_params("gap_analysis", {"scope": None, "keyword": "NLP"}) is True
+
+    def test_gap_missing_keyword(self):
+        assert _validate_params("gap_analysis", {"scope": None}) is False
+
+    def test_quiz_valid(self):
+        assert _validate_params("quiz", {"topics": ["A", "B"]}) is True
+
+    def test_quiz_empty_topics(self):
+        assert _validate_params("quiz", {"topics": []}) is True
+
+    def test_quiz_missing_topics(self):
+        assert _validate_params("quiz", {}) is False
+
+    def test_not_dict(self):
+        assert _validate_params("qa", "string") is False
+
+    def test_unknown_intent(self):
+        assert _validate_params("unknown", {"query": "x"}) is False
+
+
+class TestValidatePlan:
+    def test_valid_single_step(self):
+        steps = [{"step": 1, "intent": "qa", "params": {"query": "test"}, "depends_on": []}]
+        result = _validate_plan(steps, "test")
+        assert result == steps
+
+    def test_valid_multi_step_with_deps(self):
+        steps = [
+            {"step": 1, "intent": "gap_analysis", "params": {"scope": None, "keyword": "DL"}, "depends_on": []},
+            {"step": 2, "intent": "qa", "params": {"query": "讲解概念"}, "depends_on": [1]},
+        ]
+        result = _validate_plan(steps, "test")
+        assert result == steps
+
+    def test_empty_steps_fallback(self):
+        result = _validate_plan([], "test query")
+        assert len(result) == 1
+        assert result[0]["intent"] == "qa"
+        assert result[0]["params"]["query"] == "test query"
+
+    def test_duplicate_step_numbers_fallback(self):
+        steps = [
+            {"step": 1, "intent": "qa", "params": {"query": "a"}, "depends_on": []},
+            {"step": 1, "intent": "qa", "params": {"query": "b"}, "depends_on": []},
+        ]
+        result = _validate_plan(steps, "test")
+        assert len(result) == 1  # fallback
+
+    def test_invalid_step_number_fallback(self):
+        steps = [{"step": -1, "intent": "qa", "params": {"query": "a"}, "depends_on": []}]
+        result = _validate_plan(steps, "test")
+        assert len(result) == 1
+        assert result[0]["step"] == 1
+
+    def test_invalid_dep_reference_fallback(self):
+        steps = [
+            {"step": 1, "intent": "qa", "params": {"query": "a"}, "depends_on": []},
+            {"step": 2, "intent": "qa", "params": {"query": "b"}, "depends_on": [99]},
+        ]
+        result = _validate_plan(steps, "test")
+        assert len(result) == 1
+
+    def test_self_dependency_fallback(self):
+        steps = [{"step": 1, "intent": "qa", "params": {"query": "a"}, "depends_on": [1]}]
+        result = _validate_plan(steps, "test")
+        assert len(result) == 1
+
+    def test_cycle_detection_fallback(self):
+        steps = [
+            {"step": 1, "intent": "qa", "params": {"query": "a"}, "depends_on": [2]},
+            {"step": 2, "intent": "qa", "params": {"query": "b"}, "depends_on": [1]},
+        ]
+        result = _validate_plan(steps, "test")
+        assert len(result) == 1
+
+    def test_invalid_intent_fallback(self):
+        steps = [{"step": 1, "intent": "unknown", "params": {"query": "a"}, "depends_on": []}]
+        result = _validate_plan(steps, "test")
+        assert len(result) == 1
+
+    def test_invalid_params_fallback(self):
+        steps = [{"step": 1, "intent": "qa", "params": {"query": ""}, "depends_on": []}]
+        result = _validate_plan(steps, "test")
+        assert len(result) == 1

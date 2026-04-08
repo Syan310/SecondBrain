@@ -464,3 +464,228 @@ RAG/Agent 评测由「子目录时间戳 JSON + results 根目录 latest」双�
 
 ### 决策
 以当前结果作为基准，清理历史测试数据，进入优化阶段。
+
+---
+
+## 2026-04-06: Full Profile 评估结果分析
+
+### 背景
+完成 Step 8 评估框架搭建后，运行 full profile（30 QA + 30 intent）获取完整基准数据。此前仅有 smoke profile（6 QA + 6 intent）的初步基准。
+
+### 关键数据对比 (Smoke → Full)
+
+**RAG:**
+- Recall@K: 1.000 → 0.950（轻微下降，仍达标）
+- Faithfulness: 0.748 → 0.713（持续偏低）
+- Context Precision: 0.875 → 0.719（multi-hop 拖累严重，6/10=0.0）
+- Reranker Lift: 0.000 → **-0.010**（确认负增益）
+- Multi-hop Lift: -0.171 → **-0.316**（恶化近一倍）
+
+**Agent:**
+- Intent Accuracy: 100% → 96.7%（仍达标）
+- QA Pass Rate: 25% → 36.7%（改善有限，远未达标）
+- Timeout Rate: 75% → 60%（仍是主要瓶颈）
+- E2E P50 (成功): 89.8s → 87.0s（改善极小）
+
+### 结论
+1. **P0 是 Agent 超时**：60% timeout 导致系统不可用，需减少 LLM 调用链长度
+2. **P1 是 Reranker 负增益**：full profile 确认 reranker 在当前场景无价值，应考虑优化或暂时禁用
+3. **P2 是 Multi-hop 检索失效**：Context Precision 0.0 表明单次检索无法覆盖跨概念问题
+4. **P3 是 Faithfulness 偏低**：LLM 在生成时过度补充背景知识，需要 prompt 强化约束
+
+---
+
+## 2026-04-06: QA SubAgent 架构重构 — Plan & Execute → ReAct + Reflection
+
+### 变更
+
+**QA SubAgent (`qa_agent.py`)**:
+- 旧架构: Planner → Executor (ReAct loop per step) → Synthesize → QC (max 2 retries)
+- 新架构: ReAct (max 2轮, rag_search tool-calling) → Reflection → fail 时带 feedback 再跑 1 轮 ReAct
+- 删除: Planner、Synthesizer、QC retry 循环、query_decompose tool
+- LLM 调用次数: 3-13 次 → 2-4 次
+
+**Orchestrator (`orchestrator.py`)**:
+- plan_node prompt 新增 QA 子查询拆解能力
+- 新增 3 个 few-shot 示例: 单概念不拆、对比类拆并行、因果类拆串行
+- 将 query 拆解职责从 QA SubAgent 内部上移到 Orchestrator 层
+
+### 决策理由
+- P0 问题: Agent E2E 超时率 60% (18/30), 根因是 QA 内部嵌套 Plan & Execute 导致 LLM 调用过多
+- Orchestrator 已经做了意图级 Plan & Execute, QA 内部再做一层是冗余的
+- 简单 QA 不需要 plan → execute → QC 的完整仪式, ReAct 1-2 轮即可完成
+
+## 2026-04-06: Orchestrator plan_node 提示词重写 — 原子任务拆解
+
+**变更**: 重写 `PLAN_SYSTEM_PROMPT`，从"意图分类 + 6 个 few-shot 示例"模式改为"原子任务拆解框架 + 2 个精简示例"。
+
+**动机**: 原提示词拆解指导笼统，依赖 few-shot 模式匹配；LLM 面对未见过的复杂 query 时拆解不稳定。
+
+**核心改动**:
+1. 开头明确 SubAgent 能力边界（每次只能处理一个原子任务），让 LLM 理解拆解的必要性
+2. 定义原子任务的 3 条判定标准：单一检索意图、单一概念聚焦、独立可回答
+3. 新增"拆解判断三步流程"：识别显式/隐式意图 → 检查每个 qa 是否可继续拆分 → 确定依赖关系
+4. few-shot 从 6 个精简到 2 个（对比类并行 QA + 多意图串行）
+5. quiz 最后一步规则保留，补充架构原因说明（quiz 输出题目后需等用户作答，当前单轮架构无法继续执行后续步骤）
+
+**讨论**: 考虑过去掉 quiz 必须最后一步的限制，但需要多轮 plan 持久化（方案 A）或依赖 memory 跨轮衔接（方案 B，已有能力），当前架构改动过大，暂不调整。
+
+**影响文件**: `backend/app/agent/nodes/orchestrator.py` (PLAN_SYSTEM_PROMPT)
+
+## 2026-04-06: Orchestrator 辅助 Prompt 优化 (REWRITE / REPLAN / SYNTHESIZE)
+
+**变更**: 重写 orchestrator 中除 PLAN_SYSTEM_PROMPT 之外的三个提示词。
+
+### REWRITE_SYSTEM_PROMPT（改动最大）
+- **问题**: 原 prompt 仅 6 行，无改写目标、无前序结果处理指导、无原子性约束
+- **改动**:
+  - 明确改写目标：生成适合向量检索的、聚焦单一概念的完整问句
+  - 新增前序结果提取规则：gap→取最低 mastery 盲区，qa→取核心概念
+  - 约束改写后仍需满足原子任务标准（不合并多个概念）
+  - 增加 fallback：前序结果无可用信息时保留原始参数
+
+### REPLAN_SYSTEM_PROMPT（精简 + 约束）
+- **问题**: 4 个示例过多（trivial case 不需要示例）；revise 无膨胀限制，在 P0 超时问题背景下危险；三个选项平等呈现但 continue 应为默认
+- **改动**:
+  - 明确 continue 为默认偏好，revise 仅在结果明确不合理时使用
+  - revised_steps 上限 3 个步骤，防止计划膨胀导致超时
+  - 示例从 4 个砍到 1 个（仅保留 revise，最有教学价值）
+  - 新增判断标准：定义"有效结果"和"无意义的剩余步骤"
+
+### SYNTHESIZE_SYSTEM_PROMPT（小幅优化）
+- **问题**: 不区分意图组合的汇总策略；quiz JSON 结果会被混入自然语言；400 字硬限制过死
+- **改动**:
+  - 按意图组合给不同汇总策略（多 qa 对比结构、gap+qa 诊断→讲解、quiz JSON 原样透传）
+  - 去掉 400 字硬限制，改为"篇幅尽量精简，核心内容优先"
+
+**影响文件**: `backend/app/agent/nodes/orchestrator.py`
+
+## 2026-04-06 迭代 1 RAG 评估结果出炉
+
+**改动**: QA SubAgent 从 Plan & Execute 重构为 ReAct + Reflection; Prompt grounding 约束强化; RAG eval 移除 multi-hop
+
+**结果 (20 单跳, full profile)**:
+- Faithfulness: 0.819 → **0.934** (+11.5%) — 本轮最大收获
+- Answer Relevancy: 0.904 → 0.808 (-9.6%) — 退步，主因是检索失败时模型诚实拒答
+- Context Precision: 0.831 → 0.822 — 基本持平
+- Context Recall: 0.925 → 0.925 — 不变
+- Reranker Lift: -0.01 — 仍为负增益
+- Latency P50: 22.7s → 19.1s — 改善
+
+**遗留问题**: Q15 (上下文爆炸) + Q16 (FFN 维度变化) 两次测试都检索失败; Reranker 持续负增益
+
+**下一步**: 迭代 2 排查 chunk 切分 + Reranker A/B 测试
+
+## 2026-04-07 Embedding Heading Augmentation — 检索精度优化
+
+**问题**: Q15/Q16 评估低分根因分析发现，正确 chunk 存在于 Milvus 中但检索排名不够高。原因是 chunk 文本不含 heading 中的关键词（如 "FFN"、"上下文爆炸"），导致 embedding 向量与 query 语义距离过远。
+
+**改动**: `backend/app/api/routes/ingest.py` — embedding 编码时将 `heading_path` 拼接到 chunk text 前面，Milvus 中 `text` 字段仍存原文。
+
+**预期**: Q16 (FFN 维度变化) 和 Q15 (上下文爆炸解法) 的检索排名提升，context_precision 和 context_recall 改善。
+
+## Agent 评估框架扩展 — Quiz Quality + Gap Precision + Replan Diagnostics
+
+**日期**: 2026-04-07
+
+### 设计决策
+
+#### Tool Selection Acc — 砍掉
+- 原因：subagent dispatch 是确定性映射（plan 中 `intent=qa` → 必然调 `run_qa_agent()`），无动态 tool 选择逻辑
+- 和 Intent Classification Acc 几乎完全重复，无新增信息
+
+#### Replan Efficiency — 降级为 QA E2E 附加统计
+- 原因：replan 没有 ground truth（count=0 可能是好事也可能是 replan 机制失效）
+- 改为 piggyback 在 QA E2E 上，收集 `replan_avg`/`replan_rate`/`replan_action_distribution` 作为诊断信号
+- 修改 `run_orchestrator()` 返回 `plan`/`replan_count`/`replan_action`
+
+#### Quiz Quality — 二元 pass/fail 替代多维评分
+- 原因：10 样本 × 5 维度 × 1-5 分，Judge 方差大于 agent 差异，不 actionable
+- 改为：规则校验结构（4 选项、A-D 答案）+ LLM Judge 单一 pass/fail（题目可从 source_chunks 推导 + 答案正确）
+- 输出 `quiz_valid_rate`，直接可判断优化方向
+
+#### Gap Precision — 集合覆盖替代主观评分
+- 原因：Gap agent 逻辑近确定性（score < 0.3 → gap），测的是 LLM 指令遵循而非系统逻辑
+- 改为：预设 mastery → 运行 agent → LLM 提取报告中的 gap topic → 集合比较
+- 输出 `coverage_rate`（不遗漏真实盲区）+ `false_positive_rate`（不误报已掌握主题）
+
+#### 四路并行执行
+- Intent / QA E2E / Quiz / Gap 无数据依赖，`asyncio.gather` 同时启动
+- 共享 `Semaphore(concurrency)` 控制 API 并发
+
+## 评测稳定性修复 (2026-04-07)
+
+### 问题
+
+前几轮评测暴露了多个并发稳定性问题：
+1. embedding/reranker 首次 lazy load 在多线程/多 phase 并发时可能重复加载或竞态
+2. eval_agent 四个 phase 全并发抢占 GPU 和 SQLite，导致 OOM 或 database locked
+3. SQLite 默认 journal mode 不支持并发读写
+4. 评测启动前没有预检，基础设施异常时浪费大量时间
+5. 评测中途异常导致所有已完成 phase 结果丢失
+
+### 修复
+
+1. **模型加载线程锁**: `embedding.py` / `reranker.py` 的 `_load_model()` 加 `threading.Lock` + 双重检查模式，新增 `warmup()` 方法供评测脚本单线程预热
+2. **Phase 顺序执行**: `eval_agent` 从 `asyncio.gather(intent, qa, quiz, gap)` 改为 intent → QA → quiz → gap 顺序执行，避免跨 phase GPU/SQLite 资源竞争（各 phase 内部 case 级并发保留）
+3. **SQLite WAL + busy_timeout**: `database.py` 通过 `@event.listens_for(engine.sync_engine, "connect")` 设置 `PRAGMA journal_mode=WAL` 和 `busy_timeout=5000`
+4. **评测预检**: `eval_utils.py` 新增 `warmup_and_health_check()`，在评测开始前验证 embedding/reranker 可加载、Milvus 非空、knowledge_concepts > 0；任一检查失败直接标记 run invalid
+5. **Partial save**: `eval_agent` / `eval_rag` 每完成一个 phase 即用原子 rename 写入 JSON，report 新增 `meta.status`、`meta.completed_phases`、`meta.health_issues` 字段
+
+### 关于 Reranker A/B
+
+两轮评测均显示 reranker lift 为 0 或负值，短期暂不继续 A/B 实验，优先稳定性。待稳定性修复验证通过后再考虑 reranker 调优。
+
+### 关于 Profile 一致性
+
+对比实验须保持 profile 一致（同为 smoke 或同为 full）。迭代 2 (heading augmentation) 需在重新 ingest 后用 full profile 跑一次，方可与迭代 1 full 基准对比。
+
+## 2026-04-07: Orchestrator 健壮性四项加固
+
+### 背景
+execute_batch 裸 asyncio.gather 无并发限制、rewrite_params 无 schema 校验、单步失败污染整批、plan 缺结构校验。
+
+### 决策
+
+1. **execute_batch 全局并发限流** — 模块级 `_batch_semaphore = asyncio.Semaphore(2)` 跨请求共享，qa/quiz/gap 共享 LLM + 检索资源，cap=2 防打满。
+2. **rewrite_params 输出 schema 校验** — `_validate_params(intent, params)` 按 intent 校验必要字段（qa→query 非空, gap→scope+keyword, quiz→topics 列表），不合法回退原始 params。
+3. **单步失败隔离** — `_run_one` 内 try/except，结果统一为 `{step, intent, status: ok|failed, result, error?}`。下游 synthesize/passthrough/route_to_output 仅取 ok 结果，replan 可见失败信息做决策。
+4. **plan 结构校验** — 拆为两层：
+   - `_is_plan_structure_valid(steps)`: 编号唯一正整数、依赖引用合法、Kahn 算法检环、intent 合法
+   - `_is_plan_valid(steps)`: 结构 + 所有 step 的 params schema
+   - plan_node: 初始 plan 走 `_is_plan_valid` 全量校验，不合法回退单步 QA
+   - replan_node: revised_steps 走 `_is_plan_structure_valid`(combined plan) + `_validate_params`(仅 revised steps)，已完成步骤不再重校 params
+
+### 影响范围
+- `orchestrator.py`: 新增 `_validate_params`, `_is_plan_structure_valid`, `_is_plan_valid`, `_validate_plan`; 重写 `execute_batch`; 更新 `replan_node`, `passthrough_node`, `route_to_output`, `build_synthesize_messages`
+- `graph.py`: `_describe_step_done` 支持失败状态展示
+- `state.py`: step_results 结构注释更新
+- 测试: 65 个全过 (含 11 个新增验证测试 + 失败隔离测试 + replan cycle/params 校验测试)
+
+## 2026-04-07 Reranker Off A/B 准备
+
+**背景**: 迭代 2 full RAG 评测显示 heading augmentation 后 `MRR raw` 从 0.960 提升到 1.000，但 `MRR reranked` 仍为 0.950，`Reranker Lift` 从 -0.01 恶化到 -0.05，说明 reranker 正在破坏已改善的原始排序。与此同时，首次 full run 还在 reranker tokenizer 并发路径上触发 `RuntimeError: Already borrowed`。
+
+**决策**: 为下一轮评测加入可配置的 reranker 开关，先做 reranker off 的公平 A/B，再决定是否继续保留 reranker。
+
+**约束**:
+- 关闭 reranker 时，最终传给 LLM 的 chunk 数必须保持为 `top_k`
+- A/B 只比较排序来源差异，不能同时改变上下文长度
+- reranker off 路径直接取 Milvus 原始排序前 `top_k`，不额外引入其他改写
+
+**实现**:
+- `backend/app/config.py`: 新增 `enable_reranker: bool = True`
+- `backend/app/agent/tools/rag_search.py`: reranker 关闭时跳过 cross-encoder，仅返回 Milvus 前 `top_k`
+- `backend/tests/test_rag_search.py`: 增加 regression test，验证 reranker off 时结果数量不变且不调用 reranker
+
+**预期收益**:
+1. 验证当前 reranker 是否确实为负贡献
+2. 将 reranker 质量问题与 embedding/heading augmentation 效果解耦
+3. 若 reranker off 指标更优，可直接给后续线上默认策略提供依据
+
+## 2026-04-07 默认关闭 Reranker
+
+- 决策: 将 `backend/app/config.py` 中 `enable_reranker` 的默认值从 `True` 调整为 `False`
+- 原因: 迭代 3 full RAG 结果表明，关闭 reranker 后检索指标、Answer Relevancy 和延迟均优于开启 reranker 的版本，当前 reranker 为负贡献项
+- 约束: 仅调整默认值，不移除 reranker 能力；仍保留 `ENABLE_RERANKER=true/false` 环境变量开关，便于后续对照和重新启用
+- 影响: 未显式配置开关的本地开发、评测和服务启动将默认走 raw hybrid retrieval 排序

@@ -67,6 +67,7 @@ services:
 
   # ==================== Backend (FastAPI) ====================
   backend:
+    profiles: ["backend"]
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -74,15 +75,23 @@ services:
     env_file:
       - ./backend/.env
     ports:
-      - "8000:8000"
+      # 低位端口在部分 Docker Desktop+WSL2 上会出现 expose 500；高位通常可用
+      - "18080:8000"
     volumes:
-      - ./data:/app/data                    # SQLite 持久化 + 待摄入文档
+      - ./backend/data:/app/data              # SQLite 持久化
       - ./backend/app:/app/app              # 开发时热重载代码映射
       - ./backend/evaluation:/app/evaluation  # 评估脚本映射
       - ./backend/models:/app/models        # Embedding + Reranker 模型
     depends_on:
       milvus:
         condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - secondbrain-net

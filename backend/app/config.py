@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     # Reranker
     reranker_model_path: str = "./models/bge-reranker-v2-m3"
+    enable_reranker: bool = False
 
     # Milvus
     milvus_host: str = "milvus"
@@ -39,6 +40,11 @@ class Settings(BaseSettings):
 
     # Upload
     max_upload_size_mb: int = 50  # max file upload size in MB
+
+    # Langfuse (optional — tracing disabled when keys are empty)
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
 
     # App
     app_host: str = "0.0.0.0"

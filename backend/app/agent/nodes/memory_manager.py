@@ -22,6 +22,7 @@ from app.db import crud
 from app.services.embedding import embedding_service
 from app.services.llm_client import llm_client
 from app.services.milvus_client import memory_milvus_service
+from app.services.tracing import observe
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ CONSOLIDATE_SYSTEM_PROMPT = """\
 # ── Load Memory Context ─────────────────────────────────────
 
 
+@observe(name="load_memory")
 async def load_memory_context(
     session: AsyncSession,
     user_id: str,
@@ -117,6 +119,7 @@ async def load_memory_context(
 # ── Save Conversation Round ─────────────────────────────────
 
 
+@observe(name="save_memory")
 async def save_conversation(
     session: AsyncSession,
     user_id: str,
@@ -159,6 +162,7 @@ async def save_conversation(
 # ── Consolidation: Short-term → Long-term ───────────────────
 
 
+@observe(name="consolidate_memory")
 async def _consolidate(
     session: AsyncSession,
     user_id: str,

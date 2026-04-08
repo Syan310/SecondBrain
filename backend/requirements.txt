@@ -30,6 +30,9 @@ notion-client>=2.2.0
 # Evaluation
 ragas>=0.2.5
 
+# Observability
+langfuse>=2.0.0
+
 # Config & Utils
 pydantic>=2.0.0
 pydantic-settings>=2.0.0

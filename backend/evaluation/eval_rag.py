@@ -33,11 +33,10 @@ from app.services.milvus_client import milvus_service
 from app.services.reranker import reranker_service
 from app.services.llm_client import llm_client
 from app.agent.tools.rag_search import rag_search
-from evaluation.eval_utils import EVAL_TZ, configure_run_logging, safe_p50, safe_p95
-from evaluation.profiles import build_stratified_subset, get_eval_profile
+from evaluation.eval_utils import EVAL_TZ, configure_run_logging, safe_p50, safe_p95, warmup_and_health_check
+from evaluation.profiles import build_balanced_subset, get_eval_profile
 from evaluation.ragas_runner import (
     build_ragas_samples,
-    compute_multi_hop_lift,
     compute_ragas_means,
     run_ragas_evaluation,
 )
@@ -53,8 +52,14 @@ RAG_LOG_DIR = OUTPUT_DIR / "logs_rag"
 
 QA_SYSTEM_PROMPT = """\
 你是一个知识问答助手。根据以下检索到的文档片段回答用户问题。
-你可以综合多个片段的信息进行推理和关联分析，不必局限于单个片段中的显式表述。
-如果文档片段与问题完全无关，请说明无法回答。
+
+## 回答要求
+
+- 你的回答必须完全基于以下检索片段中的信息
+- 允许对多个片段的内容进行归纳、对比和因果推理
+- 禁止引入检索内容中未提及的概念、数据、案例或结论
+- 如果检索片段不足以回答问题，明确指出信息不足，不要用自身知识补充
+- 篇幅控制在 200 字以内，只保留核心结论和关键依据
 
 检索到的文档片段：
 {contexts}
@@ -204,6 +209,15 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _save_report(report: dict, output_path: Path) -> None:
+    """Atomically write partial/final report to JSON."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = output_path.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2, default=str)
+    tmp.rename(output_path)
+
+
 async def main(run_log_file: Path, profile_name: str):
     t_start = datetime.now(EVAL_TZ)
     started_at = t_start.isoformat()
@@ -220,149 +234,169 @@ async def main(run_log_file: Path, profile_name: str):
     milvus_service.connect()
     milvus_service.init_collection()
 
-    # Load QA dataset
-    qa_path = DATASET_DIR / "qa_dataset.json"
-    with open(qa_path, "r", encoding="utf-8") as f:
-        qa_dataset = json.load(f)
-    logger.info("Loaded %d QA items. EVAL_PROFILE=%s", len(qa_dataset), profile.name)
-
-    # Separate single-hop and multi-hop
-    qa_subset, qa_subset_meta = build_stratified_subset(
-        qa_dataset,
-        profile.rag_single_hop_limit,
-        profile.rag_multi_hop_limit,
-    )
-    single_hop = [q for q in qa_subset if q.get("question_type") != "multi-hop"]
-    multi_hop = [q for q in qa_subset if q.get("question_type") == "multi-hop"]
-    logger.info(
-        "Selected %d QA items (single-hop=%d, multi-hop=%d)",
-        qa_subset_meta["total_selected"],
-        qa_subset_meta["single_hop_selected"],
-        qa_subset_meta["multi_hop_selected"],
-    )
-
-    # Intermediate results keyed by question text to avoid mutating dataset items
-    rag_results_map: dict[str, dict] = {}
-
-    # ── Phase 1: Classic IR metrics (single-hop only, have source_doc ground truth) ──
-    logger.info("=== Phase 1: Classic IR Metrics ===")
-    recall_scores = []
-    mrr_scores = []
-    mrr_raw_scores = []
-    mrr_reranked_scores = []
-    latencies = []
-
-    for i, item in enumerate(single_hop):
-        question = item["question"]
-        source = item.get("source_doc", "")
-        logger.info("  [%d/%d] %s", i + 1, len(single_hop), question[:60])
-
-        # Run RAG pipeline
-        result = await run_rag_pipeline(question)
-        retrieved_sources = [c.source_doc for c in result["contexts"]]
-        latencies.append(result["total_ms"])
-
-        # Recall@K and MRR
-        recall = compute_recall_at_k(retrieved_sources, source)
-        mrr = compute_reciprocal_rank(retrieved_sources, source)
-        recall_scores.append(recall)
-        mrr_scores.append(mrr)
-
-        # Reranker lift
-        lift_data = compute_reranker_lift(question)
-        mrr_raw = compute_reciprocal_rank(lift_data["raw_sources"], source)
-        mrr_reranked = compute_reciprocal_rank(lift_data["reranked_sources"], source)
-        mrr_raw_scores.append(mrr_raw)
-        mrr_reranked_scores.append(mrr_reranked)
-
-        rag_results_map[question] = result
-
-    ir_metrics = {
-        "recall_at_k": sum(recall_scores) / len(recall_scores) if recall_scores else 0,
-        "mrr": sum(mrr_scores) / len(mrr_scores) if mrr_scores else 0,
-        "mrr_raw": sum(mrr_raw_scores) / len(mrr_raw_scores) if mrr_raw_scores else 0,
-        "mrr_reranked": sum(mrr_reranked_scores) / len(mrr_reranked_scores) if mrr_reranked_scores else 0,
-        "reranker_lift": (
-            (sum(mrr_reranked_scores) - sum(mrr_raw_scores)) / len(mrr_raw_scores)
-            if mrr_raw_scores
-            else 0
-        ),
-        "latency_p50_ms": safe_p50(latencies),
-        "latency_p95_ms": safe_p95(latencies),
-    }
-    logger.info("IR Metrics: %s", json.dumps(ir_metrics, indent=2))
-
-    # ── Phase 2: Run RAG for multi-hop ──
-    logger.info("=== Phase 2: Multi-hop RAG ===")
-    for i, item in enumerate(multi_hop):
-        question = item["question"]
-        logger.info("  [%d/%d] %s", i + 1, len(multi_hop), question[:60])
-        result = await run_rag_pipeline(question)
-        rag_results_map[question] = result
-
-    # ── Phase 3: RAGAS evaluation (all items) ──
-    logger.info("=== Phase 3: RAGAS Evaluation ===")
-    ragas_samples = build_ragas_samples(qa_subset, rag_results_map)
-    ragas_eval = await run_ragas_evaluation(
-        ragas_samples,
-        judge_model=settings.judge_model,
-        judge_api_key=settings.judge_api_key,
-        judge_base_url=settings.judge_base_url,
-        embeddings=_build_bge_ragas_embeddings(),
-    )
-    ragas_results = ragas_eval["results"]
-    ragas_metric_status = ragas_eval["metric_status"]
-
-    # Compute means
-    ragas_means = compute_ragas_means(ragas_results)
-
-    logger.info("RAGAS Means: %s", json.dumps(ragas_means, indent=2))
-    logger.info("RAGAS Metric Status: %s", json.dumps(ragas_metric_status, ensure_ascii=False, indent=2))
-
-    # ── Phase 4: Multi-hop Lift ──
-    logger.info("=== Phase 4: Multi-hop Lift ===")
-    multi_hop_lift = compute_multi_hop_lift(
-        qa_subset,
-        ragas_results.get("faithfulness", []),
-    )
-    logger.info("Multi-hop Lift: %s", json.dumps(multi_hop_lift, indent=2))
-
-    # ── Save results ──
+    # Prepare output path and report skeleton
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     RAG_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     output_path = _rag_report_path(run_ts)
-    finished_at = datetime.now(EVAL_TZ).isoformat()
-    full_report = {
+
+    # ── Health check: warm up models + verify infrastructure ──
+    logger.info("=== Pre-flight health check ===")
+    issues = await warmup_and_health_check(check_db=False, _logger=logger)
+
+    report: dict[str, Any] = {
         "meta": {
             "run_log_file": str(run_log_file.resolve()),
             "timezone": "America/Los_Angeles",
             "started_at": started_at,
-            "finished_at": finished_at,
+            "finished_at": None,
             "profile": profile.name,
             "output_file": str(output_path.resolve()),
+            "status": "invalid" if issues else "running",
+            "health_issues": issues,
+            "completed_phases": [],
         },
-        "subset": qa_subset_meta,
-        "ir_metrics": ir_metrics,
-        "ragas_means": ragas_means,
-        "ragas_metric_status": ragas_metric_status,
-        "multi_hop_lift": multi_hop_lift,
-        "sample_count": len(ragas_samples),
-        "ragas_per_sample": ragas_results,
     }
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(full_report, f, ensure_ascii=False, indent=2, default=str)
+
+    if issues:
+        report["meta"]["finished_at"] = datetime.now(EVAL_TZ).isoformat()
+        _save_report(report, output_path)
+        logger.error("Run marked invalid — aborting. Report: %s", output_path)
+        return
+
+    # Load QA dataset (single-hop only; multi-hop is evaluated at Agent level)
+    qa_path = DATASET_DIR / "qa_dataset.json"
+    with open(qa_path, "r", encoding="utf-8") as f:
+        qa_dataset = json.load(f)
+    single_hop_all = [q for q in qa_dataset if q.get("question_type") != "multi-hop"]
+    logger.info("Loaded %d QA items (%d single-hop). EVAL_PROFILE=%s",
+                len(qa_dataset), len(single_hop_all), profile.name)
+
+    qa_subset, qa_subset_meta = build_balanced_subset(
+        single_hop_all,
+        profile.rag_single_hop_limit,
+        group_key=lambda item: item.get("source_doc", "__unknown__"),
+    )
+    logger.info(
+        "Selected %d single-hop QA items (limit=%s)",
+        qa_subset_meta["selected"],
+        qa_subset_meta["limit"],
+    )
+
+    # Intermediate results keyed by question text to avoid mutating dataset items
+    rag_results_map: dict[str, dict] = {}
+    ir_metrics: dict[str, Any] = {}
+
+    # ── Phase 1: Classic IR metrics (parallel) ──
+    logger.info("=== Phase 1: Classic IR Metrics (concurrency=%d) ===", profile.concurrency)
+    try:
+        sem = asyncio.Semaphore(profile.concurrency)
+        total_items = len(qa_subset)
+
+        async def _run_one_ir(i: int, item: dict) -> dict:
+            question = item["question"]
+            source = item.get("source_doc", "")
+            async with sem:
+                logger.info("  [ir %d/%d] %s", i + 1, total_items, question[:60])
+                result = await run_rag_pipeline(question)
+                lift_data = await asyncio.to_thread(compute_reranker_lift, question)
+
+            retrieved_sources = [c.source_doc for c in result["contexts"]]
+            return {
+                "question": question,
+                "rag_result": result,
+                "recall": compute_recall_at_k(retrieved_sources, source),
+                "mrr": compute_reciprocal_rank(retrieved_sources, source),
+                "mrr_raw": compute_reciprocal_rank(lift_data["raw_sources"], source),
+                "mrr_reranked": compute_reciprocal_rank(lift_data["reranked_sources"], source),
+                "latency_ms": result["total_ms"],
+            }
+
+        ir_items = await asyncio.gather(*[
+            _run_one_ir(i, item) for i, item in enumerate(qa_subset)
+        ])
+
+        recall_scores = [r["recall"] for r in ir_items]
+        mrr_scores = [r["mrr"] for r in ir_items]
+        mrr_raw_scores = [r["mrr_raw"] for r in ir_items]
+        mrr_reranked_scores = [r["mrr_reranked"] for r in ir_items]
+        latencies = [r["latency_ms"] for r in ir_items]
+        for r in ir_items:
+            rag_results_map[r["question"]] = r["rag_result"]
+
+        ir_metrics = {
+            "recall_at_k": sum(recall_scores) / len(recall_scores) if recall_scores else 0,
+            "mrr": sum(mrr_scores) / len(mrr_scores) if mrr_scores else 0,
+            "mrr_raw": sum(mrr_raw_scores) / len(mrr_raw_scores) if mrr_raw_scores else 0,
+            "mrr_reranked": sum(mrr_reranked_scores) / len(mrr_reranked_scores) if mrr_reranked_scores else 0,
+            "reranker_lift": (
+                (sum(mrr_reranked_scores) - sum(mrr_raw_scores)) / len(mrr_raw_scores)
+                if mrr_raw_scores
+                else 0
+            ),
+            "latency_p50_ms": safe_p50(latencies),
+            "latency_p95_ms": safe_p95(latencies),
+        }
+        logger.info("IR Metrics: %s", json.dumps(ir_metrics, indent=2))
+        report["subset"] = qa_subset_meta
+        report["ir_metrics"] = ir_metrics
+        report["meta"]["completed_phases"].append("ir")
+    except Exception as e:
+        logger.exception("Phase 1 (IR) failed: %s", e)
+        report["ir_metrics"] = {"error": f"{type(e).__name__}: {e}"}
+    _save_report(report, output_path)
+
+    # ── Phase 2: RAGAS evaluation ──
+    ragas_means: dict[str, Any] = {}
+    ragas_metric_status: dict[str, Any] = {}
+    ragas_results: list = []
+    ragas_samples: list = []
+
+    if not rag_results_map:
+        logger.warning("Phase 1 produced no results — skipping Phase 2 (RAGAS).")
+        report["ragas_means"] = {"skipped": "Phase 1 failed or returned no results"}
+    else:
+        logger.info("=== Phase 2: RAGAS Evaluation ===")
+        try:
+            ragas_samples = build_ragas_samples(qa_subset, rag_results_map)
+            ragas_eval = await run_ragas_evaluation(
+                ragas_samples,
+                judge_model=settings.judge_model,
+                judge_api_key=settings.judge_api_key,
+                judge_base_url=settings.judge_base_url,
+                embeddings=_build_bge_ragas_embeddings(),
+            )
+            ragas_results = ragas_eval["results"]
+            ragas_metric_status = ragas_eval["metric_status"]
+            ragas_means = compute_ragas_means(ragas_results)
+            logger.info("RAGAS Means: %s", json.dumps(ragas_means, indent=2))
+            logger.info("RAGAS Metric Status: %s", json.dumps(ragas_metric_status, ensure_ascii=False, indent=2))
+            report["ragas_means"] = ragas_means
+            report["ragas_metric_status"] = ragas_metric_status
+            report["sample_count"] = len(ragas_samples)
+            report["ragas_per_sample"] = ragas_results
+            report["meta"]["completed_phases"].append("ragas")
+        except Exception as e:
+            logger.exception("Phase 2 (RAGAS) failed: %s", e)
+            report["ragas_means"] = {"error": f"{type(e).__name__}: {e}"}
+
+    # ── Final save ──
+    report["meta"]["status"] = "completed"
+    report["meta"]["finished_at"] = datetime.now(EVAL_TZ).isoformat()
+    _save_report(report, output_path)
     logger.info("RAG report saved to %s", output_path)
 
     # ── Summary ──
     logger.info("=" * 60)
-    logger.info("RAG EVALUATION SUMMARY")
+    logger.info("RAG EVALUATION SUMMARY  (phases: %s)", report["meta"]["completed_phases"])
     logger.info("=" * 60)
-    logger.info("  Recall@K:          %.3f  (target ≥ 0.85)", ir_metrics["recall_at_k"])
-    logger.info("  MRR:               %.3f  (target ≥ 0.70)", ir_metrics["mrr"])
-    logger.info("  Reranker Lift:     %.3f  (target > 0)", ir_metrics["reranker_lift"])
-    logger.info("  Latency P95:       %.0f ms  (target < 500ms)", ir_metrics["latency_p95_ms"])
-    for k, v in ragas_means.items():
-        logger.info("  %-20s %.3f", k + ":", v)
+    if ir_metrics and "error" not in ir_metrics:
+        logger.info("  Recall@K:          %.3f  (target >= 0.85)", ir_metrics["recall_at_k"])
+        logger.info("  MRR:               %.3f  (target >= 0.70)", ir_metrics["mrr"])
+        logger.info("  Reranker Lift:     %.3f  (target > 0)", ir_metrics["reranker_lift"])
+        logger.info("  Latency P95:       %.0f ms  (target < 500ms)", ir_metrics["latency_p95_ms"])
+    if ragas_means and "error" not in ragas_means:
+        for k, v in ragas_means.items():
+            logger.info("  %-20s %.3f", k + ":", v)
     for metric_name, status in ragas_metric_status.items():
         if status.get("status") == "error":
             logger.warning(
@@ -371,8 +405,6 @@ async def main(run_log_file: Path, profile_name: str):
                 status.get("error_type"),
                 status.get("error"),
             )
-    if "lift" in multi_hop_lift:
-        logger.info("  Multi-hop Lift:    %.3f  (target > 0)", multi_hop_lift["lift"])
     logger.info("=" * 60)
     logger.info("=== eval_rag run end; full log: %s ===", run_log_file.resolve())
 

@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "run_log_file": "/home/syan/SecondBrian/backend/evaluation/results/logs_rag/eval_rag_20260407_135500.log",
+    "timezone": "America/Los_Angeles",
+    "started_at": "2026-04-07T13:55:00.623509-07:00",
+    "finished_at": "2026-04-07T13:55:29.263360-07:00",
+    "profile": "full",
+    "output_file": "/home/syan/SecondBrian/backend/evaluation/results/rag/rag_eval_20260407_135500.json",
+    "status": "completed",
+    "health_issues": [],
+    "completed_phases": [
+      "ragas"
+    ]
+  },
+  "ir_metrics": {
+    "error": "RuntimeError: Already borrowed"
+  },
+  "ragas_means": {},
+  "ragas_metric_status": {
+    "faithfulness": {
+      "status": "error",
+      "error_type": "IndexError",
+      "error": "list index out of range"
+    },
+    "answer_relevancy": {
+      "status": "error",
+      "error_type": "IndexError",
+      "error": "list index out of range"
+    },
+    "llm_context_precision_with_reference": {
+      "status": "error",
+      "error_type": "IndexError",
+      "error": "list index out of range"
+    },
+    "context_recall": {
+      "status": "error",
+      "error_type": "IndexError",
+      "error": "list index out of range"
+    }
+  },
+  "sample_count": 0,
+  "ragas_per_sample": {
+    "user_input": [],
+    "response": [],
+    "retrieved_contexts": [],
+    "reference": [],
+    "faithfulness": [],
+    "answer_relevancy": [],
+    "llm_context_precision_with_reference": [],
+    "context_recall": []
+  }
+}

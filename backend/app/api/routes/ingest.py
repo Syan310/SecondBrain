@@ -32,6 +32,14 @@ _FILENAME_MAX_LEN = 255
 _SAFE_FILENAME_RE = re.compile(r"[^\w\s\-\.\(\)\[\]（）\u4e00-\u9fff]", re.UNICODE)
 
 
+def _build_embed_texts(children: list) -> list[str]:
+    """Build texts for embedding: prepend heading_path to improve semantic matching."""
+    return [
+        f"{c.heading_path}\n{c.text}" if c.heading_path else c.text
+        for c in children
+    ]
+
+
 def _sanitize_filename(raw: str) -> str:
     """Sanitize an uploaded filename: strip path components, limit length."""
     # Take only the basename (防止路径穿越)
@@ -132,7 +140,8 @@ async def _ingest_one(
 
         # 2. Embed (serial — shared model, called sequentially by caller)
         texts = [child.text for child in all_children]
-        embed_out = embedding_service.encode_documents(texts)
+        embed_texts = _build_embed_texts(all_children)
+        embed_out = embedding_service.encode_documents(embed_texts)
         embeddings = embed_out.dense.tolist()
         sparse_embeddings = embed_out.sparse
 
@@ -140,7 +149,7 @@ async def _ingest_one(
         milvus_service.delete_by_source(filename)
         await delete_concepts_by_source(db_session, filename)
 
-        # 4. Insert into Milvus
+        # 4. Insert into Milvus (text stores original, embedding uses heading-augmented)
         count = milvus_service.insert(
             parent_ids=[child.parent_id for child in all_children],
             source_docs=[filename] * len(all_children),
@@ -225,7 +234,8 @@ async def upload_documents(
 
         try:
             texts = [child.text for child in all_children]
-            embed_out = embedding_service.encode_documents(texts)
+            embed_texts = _build_embed_texts(all_children)
+            embed_out = embedding_service.encode_documents(embed_texts)
             embeddings = embed_out.dense.tolist()
             sparse_embeddings = embed_out.sparse
 

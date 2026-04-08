@@ -141,7 +141,6 @@ Tools 位于 `app/agent/tools/`（由 SubAgents 通过 LLM tool-calling 或代�
 | Tool | 作用 |
 |------|------|
 | **rag_search** | hybrid search + RRF + rerank；返回排序 chunk 与来源信息；Milvus 空库时上层可有 fallback 策略 |
-| **query_decompose** | 复杂问句拆成 2–4 子查询；失败则回退原 query |
 | **read_mastery** | 读 `user_mastery`，计算时间衰减后的 **effective** 掌握度 |
 | **update_mastery** | Quiz 判分等：二元 `is_correct`，在 effective 基础上 **+0.1 / -0.15**（首次 topic 默认分见 `default_mastery_score`） |
 | **search_concepts** | 封装 `crud.search_concepts`，供 Gap / 选题等 |
@@ -169,7 +168,7 @@ Orchestrator 共享状态要点：
 - `current_step_index`、`replan_action`（continue / revise / finish）、`replan_count`
 - `final_answer`
 
-意图仅三类：**`qa`**、**`gap_analysis`**、**`quiz`**。规划 prompt 要求：**若含 quiz，必须为最后一步**，且可设 `depends_on` 以串联前序步骤。
+意图仅三类：**`qa`**、**`gap_analysis`**、**`quiz`**。规划 prompt 要求：**若含 quiz，必须为最后一步**，且可设 `depends_on` 以串联前序步骤。**对比/关联类 QA 在 plan_node 阶段拆为多个 QA step**（并行或串行），QA SubAgent 只处理单概念查询。
 
 ### 7.3 LangGraph 拓扑（与代码一致）
 
@@ -184,7 +183,7 @@ START → memory → plan → route_after_plan
 ```
 
 - **memory**：`load_memory_context` — SQLite 近期轮次 + Milvus 长期摘要（hybrid + 阈值）。
-- **plan**：`plan_node` — LLM 输出 JSON 计划；注入 `memory_context`。
+- **plan**：`plan_node` — LLM 输出 JSON 计划；注入 `memory_context`；对比/关联类 QA 拆为多步。
 - **execute_step**：每次执行 `plan[current_step_index]` 一步；若有依赖，用前序 `step_results` **LLM 改写 params**；分发 `run_qa_agent` / `run_gap_agent` / `run_quiz_agent`。
 - **replan**：`replan_node` — continue / revise / finish；revise 可替换剩余步骤；有次数上限防死循环。
 - **passthrough**：单步结果直接作为最终回答。
@@ -198,7 +197,7 @@ START → memory → plan → route_after_plan
 
 ### 7.5 SubAgent 行为摘要
 
-- **QA**（`qa_agent.py`）：Planner → 逐步 Execute（ReAct + tools）→ Synthesize → QC（有限次重试）。
+- **QA**（`qa_agent.py`）：ReAct (max 2轮, rag_search tool-calling) → Reflection (质量审查) → fail 时带反馈再跑 1 轮 ReAct。查询拆解由 Orchestrator plan_node 负责。
 - **Gap**（`gap_agent.py`）：tools 读掌握度与概念，LLM 生成盲区报告；支持 `scope` 文档过滤。
 - **Quiz**（`quiz_agent.py`）：在 Orchestrator 中为 **单次生成 2 道选择题**（非旧版 10 题长会话）；**不出分、不写 mastery**。
 

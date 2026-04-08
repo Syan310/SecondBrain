@@ -25,9 +25,8 @@
     │   └── 生成层: Faithfulness, Answer Relevancy
     │
     ├── Agent 评估 (任务驱动)
-    │   ├── 路由层: Intent Classification Acc, Tool Selection Acc
-    │   ├── 子任务: Task Success Rate, Quiz Quality, Gap Precision
-    │   └── 多跳: Multi-hop Lift
+    │   ├── 路由层: Intent Classification Acc
+    │   ├── 子任务: Task Success Rate (含 Replan 诊断), Quiz Valid Rate, Gap Coverage
     │
     └── 端到端: E2E Latency (P95), Overall Success Rate
 ```
@@ -38,11 +37,13 @@
 
 ### 运行档位
 
+RAG 评估仅使用 **单跳** 样本（multi-hop 由 Agent 评估覆盖）。
+
 | Profile | 用途 | 样本规模 |
 |---------|------|----------|
-| `smoke` | 开发期快速回归 | 4 单跳 + 2 多跳 |
-| `standard` | 日常主评测 | 10 单跳 + 5 多跳 |
-| `full` | 阶段性全量验收 | 全量 30 |
+| `smoke` | 开发期快速回归 | 4 单跳 |
+| `standard` | 日常主评测 | 10 单跳 |
+| `full` | 阶段性全量验收 | 全量单跳 |
 
 ### 检索层
 
@@ -67,28 +68,30 @@
 
 ### 运行档位
 
-| Profile | Intent 样本 | QA E2E 样本 | 用途 |
-|---------|-------------|-------------|------|
-| `smoke` | 6 | 3 单跳 + 1 多跳 | 开发期快速回归 |
-| `standard` | 15 | 10 单跳 + 5 多跳 | 日常主评测 |
-| `full` | 30 | 全量 | 阶段性全量验收 |
+| Profile | Intent | QA E2E | Quiz | Gap | 用途 |
+|---------|--------|--------|------|-----|------|
+| `smoke` | 6 | 3 单跳 + 1 多跳 | 3 | 2 | 开发期快速回归 |
+| `standard` | 15 | 10 单跳 + 5 多跳 | 6 | 4 | 日常主评测 |
+| `full` | 全量 | 全量 | 全量 | 全量 | 阶段性全量验收 |
+
+四个 phase 使用 `asyncio.gather` 四路并行，各自独立 `Semaphore(concurrency)` 控制并发。
 
 ### 路由与决策
 
 | 指标 | 定义 | 评估方式 | 目标 |
 |------|------|----------|------|
 | **Intent Classification Acc** | Orchestrator `plan_node` 单意图规划准确率 | 标注 test set 对比 | ≥ 0.95 |
-| **Tool Selection Acc** | Agent 工具选择准确率 | 记录 trajectory, LLM-as-Judge | ≥ 0.85 |
-| **Replan Efficiency** | 平均 replan 次数 | 统计 | ≤ 1.5 |
+
+> **已分析后不实现**：Tool Selection Acc（subagent dispatch 是 intent→subagent 的确定性映射，与 Intent Acc 完全重复）。
 
 ### 子任务质量
 
 | 指标 | 适用 | 评估方式 | 目标 |
 |------|------|----------|------|
-| **Task Success Rate** | 当前脚本默认仅 QA 子集 | LLM-as-Judge 判通过/不通过 | ≥ 0.80 |
-| **Multi-hop Lift** | QA 复杂问题 | decompose 开启/关闭 Faithfulness 差值 | > 0 |
-| **Quiz Question Quality** | Quiz | LLM-as-Judge 评分 (相关性+区分度+正确性) | ≥ 4.0/5 |
-| **Gap Detection Precision** | Gap | 人工抽检盲区合理性 | ≥ 0.80 |
+| **Task Success Rate** | QA 子集 E2E | LLM-as-Judge 判 pass/partial/fail | ≥ 0.80 |
+| **Replan Efficiency** | QA E2E 附带诊断 | piggyback 统计 `replan_avg` / `replan_rate` / `replan_action_distribution`，仅在 action=revise 时计数 | 诊断信号，无硬目标 |
+| **Quiz Valid Rate** | Quiz | 规则校验结构（4 选项 / A-D 答案）+ Kimi Judge 二元 pass/fail（题目可从 source_chunks 推导 + 答案正确） | ≥ 0.80 |
+| **Gap Coverage** | Gap | SQLite 预设 mastery → 调 `run_gap_agent` → LLM 从报告提取 gap 列表 → 集合比较得 `coverage_rate` + `false_positive_rate` | coverage ≥ 0.80, FP ≤ 0.20 |
 
 ---
 
@@ -108,12 +111,12 @@
 
 ## 四、评估数据集
 
-| 数据集 | 用途 | 条数 | 格式 |
-|--------|------|------|------|
-| QA 评估集 | RAG + 生成 | 30-40 (含 10 多跳) | `{question, ground_truth, contexts, source_doc}` |
-| Intent 评估集 | 路由准确率 | 30 (qa/quiz/gap 各 10) | `{query, expected_intent}` |
-| Quiz 评估集 | 出题质量 | 10 组 | 生成后 LLM-as-Judge 评分 |
-| Gap 评估集 | 盲区检测 | 5-10 | 预设 mastery + 验证报告 |
+| 数据集 | 文件 | 用途 | 条数 | 格式 |
+|--------|------|------|------|------|
+| QA 评估集 | `qa_dataset.json` | RAG 单跳 + Agent E2E（含多跳） | ~30 (含 10 多跳) | `{question, ground_truth, source_doc, question_type}` |
+| Intent 评估集 | `intent_dataset.json` | 路由准确率 | 30 (qa/quiz/gap 各 10) | `{query, expected_intent}` |
+| Quiz 评估集 | `quiz_eval_dataset.json` | 出题质量 | 10 组 | `{topic, query, source_doc}` |
+| Gap 评估集 | `gap_eval_dataset.json` | 盲区检测 | 6 组 | `{scenario_id, mastery_preset, scope, expected_gap_mode}` |
 
 **生成方式**：半自动（LLM 从 Milvus chunks 生成候选 → 人工审核定稿）。
 
@@ -125,11 +128,9 @@
 - **Judge 模型**: Kimi-K2.5 (Moonshot API, OpenAI-compatible)
 - **评估脚本**: `backend/evaluation/` 目录, 每个维度独立模块, 统一 runner 输出 JSON 报告
 - **运行方式**:
-  - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag --profile smoke`
-  - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag --profile standard`
-  - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag --profile full`
-  - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile smoke`
-  - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile standard`
-  - `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile full`
+  - 并行跑 RAG + Agent: `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_all --profile smoke`
+  - 单独跑 RAG: `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_rag --profile smoke`
+  - 单独跑 Agent: `cd backend && MILVUS_HOST=localhost python -m evaluation.eval_agent --profile smoke`
+  - 将 `smoke` 替换为 `standard` / `full` 切换档位
 - **RAG 输出增强**: 每次运行仅写入 `evaluation/results/rag/rag_eval_YYYYMMDD_HHMMSS.json`（`YYYYMMDD_HHMMSS` 为洛杉矶本地），`meta.timezone` / `meta.started_at` / `meta.finished_at`（ISO 含偏移）、`meta.output_file`，并记录 `ragas_metric_status`
 - **Agent 输出增强**: 每次运行仅写入 `evaluation/results/agent/agent_eval_YYYYMMDD_HHMMSS.json`（同上为洛杉矶本地），`meta` 字段同上，并记录 `metric_scope`、当前 `profile`、子集组成、judge error 统计

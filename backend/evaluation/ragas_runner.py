@@ -68,49 +68,6 @@ def compute_ragas_means(ragas_results: dict[str, list[Any]]) -> dict[str, float]
     return ragas_means
 
 
-def compute_multi_hop_lift(
-    qa_subset: list[dict[str, Any]],
-    faithfulness_values: list[Any],
-) -> dict[str, float | None]:
-    """Compute single-hop vs multi-hop faithfulness lift."""
-    single_faithfulness: list[float] = []
-    multi_faithfulness: list[float] = []
-
-    for i, item in enumerate(qa_subset):
-        if i >= len(faithfulness_values):
-            break
-        value = faithfulness_values[i]
-        if not (isinstance(value, (int, float)) and value == value):
-            continue
-        if item.get("question_type") == "multi-hop":
-            multi_faithfulness.append(value)
-        else:
-            single_faithfulness.append(value)
-
-    result: dict[str, float | None] = {
-        "single_hop_faithfulness": (
-            sum(single_faithfulness) / len(single_faithfulness)
-            if single_faithfulness
-            else None
-        ),
-        "multi_hop_faithfulness": (
-            sum(multi_faithfulness) / len(multi_faithfulness)
-            if multi_faithfulness
-            else None
-        ),
-    }
-
-    if (
-        result["single_hop_faithfulness"] is not None
-        and result["multi_hop_faithfulness"] is not None
-    ):
-        result["lift"] = (
-            result["multi_hop_faithfulness"] - result["single_hop_faithfulness"]
-        )
-
-    return result
-
-
 async def run_ragas_evaluation(
     samples: list[dict[str, Any]],
     *,
