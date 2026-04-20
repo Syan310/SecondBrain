@@ -46,9 +46,9 @@ LLM_API_KEY=sk-xxxx
 Recommended local settings:
 
 ```env
-LLM_API_KEY=sk-xxxx
-LLM_BASE_URL=https://dashscope-us.aliyuncs.com/compatible-mode/v1
-LLM_MODEL=qwen3.6-plus
+LLM_API_KEY=sk-ant-xxxx
+LLM_BASE_URL=https://api.anthropic.com
+LLM_MODEL=claude-opus-4-6
 
 EMBEDDING_MODEL_PATH=./models/bge-m3
 RERANKER_MODEL_PATH=./models/bge-reranker-v2-m3
