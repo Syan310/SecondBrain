@@ -1,0 +1,69 @@
+{
+  "reference": "Opus",
+  "sonnet_file": "evaluation/results/calibration/opus_labels_rag_20261102_220755.json",
+  "haiku_files": [
+    "evaluation/results/rag/rag_eval_20261102_220755.json",
+    "evaluation/results/rag/rag_eval_20261102_221242.json",
+    "evaluation/results/rag/rag_eval_20261102_221817.json"
+  ],
+  "sonnet_judge": "claude-opus-5-5 (Claude Code, user-run)",
+  "haiku_judges": [
+    "anthropic/claude-haiku-5.5"
+  ],
+  "metrics": {
+    "faithfulness": {
+      "n": 0,
+      "spearman": null,
+      "mean_diff": null,
+      "sonnet_mean": null,
+      "haiku_mean": null,
+      "low_correlation": true
+    },
+    "answer_relevancy": {
+      "n": 0,
+      "spearman": null,
+      "mean_diff": null,
+      "sonnet_mean": null,
+      "haiku_mean": null,
+      "low_correlation": true
+    },
+    "context_precision": {
+      "n": 0,
+      "spearman": null,
+      "mean_diff": null,
+      "sonnet_mean": null,
+      "haiku_mean": null,
+      "low_correlation": true
+    },
+    "context_recall": {
+      "n": 0,
+      "spearman": null,
+      "mean_diff": null,
+      "sonnet_mean": null,
+      "haiku_mean": null,
+      "low_correlation": true
+    },
+    "correctness_score": {
+      "n": 50,
+      "spearman": 0.9450520866924337,
+      "mean_diff": 0.006666666666666666,
+      "sonnet_mean": 0.87,
+      "haiku_mean": 0.8633333333333334,
+      "low_correlation": false
+    }
+  },
+  "refusal": {
+    "n": 0,
+    "majority_agree": 0,
+    "majority_agreement": null,
+    "per_run_agreement": null,
+    "disagreements": []
+  },
+  "correctness": {
+    "n": 50,
+    "majority_agree": 50,
+    "majority_agreement": 1.0,
+    "per_run_agreement": 0.9866666666666667,
+    "disagreements": []
+  }
+}

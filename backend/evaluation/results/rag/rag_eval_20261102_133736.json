@@ -1,0 +1,509 @@
+{
+  "meta": {
+    "run_id": "rag_20261102_133736",
+    "run_log_file": "C:\\Users\\Shaoyu Yan\\Desktop\\SecondBrain\\backend\\evaluation\\results\\logs_rag\\eval_rag_20261102_133736.log",
+    "timezone": "America/Los_Angeles",
+    "started_at": "2026-11-02T13:37:36.157387-08:00",
+    "finished_at": "2026-11-02T13:38:23.395872-08:00",
+    "profile": "smoke",
+    "dataset": {
+      "name": "qa_l0_v1.json",
+      "sha256": "ee47c4ecc71352f628a4ca46fe3d73d6f12be187aefc70bdc871d6fcf6c2d0db",
+      "items": 60,
+      "answerable": 50,
+      "refusal": 10,
+      "type_counts": {
+        "original": 20,
+        "term": 10,
+        "paraphrase": 10,
+        "heading": 5,
+        "factual": 5,
+        "refusal": 10
+      }
+    },
+    "output_file": "C:\\Users\\Shaoyu Yan\\Desktop\\SecondBrain\\backend\\evaluation\\results\\rag\\rag_eval_20261102_133736.json",
+    "status": "completed",
+    "health_issues": [],
+    "completed_phases": [
+      "ir",
+      "refusal",
+      "ragas"
+    ],
+    "commit": {
+      "sha": "6139268a2687c05524e194ff5a3627a04b10aded",
+      "dirty": false
+    },
+    "config": {
+      "enable_reranker": false,
+      "reranker_use_heading": false,
+      "citation_mode": "off",
+      "reranker_max_length": 1024,
+      "top_k": 5,
+      "candidate_k": 15,
+      "rrf_k": 60,
+      "bm25_k1": 1.2,
+      "bm25_b": 0.75,
+      "qa_temperature": 0.1,
+      "qa_max_tokens": 1024
+    },
+    "prompt_sha256": "9222d3ceeffd",
+    "refusal_judge_prompt_sha256": "b2bf34152599",
+    "corpus": {
+      "dir": "C:\\Users\\Shaoyu Yan\\Desktop\\LLM_Learn",
+      "files": {
+        "Agent 复习.md": {
+          "sha256": "ff0038ecfd356dc7a7c0fcb14db20999987d206f474ccd2c5b6f7bb14652d15a",
+          "chunks": 52
+        },
+        "RAG复习.md": {
+          "sha256": "49e7980d9bc8ca6c3a5eb6d5f2c5ee8f391e7ff3d6e67f6c1507669b9e720557",
+          "chunks": 81
+        },
+        "Transformer 复习.md": {
+          "sha256": "4e0af6eb3a8bb1995481166c317ab8c7fe514116a36e0cdf9b1dcf99bfb53e81",
+          "chunks": 21
+        },
+        "你不知道的Agent-原理架构与工程实践.md": {
+          "sha256": "8f544c38718654a8962c18a6f07530aa42e36740a4adfb16af5448156bf0f473",
+          "chunks": 33
+        }
+      }
+    },
+    "models": {
+      "llm": {
+        "model": "deepseek-flash",
+        "base_url": "https://api.deepseek.com",
+        "provider_order": [],
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        }
+      },
+      "judge": {
+        "model": "anthropic/claude-sonnet-5.5",
+        "base_url": "https://openrouter.ai/api/v1",
+        "provider_order": [
+          "anthropic"
+        ],
+        "extra_body": {
+          "usage": {
+            "include": true
+          },
+          "provider": {
+            "order": [
+              "anthropic"
+            ],
+            "allow_fallbacks": false
+          }
+        },
+        "sampling": "temperature/top_p not sent (provider default)",
+        "reasoning": "not sent (OpenRouter default)"
+      },
+      "embedding": {
+        "name": "BAAI/bge-m3",
+        "path": "./models/bge-m3"
+      },
+      "reranker": {
+        "name": "BAAI/bge-reranker-v2-m3",
+        "path": "./models/bge-reranker-v2-m3"
+      }
+    },
+    "versions": {
+      "python": "3.11.15",
+      "pymilvus": "2.6.17",
+      "milvus_server": "2.6.25",
+      "ragas": "0.4.3",
+      "langgraph": "1.2.19",
+      "openai": "1.109.1",
+      "FlagEmbedding": "1.4.2",
+      "transformers": "4.57.6",
+      "torch": "2.11.0+cu128"
+    },
+    "usage": {
+      "llm": {
+        "requests": 6,
+        "prompt_tokens": 4004,
+        "completion_tokens": 476,
+        "cost_usd": 0.0,
+        "providers": {
+          "api.deepseek.com": 6
+        },
+        "models": {
+          "deepseek-flash": 6
+        }
+      },
+      "judge": {
+        "requests": 42,
+        "prompt_tokens": 63900,
+        "completion_tokens": 8537,
+        "cost_usd": 0.21317000000000005,
+        "providers": {
+          "Anthropic": 42
+        },
+        "models": {
+          "anthropic/claude-sonnet-5.5": 42
+        }
+      }
+    },
+    "provider_problems": []
+  },
+  "subset": {
+    "answerable_limit": 4,
+    "answerable_types": [
+      "original"
+    ],
+    "refusal_limit": 2,
+    "answerable_selected": 4,
+    "refusal_selected": 2,
+    "selected": 6,
+    "group_counts": {
+      "Transformer 复习.md": 5,
+      "RAG复习.md": 5,
+      "你不知道的Agent-原理架构与工程实践.md": 5,
+      "Agent 复习.md": 5
+    },
+    "ids": [
+      "q001",
+      "q006",
+      "q011",
+      "q016",
+      "q051",
+      "q052"
+    ]
+  },
+  "ir_metrics": {
+    "n": 4,
+    "recall_at_k": 1.0,
+    "mrr": 1.0,
+    "mrr_raw": 1.0,
+    "mrr_reranked": 1.0,
+    "reranker_lift": 0.0,
+    "latency_p50_ms": 1385.7368000008137,
+    "latency_p95_ms": 1688.076500000534,
+    "latency_n": 6
+  },
+  "per_question": [
+    {
+      "id": "q001",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "原始 Transformer 使用什么函数生成位置编码？这些编码在训练过程中是否参与梯度更新？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "原始 Transformer 使用**正余弦函数**生成位置编码，且这些编码**不参与梯度更新**（[1]）。",
+      "clean_answer": "原始 Transformer 使用**正余弦函数**生成位置编码，且这些编码**不参与梯度更新**。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）",
+          "child_id": "3a7b524a-c1af-4178-9f0a-ef06b310a937"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "2. Token Embedding",
+          "child_id": "c1ee8657-f6de-4b24-acbb-cf76d460f276"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）/为什么用正余弦而不是可学习的位置编码？",
+          "child_id": "e31956c3-031d-4995-9e7c-19f644c3291b"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）/关键要点",
+          "child_id": "00a5b46b-018c-4d8c-9307-b733808916a8"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/Pre-Norm vs Post-Norm",
+          "child_id": "d127c412-c71e-42b6-ad75-9f12f1cd06e1"
+        }
+      ],
+      "latency_ms": 1368.868300000031,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接说明原始 Transformer 用正余弦函数生成位置编码,且这些编码不参与梯度更新,正面回应了问题的两个部分,没有表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9509146450683673,
+      "context_precision": 0.8055555555287036,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q006",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为哪三个步骤？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "Naive RAG 的标准流程固定为三个步骤：**索引 → 检索 → 生成**。\n\n- **索引**：文档解析 → 分块 → Embedding → 存入向量数据库\n- **检索**：用户 Query 向量化后做相似度检索，取 Top-K\n- **生成**：将检索结果拼入 Prompt，送入 LLM 生成回答\n\n该流程为固定线性结构，灵活性低，适用于原型验证场景。",
+      "clean_answer": "Naive RAG 的标准流程固定为三个步骤：**索引 → 检索 → 生成**。\n\n- **索引**：文档解析 → 分块 → Embedding → 存入向量数据库\n- **检索**：用户 Query 向量化后做相似度检索，取 Top-K\n- **生成**：将检索结果拼入 Prompt，送入 LLM 生成回答\n\n该流程为固定线性结构，灵活性低，适用于原型验证场景。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Naive RAG（朴素 RAG）",
+          "child_id": "986b480b-68d7-4c88-b60b-981d05123119"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Modular RAG（模块化 RAG）",
+          "child_id": "6b069d86-08f1-4bf7-8c14-615e4a8385cb"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Advanced RAG（增强 RAG）",
+          "child_id": "c2be6500-22b9-4c1d-9e14-ed25b77e9adc"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/核心问题",
+          "child_id": "5c0cc890-cde4-4545-b396-6a348307f7da"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/冷启动面临的三个核心挑战",
+          "child_id": "6984a862-671e-4bea-afc4-dda25027576e"
+        }
+      ],
+      "latency_ms": 1385.7368000008137,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了 Naive RAG 的三个步骤（索引、检索、生成），并附上了每一步的具体说明，没有声明信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8667631325513174,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q011",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在 Agent 的记忆系统设计中，MEMORY.md 对应的是哪一种记忆类型？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "MEMORY.md 对应的是**语义记忆**。\n\n依据片段[1]，Agent 记忆分为四类：上下文窗口（工作记忆）、Skills 文件（程序性记忆）、JSONL 会话历史（情景记忆）和 MEMORY.md（语义记忆）。该片段还指出，MEMORY.md 属于精选事实，需要 Agent 主动维护，整合触发基于 token 使用率阈值，失败时将消息写入存档而非删除，以保持可回退特性。",
+      "clean_answer": "MEMORY.md 对应的是**语义记忆**。\n\n依据片段，Agent 记忆分为四类：上下文窗口（工作记忆）、Skills 文件（程序性记忆）、JSONL 会话历史（情景记忆）和 MEMORY.md（语义记忆）。该片段还指出，MEMORY.md 属于精选事实，需要 Agent 主动维护，整合触发基于 token 使用率阈值，失败时将消息写入存档而非删除，以保持可回退特性。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/5. 记忆系统设计",
+          "child_id": "7a857b89-ce60-474a-80e1-16621d3eacab"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 记忆模块",
+          "child_id": "34a002b1-a0e4-4d71-aa14-eabcf2a31d1f"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "长期记忆管理：Memory Consolidation（记忆整合）",
+          "child_id": "42fb359b-d5a8-48a0-8784-ccb731558df6"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 记忆模块/短期记忆（Short-term Memory）",
+          "child_id": "a19f42b6-53ba-4a73-a1a0-b163ad122385"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 记忆模块/长期记忆（Long-term Memory）",
+          "child_id": "005a791f-a0d7-485f-abaa-29aaec34c280"
+        }
+      ],
+      "latency_ms": 1688.076500000534,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接指出 MEMORY.md 对应语义记忆，并补充了四类记忆的划分和相关说明，没有表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9573337335024747,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q016",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "LangGraph 的 Checkpointer 机制主要提供哪四种核心能力？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "LangGraph 的 Checkpointer 机制提供四种核心能力：\n\n1. **跨会话记忆**：同一用户下次对话时恢复上次的 State，无需重新开始；\n2. **Human-in-the-Loop**：执行到某一步时暂停，等待人工确认后继续；\n3. **错误恢复**：从最后一个成功的 Checkpoint 重新执行，而非从头开始；\n4. **时间旅行（Time Travel）**：回退到历史某个 State，重新分叉执行。\n\n其原理是在每一步执行后保存 State 快照，从而实现上述能力。",
+      "clean_answer": "LangGraph 的 Checkpointer 机制提供四种核心能力：\n\n1. **跨会话记忆**：同一用户下次对话时恢复上次的 State，无需重新开始；\n2. **Human-in-the-Loop**：执行到某一步时暂停，等待人工确认后继续；\n3. **错误恢复**：从最后一个成功的 Checkpoint 重新执行，而非从头开始；\n4. **时间旅行（Time Travel）**：回退到历史某个 State，重新分叉执行。\n\n其原理是在每一步执行后保存 State 快照，从而实现上述能力。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化",
+          "child_id": "80d85a51-4651-4922-8d5b-12079e21cc6e"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化/使用方式",
+          "child_id": "b24f4ad4-2ecb-4360-9b00-878045d1c21a"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：条件边的实现",
+          "child_id": "a8978bfd-50da-46f1-ac2f-36242448a9b0"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化/常用 Checkpointer",
+          "child_id": "c41b24f2-4457-418d-a877-1e63748abace"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：State Reducer 机制",
+          "child_id": "7016d158-3489-49dd-bde1-e2af0cfc0e95"
+        }
+      ],
+      "latency_ms": 1027.766300001531,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了 Checkpointer 的四种核心能力（跨会话记忆、Human-in-the-Loop、错误恢复、时间旅行）并附有说明，没有声明信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9566202913548837,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q051",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "RAPTOR 方法如何通过递归聚类和摘要构建树状索引来改进 RAG 检索？",
+      "source_doc": "",
+      "raw_answer": "检索片段中未提及 RAPTOR 方法，无法回答该问题。现有片段仅涉及 GraphRAG、Naive RAG、Multi-hop RAG 及 RAG 评估方法，均未包含递归聚类或树状索引的相关内容。",
+      "clean_answer": "检索片段中未提及 RAPTOR 方法，无法回答该问题。现有片段仅涉及 GraphRAG、Naive RAG、Multi-hop RAG 及 RAG 评估方法，均未包含递归聚类或树状索引的相关内容。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/GraphRAG（知识图谱 RAG）",
+          "child_id": "f202d270-1e4c-4649-afb0-ad188cdfecae"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Naive RAG（朴素 RAG）",
+          "child_id": "986b480b-68d7-4c88-b60b-981d05123119"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/Multi-hop RAG（多跳检索）",
+          "child_id": "9a456627-eb06-4a8a-ae9c-7341c9e9096f"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 系统评估/端到端评估方法",
+          "child_id": "9f1b16a1-85e3-45a7-a219-2b7c36b9c4b9"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/核心问题",
+          "child_id": "5c0cc890-cde4-4545-b396-6a348307f7da"
+        }
+      ],
+      "latency_ms": 1165.1199000007182,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答表明检索片段中没有 RAPTOR 的相关信息，只说明现有片段涉及哪些其他内容，没有给出递归聚类、摘要或树状索引的任何实质内容。"
+    },
+    {
+      "id": "q052",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "Corrective RAG（CRAG）中，检索评估器判断检索结果质量差时会采取什么动作？",
+      "source_doc": "",
+      "raw_answer": "根据提供的检索片段，**无法回答**该问题。片段中虽提及 Self-RAG（模型自判检索内容是否有用）、Naive RAG（生成时未验证检索质量、幻觉率高）及 Multi-hop RAG 等模式，但均未涉及 Corrective RAG（CRAG）及其检索评估器在判定检索结果质量差时的具体动作。建议补充 CRAG 相关文档。",
+      "clean_answer": "根据提供的检索片段，**无法回答**该问题。片段中虽提及 Self-RAG（模型自判检索内容是否有用）、Naive RAG（生成时未验证检索质量、幻觉率高）及 Multi-hop RAG 等模式，但均未涉及 Corrective RAG（CRAG）及其检索评估器在判定检索结果质量差时的具体动作。建议补充 CRAG 相关文档。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/Self-RAG（自反思 RAG）",
+          "child_id": "e45c87f4-8021-448b-9977-f19220c86c1b"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Naive RAG（朴素 RAG）",
+          "child_id": "986b480b-68d7-4c88-b60b-981d05123119"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索环节/检索质量评估指标",
+          "child_id": "b044b75d-8260-4564-8ea2-c5f0a4d3b242"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/Multi-hop RAG（多跳检索）",
+          "child_id": "9a456627-eb06-4a8a-ae9c-7341c9e9096f"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 系统评估",
+          "child_id": "22fe2ac4-4c41-44e8-838c-606eb6fbdfb2"
+        }
+      ],
+      "latency_ms": 1414.9144000002707,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确表示无法回答，只提到片段中的其他RAG模式，没有给出CRAG检索评估器在结果质量差时的任何具体动作。"
+    }
+  ],
+  "refusal_metrics": {
+    "refusal_correct": 2,
+    "refusal_total": 2,
+    "refusal_accuracy": 1.0,
+    "false_refusals": 0,
+    "answerable_total": 4,
+    "false_refusal_rate": 0.0,
+    "unjudged": 0,
+    "label_counts": {
+      "refusal": 2,
+      "partial": 0,
+      "answer": 4
+    }
+  },
+  "ragas_means": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.9329079506192609,
+    "llm_context_precision_with_reference": 0.9513888888071759,
+    "context_recall": 1.0
+  },
+  "ragas_metric_status": {
+    "faithfulness": {
+      "status": "ok",
+      "valid_count": 4,
+      "sample_count": 4
+    },
+    "answer_relevancy": {
+      "status": "ok",
+      "valid_count": 4,
+      "sample_count": 4
+    },
+    "llm_context_precision_with_reference": {
+      "status": "ok",
+      "valid_count": 4,
+      "sample_count": 4
+    },
+    "context_recall": {
+      "status": "ok",
+      "valid_count": 4,
+      "sample_count": 4
+    }
+  },
+  "sample_count": 4
+}

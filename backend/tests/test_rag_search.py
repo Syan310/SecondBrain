@@ -14,7 +14,6 @@ for _mod in ["FlagEmbedding", "pymilvus"]:
         except ImportError:
             sys.modules[_mod] = MagicMock()
 
-from app.services.embedding import EmbeddingOutput  # noqa: E402
 from app.services.milvus_client import SearchResult  # noqa: E402
 from app.services.reranker import RerankResult  # noqa: E402
 
@@ -69,10 +68,7 @@ def _make_rerank_results(
 def test_rag_search_basic(mock_embed, mock_milvus, mock_reranker):
     """Basic flow: encode → hybrid_search → rerank → return RankedChunks."""
     # Mock embedding
-    mock_embed.encode_query.return_value = EmbeddingOutput(
-        dense=np.random.randn(1024).astype(np.float32),
-        sparse=[{1: 0.5, 2: 0.3}],
-    )
+    mock_embed.encode_dense.return_value = np.random.randn(1, 1024).astype(np.float32)
 
     # Mock hybrid_search returns 15 candidates (top_k=5, candidate=15)
     candidates = _make_search_results(15)
@@ -93,13 +89,15 @@ def test_rag_search_basic(mock_embed, mock_milvus, mock_reranker):
     scores = [r.rerank_score for r in results]
     assert scores == sorted(scores, reverse=True)
 
-    # Verify encode_query was called with the query
-    mock_embed.encode_query.assert_called_once_with("What is attention?")
+    # Verify the query was encoded once (dense only)
+    mock_embed.encode_dense.assert_called_once_with("What is attention?")
 
-    # Verify hybrid_search was called with candidate_k = 5 * 3 = 15
+    # Verify hybrid_search got candidate_k = 5 * 3 = 15 and the raw text for BM25
     mock_milvus.hybrid_search.assert_called_once()
     call_kwargs = mock_milvus.hybrid_search.call_args
     assert call_kwargs.kwargs["top_k"] == 15
+    assert call_kwargs.kwargs["query_text"] == "What is attention?"
+    assert len(call_kwargs.kwargs["query_vector"]) == 1024
 
     # Verify reranker was called with top_n=5
     mock_reranker.rerank.assert_called_once()
@@ -112,10 +110,7 @@ def test_rag_search_basic(mock_embed, mock_milvus, mock_reranker):
 @patch.object(_rag_mod, "embedding_service")
 def test_rag_search_empty_results(mock_embed, mock_milvus, mock_reranker):
     """When Milvus returns no candidates, return empty list without calling reranker."""
-    mock_embed.encode_query.return_value = EmbeddingOutput(
-        dense=np.random.randn(1024).astype(np.float32),
-        sparse=[{1: 0.5}],
-    )
+    mock_embed.encode_dense.return_value = np.random.randn(1, 1024).astype(np.float32)
     mock_milvus.hybrid_search.return_value = []
 
     results = rag_search("nonexistent topic", top_k=5)
@@ -130,10 +125,7 @@ def test_rag_search_empty_results(mock_embed, mock_milvus, mock_reranker):
 @patch.object(_rag_mod, "embedding_service")
 def test_rag_search_fewer_candidates_than_topk(mock_embed, mock_milvus, mock_reranker):
     """When Milvus returns fewer candidates than top_k, rerank all of them."""
-    mock_embed.encode_query.return_value = EmbeddingOutput(
-        dense=np.random.randn(1024).astype(np.float32),
-        sparse=[{1: 0.5}],
-    )
+    mock_embed.encode_dense.return_value = np.random.randn(1, 1024).astype(np.float32)
 
     # Only 3 candidates, but top_k=5
     candidates = _make_search_results(3)
@@ -154,10 +146,7 @@ def test_rag_search_fewer_candidates_than_topk(mock_embed, mock_milvus, mock_rer
 @patch.object(_rag_mod, "embedding_service")
 def test_rag_search_metadata_preserved(mock_embed, mock_milvus, mock_reranker):
     """Verify that source metadata is correctly mapped from candidates through rerank."""
-    mock_embed.encode_query.return_value = EmbeddingOutput(
-        dense=np.random.randn(1024).astype(np.float32),
-        sparse=[{1: 0.5}],
-    )
+    mock_embed.encode_dense.return_value = np.random.randn(1, 1024).astype(np.float32)
 
     candidates = _make_search_results(6)
     mock_milvus.hybrid_search.return_value = candidates
@@ -188,10 +177,7 @@ def test_rag_search_metadata_preserved(mock_embed, mock_milvus, mock_reranker):
 @patch.object(_rag_mod, "embedding_service")
 def test_rag_search_with_filter_expr(mock_embed, mock_milvus, mock_reranker):
     """Verify that expr filter is passed through to hybrid_search."""
-    mock_embed.encode_query.return_value = EmbeddingOutput(
-        dense=np.random.randn(1024).astype(np.float32),
-        sparse=[{1: 0.5}],
-    )
+    mock_embed.encode_dense.return_value = np.random.randn(1, 1024).astype(np.float32)
     mock_milvus.hybrid_search.return_value = _make_search_results(3)
 
     passages = [c.text for c in _make_search_results(3)]
@@ -209,10 +195,7 @@ def test_rag_search_with_filter_expr(mock_embed, mock_milvus, mock_reranker):
 @patch.object(_rag_mod, "embedding_service")
 def test_rag_search_without_reranker_keeps_top_k(mock_embed, mock_milvus, mock_reranker):
     """When reranker is disabled, return Milvus top_k directly without changing count."""
-    mock_embed.encode_query.return_value = EmbeddingOutput(
-        dense=np.random.randn(1024).astype(np.float32),
-        sparse=[{1: 0.5}],
-    )
+    mock_embed.encode_dense.return_value = np.random.randn(1, 1024).astype(np.float32)
 
     candidates = _make_search_results(6)
     mock_milvus.hybrid_search.return_value = candidates
@@ -223,3 +206,48 @@ def test_rag_search_without_reranker_keeps_top_k(mock_embed, mock_milvus, mock_r
     assert [r.child_id for r in results] == ["child_0", "child_1"]
     assert [r.rerank_score for r in results] == [candidates[0].score, candidates[1].score]
     mock_reranker.rerank.assert_not_called()
+
+
+@patch.object(_rag_mod.settings, "reranker_use_heading", True)
+@patch.object(_rag_mod.settings, "enable_reranker", True)
+@patch.object(_rag_mod, "reranker_service")
+@patch.object(_rag_mod, "milvus_service")
+@patch.object(_rag_mod, "embedding_service")
+def test_rag_search_heading_reranker_does_not_leak_heading_into_text(
+    mock_embed, mock_milvus, mock_reranker
+):
+    """With RERANKER_USE_HEADING, the reranker sees heading + text, but
+    RankedChunk.text (LLM context and RAGAS retrieved_contexts) stays the raw text."""
+    mock_embed.encode_dense.return_value = np.random.randn(1, 1024).astype(np.float32)
+    candidates = _make_search_results(15)
+    mock_milvus.hybrid_search.return_value = candidates
+    # The fake reranker echoes back the passages it received, as the real one does.
+    mock_reranker.rerank.side_effect = lambda query, passages, top_n: _make_rerank_results(
+        passages, top_n
+    )
+
+    results = rag_search("test", top_k=5)
+
+    passages = mock_reranker.rerank.call_args.kwargs["passages"]
+    assert passages[0] == f"{candidates[0].heading_path}\n{candidates[0].text}"
+    for r in results:
+        assert r.heading_path not in r.text
+        assert r.text == next(c.text for c in candidates if c.child_id == r.child_id)
+
+
+@patch.object(_rag_mod.settings, "reranker_use_heading", False)
+@patch.object(_rag_mod.settings, "enable_reranker", True)
+@patch.object(_rag_mod, "reranker_service")
+@patch.object(_rag_mod, "milvus_service")
+@patch.object(_rag_mod, "embedding_service")
+def test_rag_search_text_only_reranker_passes_raw_text(mock_embed, mock_milvus, mock_reranker):
+    mock_embed.encode_dense.return_value = np.random.randn(1, 1024).astype(np.float32)
+    candidates = _make_search_results(15)
+    mock_milvus.hybrid_search.return_value = candidates
+    mock_reranker.rerank.side_effect = lambda query, passages, top_n: _make_rerank_results(
+        passages, top_n
+    )
+
+    rag_search("test", top_k=5)
+
+    assert mock_reranker.rerank.call_args.kwargs["passages"] == [c.text for c in candidates]

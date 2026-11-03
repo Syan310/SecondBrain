@@ -137,29 +137,30 @@ def test_intent_subset_balances_labels_instead_of_head_slice():
     }
 
 
-def test_judge_request_kwargs_match_kimi_k25_non_thinking_contract():
+def test_judge_request_kwargs_send_no_sampling_params():
     kwargs = build_judge_request_kwargs(
-        model="kimi-k2.5",
+        model="anthropic/claude-sonnet-5.5",
         messages=[{"role": "user", "content": "judge this"}],
     )
 
     assert kwargs == {
-        "model": "kimi-k2.5",
+        "model": "anthropic/claude-sonnet-5.5",
         "messages": [{"role": "user", "content": "judge this"}],
-        "extra_body": {"thinking": {"type": "disabled"}},
     }
 
 
-def test_judge_request_kwargs_use_max_completion_tokens_for_kimi():
+def test_judge_request_kwargs_pass_extra_body_and_max_completion_tokens():
+    routing = {"provider": {"order": ["anthropic"], "allow_fallbacks": False}}
     kwargs = build_judge_request_kwargs(
-        model="kimi-k2.5",
+        model="anthropic/claude-sonnet-5.5",
         messages=[{"role": "user", "content": "judge this"}],
         max_completion_tokens=512,
+        extra_body=routing,
     )
 
     assert kwargs == {
-        "model": "kimi-k2.5",
+        "model": "anthropic/claude-sonnet-5.5",
         "messages": [{"role": "user", "content": "judge this"}],
-        "extra_body": {"thinking": {"type": "disabled"}},
+        "extra_body": routing,
         "max_completion_tokens": 512,
     }

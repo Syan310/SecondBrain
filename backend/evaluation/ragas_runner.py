@@ -21,18 +21,26 @@ RAGAS_METRIC_NAMES = (
 )
 
 
-def build_ragas_judge_llm_kwargs(judge_model: str) -> dict[str, Any]:
-    """Build Kimi K2.5-specific kwargs for ragas.llm_factory().
+# ragas' InstructorLLM sends these by default; Claude rejects them with HTTP 400.
+UNSUPPORTED_JUDGE_SAMPLING_ARGS = ("temperature", "top_p", "top_k")
 
-    Kimi K2.5 does not accept temperature, top_p, frequency_penalty,
-    presence_penalty, or n — these are fixed by the model and must be omitted.
+
+def build_ragas_judge_llm_kwargs(judge_model: str) -> dict[str, Any]:
+    """Build kwargs for ragas.llm_factory().
+
+    Only ``max_tokens`` is set. Sampling parameters are not sent (Claude rejects
+    them), and reasoning parameters stay at the provider default.
     """
-    return {
-        "extra_body": {"thinking": {"type": "disabled"}},
-        "temperature": 0.6,
-        "top_p": 0.95,
-        "max_tokens": 8192,
-    }
+    return {"max_tokens": 8192}
+
+
+def strip_unsupported_sampling_args(judge_llm: Any) -> Any:
+    """Remove ragas' default sampling args from an InstructorLLM's model_args."""
+    model_args = getattr(judge_llm, "model_args", None)
+    if isinstance(model_args, dict):
+        for key in UNSUPPORTED_JUDGE_SAMPLING_ARGS:
+            model_args.pop(key, None)
+    return judge_llm
 
 
 def build_ragas_samples(
@@ -75,6 +83,7 @@ async def run_ragas_evaluation(
     judge_api_key: str,
     judge_base_url: str,
     embeddings: Any,
+    judge_extra_body: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run RAGAS using the official async evaluation flow.
 
@@ -82,8 +91,11 @@ async def run_ragas_evaluation(
     - ``AsyncOpenAI`` client
     - ``ragas.llms.llm_factory(...)`` for judge initialization
     - ``ragas.aevaluate(...)`` for async-safe production evaluation
+
+    ``judge_extra_body`` (OpenRouter provider routing) is sent with every judge
+    request. Responses are recorded in ``usage_tracker`` under role "judge".
     """
-    from openai import AsyncOpenAI
+    from app.services.llm_client import make_async_openai
     from ragas import EvaluationDataset, aevaluate
     from ragas.dataset_schema import SingleTurnSample
     from ragas.llms import llm_factory
@@ -115,14 +127,16 @@ async def run_ragas_evaluation(
     metric_status: dict[str, dict[str, Any]] = {}
 
     try:
-        judge_client = AsyncOpenAI(
+        judge_client = make_async_openai(
             api_key=judge_api_key,
             base_url=judge_base_url,
+            role="judge",
         )
-        judge_llm = llm_factory(
-            judge_model,
-            client=judge_client,
-            **build_ragas_judge_llm_kwargs(judge_model),
+        llm_kwargs = build_ragas_judge_llm_kwargs(judge_model)
+        if judge_extra_body:
+            llm_kwargs["extra_body"] = judge_extra_body
+        judge_llm = strip_unsupported_sampling_args(
+            llm_factory(judge_model, client=judge_client, **llm_kwargs)
         )
     except Exception as exc:
         logger.exception("Failed to initialize RAGAS judge: %s", exc)

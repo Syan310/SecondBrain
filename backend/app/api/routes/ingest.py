@@ -18,6 +18,7 @@ from app.config import settings
 from app.db.crud import (
     delete_concepts_by_source, get_all_concept_topics, list_documents, upsert_concepts,
 )
+from app.services.chunk_text import with_heading
 from app.services.concept_extractor import extract_concepts
 from app.services.doc_processor import doc_processor
 from app.services.embedding import embedding_service
@@ -34,10 +35,7 @@ _SAFE_FILENAME_RE = re.compile(r"[^\w\s\-\.\(\)\[\]（）\u4e00-\u9fff]", re.UNI
 
 def _build_embed_texts(children: list) -> list[str]:
     """Build texts for embedding: prepend heading_path to improve semantic matching."""
-    return [
-        f"{c.heading_path}\n{c.text}" if c.heading_path else c.text
-        for c in children
-    ]
+    return [with_heading(c.heading_path, c.text) for c in children]
 
 
 def _sanitize_filename(raw: str) -> str:
@@ -141,15 +139,13 @@ async def _ingest_one(
         # 2. Embed (serial — shared model, called sequentially by caller)
         texts = [child.text for child in all_children]
         embed_texts = _build_embed_texts(all_children)
-        embed_out = embedding_service.encode_documents(embed_texts)
-        embeddings = embed_out.dense.tolist()
-        sparse_embeddings = embed_out.sparse
+        embeddings = embedding_service.encode_dense(embed_texts).tolist()
 
         # 3. Delete old data for re-ingestion
         milvus_service.delete_by_source(filename)
         await delete_concepts_by_source(db_session, filename)
 
-        # 4. Insert into Milvus (text stores original, embedding uses heading-augmented)
+        # 4. Insert into Milvus (text stores original; embedding and BM25 use heading-augmented)
         count = milvus_service.insert(
             parent_ids=[child.parent_id for child in all_children],
             source_docs=[filename] * len(all_children),
@@ -157,7 +153,6 @@ async def _ingest_one(
             chunk_indices=[child.chunk_index for child in all_children],
             texts=texts,
             embeddings=embeddings,
-            sparse_embeddings=sparse_embeddings,
         )
 
         # 5. LLM concept extraction per parent chunk
@@ -235,9 +230,7 @@ async def upload_documents(
         try:
             texts = [child.text for child in all_children]
             embed_texts = _build_embed_texts(all_children)
-            embed_out = embedding_service.encode_documents(embed_texts)
-            embeddings = embed_out.dense.tolist()
-            sparse_embeddings = embed_out.sparse
+            embeddings = embedding_service.encode_dense(embed_texts).tolist()
 
             milvus_service.delete_by_source(filename)
             await delete_concepts_by_source(session, filename)
@@ -249,7 +242,6 @@ async def upload_documents(
                 chunk_indices=[child.chunk_index for child in all_children],
                 texts=texts,
                 embeddings=embeddings,
-                sparse_embeddings=sparse_embeddings,
             )
 
             concepts_total, concepts_new = await _extract_concepts_for_doc(

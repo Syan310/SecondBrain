@@ -13,6 +13,9 @@ VALID_EVAL_PROFILES = ("smoke", "standard", "full")
 class EvalProfile:
     name: str
     rag_single_hop_limit: int | None
+    rag_multi_hop_limit: int | None
+    rag_refusal_limit: int | None  # refusal questions (answerable=false) in RAG eval
+    rag_answerable_types: tuple[str, ...] | None  # restrict answerable pool; None = all
     agent_intent_limit: int | None
     agent_qa_single_hop_limit: int | None
     agent_qa_multi_hop_limit: int | None
@@ -25,6 +28,9 @@ EVAL_PROFILES: dict[str, EvalProfile] = {
     "smoke": EvalProfile(
         name="smoke",
         rag_single_hop_limit=4,
+        rag_multi_hop_limit=2,
+        rag_refusal_limit=2,
+        rag_answerable_types=("original",),
         agent_intent_limit=6,
         agent_qa_single_hop_limit=3,
         agent_qa_multi_hop_limit=1,
@@ -35,6 +41,9 @@ EVAL_PROFILES: dict[str, EvalProfile] = {
     "standard": EvalProfile(
         name="standard",
         rag_single_hop_limit=10,
+        rag_multi_hop_limit=5,
+        rag_refusal_limit=3,
+        rag_answerable_types=None,
         agent_intent_limit=15,
         agent_qa_single_hop_limit=10,
         agent_qa_multi_hop_limit=5,
@@ -45,6 +54,9 @@ EVAL_PROFILES: dict[str, EvalProfile] = {
     "full": EvalProfile(
         name="full",
         rag_single_hop_limit=None,
+        rag_multi_hop_limit=None,
+        rag_refusal_limit=None,
+        rag_answerable_types=None,
         agent_intent_limit=None,
         agent_qa_single_hop_limit=None,
         agent_qa_multi_hop_limit=None,

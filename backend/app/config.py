@@ -13,18 +13,31 @@ class Settings(BaseSettings):
     judge_base_url: str = "https://api.moonshot.cn/v1"
     judge_model: str = "kimi-k2.5"
 
+    # OpenRouter provider routing (provider slugs, fallbacks disabled; empty = no routing)
+    llm_provider_order: list[str] = ["deepseek"]
+    judge_provider_order: list[str] = ["anthropic"]
+
     # Embedding (bge-m3: 1024-dim, multilingual Chinese/English)
     embedding_model_path: str = "./models/bge-m3"
 
     # Reranker
     reranker_model_path: str = "./models/bge-reranker-v2-m3"
     enable_reranker: bool = False
+    reranker_use_heading: bool = False  # prepend heading_path to reranker passages
+
+    # Citations: "off" | "prompt" (strip markers) | "filter" (drop uncited sentences)
+    #   | "fallback" (keep sentences; if the notes have no answer, say so, then answer from model knowledge)
+    citation_mode: str = "fallback"
 
     # Milvus
     milvus_host: str = "milvus"
     milvus_port: int = 19530
     milvus_collection_name: str = "secondbrain_docs"
     milvus_memory_collection: str = "conversation_memory"
+
+    # BM25 (set when the collection is created; changing them needs a re-ingest)
+    bm25_k1: float = 1.2   # term-frequency saturation
+    bm25_b: float = 0.75   # document-length normalization
 
     # Memory
     memory_short_term_limit: int = 20       # max conversation rounds in short-term

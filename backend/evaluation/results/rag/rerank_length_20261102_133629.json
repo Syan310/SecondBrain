@@ -1,0 +1,33 @@
+{
+  "limit": 512,
+  "questions": 60,
+  "summary": {
+    "text": {
+      "pairs": 900,
+      "max": 530,
+      "over_limit": 7,
+      "over_ratio": 0.0077777777777777776
+    },
+    "heading": {
+      "pairs": 900,
+      "max": 555,
+      "over_limit": 11,
+      "over_ratio": 0.012222222222222223
+    }
+  },
+  "dataset": {
+    "name": "qa_l0_v1.json",
+    "sha256": "ee47c4ecc71352f628a4ca46fe3d73d6f12be187aefc70bdc871d6fcf6c2d0db",
+    "items": 60,
+    "answerable": 50,
+    "refusal": 10,
+    "type_counts": {
+      "original": 20,
+      "term": 10,
+      "paraphrase": 10,
+      "heading": 5,
+      "factual": 5,
+      "refusal": 10
+    }
+  }
+}

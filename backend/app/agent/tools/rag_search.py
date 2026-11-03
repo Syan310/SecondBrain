@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-"""RAG Search tool: hybrid retrieval (dense + sparse) + optional rerank.
+"""RAG Search tool: hybrid retrieval (dense + BM25) + optional rerank.
 
 Flow:
-  1. Encode query → dense vector + sparse vector (BGE-m3)
+  1. Encode query → dense vector (BGE-m3); the raw query goes to the BM25 path
   2. Milvus hybrid_search → top_k*3 candidates (RRF fusion)
   3. Optional reranker (bge-reranker-v2-m3) → top_k final results
 
@@ -15,6 +15,7 @@ import time
 from dataclasses import dataclass
 
 from app.config import settings
+from app.services.chunk_text import reranker_passages
 from app.services.embedding import embedding_service
 from app.services.milvus_client import milvus_service
 from app.services.reranker import reranker_service
@@ -59,10 +60,8 @@ def rag_search(
     """
     t0 = time.perf_counter()
 
-    # Step 1: Encode query (dense + sparse)
-    query_out = embedding_service.encode_query(query)
-    dense_vector = query_out.dense.tolist()
-    sparse_vector = query_out.sparse[0]  # single query → first element
+    # Step 1: Encode query (dense only; Milvus tokenizes the text for BM25)
+    dense_vector = embedding_service.encode_dense(query)[0].tolist()
 
     t_encode = time.perf_counter()
 
@@ -70,7 +69,7 @@ def rag_search(
     candidate_k = top_k * 3
     candidates = milvus_service.hybrid_search(
         query_vector=dense_vector,
-        sparse_vector=sparse_vector,
+        query_text=query,
         top_k=candidate_k,
         expr=expr,
     )
@@ -82,8 +81,8 @@ def rag_search(
         return []
 
     if settings.enable_reranker:
-        # Step 3: Rerank candidates
-        passages = [c.text for c in candidates]
+        # Step 3: Rerank candidates (optionally with heading_path, same format as embeddings)
+        passages = reranker_passages(candidates, settings.reranker_use_heading)
         rerank_results = reranker_service.rerank(
             query=query,
             passages=passages,
@@ -100,7 +99,8 @@ def rag_search(
                 source_doc=candidates[r.original_index].source_doc,
                 heading_path=candidates[r.original_index].heading_path,
                 chunk_index=candidates[r.original_index].chunk_index,
-                text=r.text,
+                # Not r.text: that is the reranker input and may contain the heading.
+                text=candidates[r.original_index].text,
                 rerank_score=r.score,
             )
             for r in rerank_results
@@ -122,12 +122,13 @@ def rag_search(
         t_rerank = time.perf_counter()
 
     logger.info(
-        "rag_search: query=%s | candidates=%d | top_k=%d | reranker=%s | "
+        "rag_search: query=%s | candidates=%d | top_k=%d | reranker=%s heading=%s | "
         "encode=%.0fms search=%.0fms rerank=%.0fms total=%.0fms",
         query[:50],
         len(candidates),
         len(ranked_chunks),
         "on" if settings.enable_reranker else "off",
+        settings.reranker_use_heading,
         (t_encode - t0) * 1000,
         (t_search - t_encode) * 1000,
         (t_rerank - t_search) * 1000,
@@ -141,6 +142,7 @@ def rag_search(
             "returned": len(ranked_chunks),
             "top_k": top_k,
             "reranker": "on" if settings.enable_reranker else "off",
+            "reranker_use_heading": settings.reranker_use_heading,
             "encode_ms": round((t_encode - t0) * 1000),
             "search_ms": round((t_search - t_encode) * 1000),
             "rerank_ms": round((t_rerank - t_search) * 1000),

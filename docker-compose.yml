@@ -1,7 +1,7 @@
 services:
   # ==================== Milvus 依赖 ====================
   etcd:
-    image: quay.io/coreos/etcd:v3.5.16
+    image: quay.io/coreos/etcd:v3.5.25
     container_name: secondbrain-etcd
     environment:
       - ETCD_AUTO_COMPACTION_MODE=revision
@@ -9,7 +9,7 @@ services:
       - ETCD_QUOTA_BACKEND_BYTES=4294967296
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
-      - etcd_data:/etcd
+      - etcd_data_v26:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
@@ -21,16 +21,17 @@ services:
       - secondbrain-net
 
   minio:
-    image: minio/minio:RELEASE.2024-09-22T00-33-43Z
+    # minio/minio is no longer pulled from Docker Hub; Milvus ships its own mirror
+    image: milvusdb/minio:RELEASE.2024-12-18T13-15-44Z
     container_name: secondbrain-minio
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
     volumes:
-      - minio_data:/minio_data
+      - minio_data_v26:/minio_data
     command: minio server /minio_data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 5s
       timeout: 10s
       retries: 10
@@ -39,15 +40,20 @@ services:
       - secondbrain-net
 
   # ==================== Milvus Standalone ====================
+  # v2.6: built-in BM25 Function + jieba analyzer. Settings follow the official
+  # v2.6.25 standalone compose. Volumes are new (*_v26): 2.4 data is not migrated.
   milvus:
-    image: milvusdb/milvus:v2.4.17
+    image: milvusdb/milvus:v2.6.25
     container_name: secondbrain-milvus
     command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000
+      MQ_TYPE: woodpecker
     volumes:
-      - milvus_data:/var/lib/milvus
+      - milvus_data_v26:/var/lib/milvus
     ports:
       - "19530:19530"
       - "9091:9091"
@@ -61,7 +67,7 @@ services:
       interval: 5s
       timeout: 10s
       retries: 20
-      start_period: 30s
+      start_period: 90s
     networks:
       - secondbrain-net
 
@@ -97,9 +103,9 @@ services:
       - secondbrain-net
 
 volumes:
-  etcd_data:
-  minio_data:
-  milvus_data:
+  etcd_data_v26:
+  minio_data_v26:
+  milvus_data_v26:
 
 networks:
   secondbrain-net:

@@ -1,0 +1,72 @@
+{
+  "sonnet_file": "evaluation/results/rag/rag_eval_20261102_151524.json",
+  "haiku_files": [
+    "evaluation/results/rag/rag_eval_20261102_141505.json",
+    "evaluation/results/rag/rag_eval_20261102_141907.json",
+    "evaluation/results/rag/rag_eval_20261102_142307.json"
+  ],
+  "sonnet_judge": "anthropic/claude-sonnet-5.5",
+  "haiku_judges": [
+    "anthropic/claude-haiku-5.5"
+  ],
+  "metrics": {
+    "faithfulness": {
+      "n": 50,
+      "spearman": 0.7713231990067315,
+      "mean_diff": -0.011791435803045723,
+      "sonnet_mean": 0.9189351584088427,
+      "haiku_mean": 0.9307265942118884,
+      "low_correlation": false
+    },
+    "answer_relevancy": {
+      "n": 50,
+      "spearman": 0.8565117172493276,
+      "mean_diff": 0.01094502888287578,
+      "sonnet_mean": 0.8032840738068718,
+      "haiku_mean": 0.792339044923996,
+      "low_correlation": false
+    },
+    "context_precision": {
+      "n": 50,
+      "spearman": 0.9331354018723177,
+      "mean_diff": -0.007777777780749993,
+      "sonnet_mean": 0.8361111110378241,
+      "haiku_mean": 0.8438888888185742,
+      "low_correlation": false
+    },
+    "context_recall": {
+      "n": 50,
+      "spearman": 0.9221388919541469,
+      "mean_diff": 0.0016666666666666674,
+      "sonnet_mean": 0.9,
+      "haiku_mean": 0.8983333333333334,
+      "low_correlation": false
+    }
+  },
+  "refusal": {
+    "n": 60,
+    "majority_agree": 58,
+    "majority_agreement": 0.9666666666666667,
+    "per_run_agreement": 0.9611111111111111,
+    "disagreements": [
+      {
+        "id": "q034",
+        "sonnet": "refusal",
+        "haiku": [
+          "partial",
+          "partial",
+          "partial"
+        ]
+      },
+      {
+        "id": "q037",
+        "sonnet": "answer",
+        "haiku": [
+          "partial",
+          "partial",
+          "partial"
+        ]
+      }
+    ]
+  }
+}

@@ -12,8 +12,8 @@ langchain-core>=0.3.0
 FlagEmbedding>=1.2.0
 transformers>=4.40.0,<5.0.0
 
-# Vector store
-pymilvus>=2.4.0
+# Vector store (2.6.x matches the Milvus v2.6 server; BM25 Function needs >= 2.5)
+pymilvus>=2.6.17,<2.7
 
 # Database
 sqlalchemy>=2.0.0

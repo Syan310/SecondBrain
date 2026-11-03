@@ -1,0 +1,362 @@
+[
+  {
+    "qid": "q007",
+    "question": "为什么 E5 系列模型不能混用 query 和 document 的编码策略？",
+    "ground_truth": "因为这类模型在训练时使用了不对称训练（asymmetric training），混用会导致向量空间不对齐，相似度计算失准。",
+    "clean_answer": "E5 系列模型在训练时对 query 和 document 采用了不同的编码策略（asymmetric training），因此使用时必须加不同的 instruction prefix：query 加 `\"query: \"`，document 加 `\"passage: \"`。如果混用或省略前缀，会导致 query 与 document 的向量空间不对齐，相似度计算失准，检索效果显著下降。这是实际使用 BGE、E5 等模型时最常见的踩坑点。相比之下，OpenAI 的 text-embedding 系列不需要加前缀，对称使用即可。"
+  },
+  {
+    "qid": "q054",
+    "question": "FlashAttention 通过什么方式减少注意力计算中的显存读写？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "根据检索片段，FlashAttention 采用**分块计算**的方式，使注意力矩阵的显存占用从 O(n²) 降到线性。但需注意，它只降低了显存，**计算量仍是平方级**（约 O(n²·d)），并未减少计算本身。片段中未提及它具体如何减少显存读写（如分块在 SRAM 中完成等细节），因此无法进一步说明其读写优化机制。"
+  },
+  {
+    "qid": "q048",
+    "question": "重排序模型有哪三种训练目标？大多数常用的重排序模型采用哪种？",
+    "ground_truth": "Pointwise（单点评分）、Pairwise（对比学习）、Listwise（列表级优化）。大多数常用的 Reranking 模型（如 bge-reranker、ms-marco-MiniLM）采用 Pointwise 或 Pairwise。",
+    "clean_answer": "重排序模型（Cross-Encoder）有三种训练目标：\n\n- **Pointwise（单点评分）**：对每个（query, document）对独立打分，训练简单，但无法显式建模文档间的相对顺序。\n- **Pairwise（对比学习）**：对两个文档进行相对比较，直接优化排序目标，效果通常优于 Pointwise。\n- **Listwise（列表级优化）**：对整个候选列表建模，直接优化排名指标（如 NDCG），效果最好但训练成本最高。\n\n大多数常用的重排序模型（如 bge-reranker、ms-marco-MiniLM）采用 **Pointwise 或 Pairwise** 训练。"
+  },
+  {
+    "qid": "q057",
+    "question": "SPLADE 模型是如何生成用于检索的稀疏向量的？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "检索片段中没有关于 SPLADE 模型的信息，无法回答该问题。\n\n片段中涉及的稀疏向量相关内容仅限 BGE-M3：其 `EmbeddingService.encode` 可输出 sparse 词元权重列表，稀疏权重由模型学习得到（而非按当前文档集合计算 BM25），并转为 int 存入 Milvus 的 `SPARSE_FLOAT_VECTOR` 字段。这与 SPLADE 的机制无关，不能据此推断。"
+  },
+  {
+    "qid": "q032",
+    "question": "让每一层的原始信息绕过该层、原样并入它的结果，这种设计主要为了解决什么训练难题？",
+    "ground_truth": "这是残差连接，核心目的是缓解深层网络中的梯度消失问题：把子层的输入直接加到输出上（output = x + sublayer(x)），即使某一层学得不好，也能保留原始输入的信息，保证梯度顺利回传。",
+    "clean_answer": "这种设计（残差连接/恒等映射）主要解决两个训练难题：\n\n1. **深度退化问题**：在复杂网络中\"什么都不做\"反而最难学到；通过直接加回输入 x，即使参数全为 0 也能实现数据透传（y=x），从而解决\"层数越多、效果越差\"的退化问题（片段1）。\n\n2. **梯度消失问题**：将每一子层的输入直接加到其输出上（output = x + sublayer(x)），即使某层学到的变换效果不佳，至少能保留原始输入信息，保证梯度能顺利回传（片段2）。"
+  },
+  {
+    "qid": "q059",
+    "question": "Tree of Thoughts（思维树）框架在推理时如何对多个候选思路进行搜索和回溯？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "检索片段中没有关于 Tree of Thoughts（思维树）框架的内容，无法回答该问题。片段仅介绍了 ReAct 框架（Thought/Action/Observation 循环），并提示不要与 Plan-and-Execute 混淆，但未涉及思维树的多候选搜索与回溯机制。建议补充相关文档。"
+  },
+  {
+    "qid": "q046",
+    "question": "Encoder、Decoder 和 Encoder-Decoder 三种架构的代表模型分别是什么？",
+    "ground_truth": "Encoder 的代表是 BERT；Decoder 的代表是 GPT 系列；Encoder-Decoder 的代表是 T5 和 BART。",
+    "clean_answer": "根据检索片段，三种架构的代表模型如下：\n\n- **Encoder**：代表模型为 **BERT**，采用双向注意力，适用于文本分类、NER、语义理解等任务。\n- **Decoder**：代表模型为 **GPT 系列**，使用 Causal Mask 实现单向注意力，适用于文本生成、对话、代码补全。\n- **Encoder-Decoder**：代表模型为 **T5、BART**，通过 Cross-Attention 融合两端信息，适用于翻译、摘要、问答等 Seq2Seq 任务。"
+  },
+  {
+    "qid": "q045",
+    "question": "Agent 的可观测性与追踪要记录哪三个关键节点？",
+    "ground_truth": "tool_start、tool_end、turn_end。完整 Trace 同步落盘，并分发给日志系统、UI 更新、在线评测等下游。",
+    "clean_answer": "根据检索片段，Trace 记录三个关键节点：**tool_start、tool_end、turn_end**。完整 Trace 会同步落盘，并分发给日志系统、UI 更新、在线评测等下游。"
+  },
+  {
+    "qid": "q009",
+    "question": "在实际工程中，如果缺乏历史数据来评估 RAG 系统，文档推荐的最常用构建测试集方案是什么？",
+    "ground_truth": "利用 LLM 自动生成测试集，即直接让 LLM 从已有文档中生成问题-答案对。",
+    "clean_answer": "文档推荐的最常用方案是**利用 LLM 自动生成测试集**：在没有历史数据的情况下，直接让 LLM 从已有文档中生成问题-答案对。\n\n这一方案针对的正是冷启动的核心挑战之一——新系统没有历史 QA 对，而 RAGAS 等评估框架需要（问题, 标准答案, 相关文档）三元组数据集。"
+  },
+  {
+    "qid": "q031",
+    "question": "词向量在送进模型之前，为什么要先放大一个跟模型宽度有关的倍数？",
+    "ground_truth": "Embedding 向量会乘以 √d_model（模型维度的平方根），目的是确保 Embedding 的数值尺度不会被位置编码淹没。",
+    "clean_answer": "检索片段中没有提到“词向量在送进模型前放大一个与模型宽度有关的倍数”这一概念或做法，无法据此回答。片段只说明 embedding 模型把文本转成向量、用对比学习训练，讲分块与向量化，讲两路召回与 RRF，均未涉及该缩放操作。信息不足。"
+  },
+  {
+    "qid": "q002",
+    "question": "为什么多头注意力（Multi-Head Attention）机制在增加 head 数量的同时不会增加整体计算量？",
+    "ground_truth": "因为整个 d_model 维度被按 head 数量均分，每个 head 仅在低维子空间中独立计算注意力，最后将所有 head 的输出拼接回原始维度，因此总计算量保持不变。",
+    "clean_answer": "多头注意力不增加计算量，关键在于**维度均分**：将整个 d_model 维度按 head 数量均分，每个 head 在低维子空间（维度为 d_model/h）中独立计算注意力，最后把所有 head 的输出拼接回原始维度。因此多头的总计算量与单头全维度大致相同，并非\"多算 h 倍\"。这样做的收益是让不同 head 并行关注不同方面的语义特征或关系。"
+  },
+  {
+    "qid": "q010",
+    "question": "在计算 RAGAS 的 Faithfulness（忠实度）指标时，具体的计算公式是什么？",
+    "ground_truth": "Faithfulness = 可被上下文支持的陈述数 / 总陈述数",
+    "clean_answer": "Faithfulness 的计算分三步：先将生成回答拆解为若干原子性陈述（atomic claims）；再用 LLM 逐个判断每个陈述能否从检索到的上下文中推断出来（NLI 风格判断）；最后按公式计算：\n\n**Faithfulness = 可被上下文支持的陈述数 / 总陈述数**\n\n需要注意，该指标只衡量回答与上下文的关系，不管答案是否完整，也不管材料本身是否正确。"
+  },
+  {
+    "qid": "q020",
+    "question": "根据文档中的正反示例对比，一个“好的工具描述”应当包含哪些关键要素？",
+    "ground_truth": "应明确说明工具的具体用途、输入格式（如字符串）、输出内容（如返回的文档数量和字段），以及清晰的使用边界或限制条件（如仅适用于特定场景，不适用于其他场景）。",
+    "clean_answer": "根据文档，好的工具描述应包含以下要素：\n\n1. **明确功能边界**：说明工具做什么、不做什么（如示例中“仅用于查询内部文档，不适用于搜索互联网信息”）。\n2. **说明输入参数的含义和格式**：尤其要交代可选参数的默认行为。\n3. **说明返回值结构**：让 LLM 知道结果长什么样（如示例中“返回最相关的 5 篇文档标题和摘要”）。\n4. **给出典型使用场景**：帮助 LLM 判断何时调用。\n5. **说明限制和边界条件**：避免在不该调用时调用。\n\n文档强调，LLM 完全依赖文字描述决定是否及如何调用工具，描述质量直接影响行为准确性；描述相似或歧义是工具选择错误的常见原因。"
+  },
+  {
+    "qid": "q055",
+    "question": "GQA（Grouped-Query Attention）相比 Multi-Head Attention，如何减少推理时的显存占用？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "GQA 通过减少 KV head 数来降低推理显存。根据检索片段，KV cache 字节数 ≈ 2 × 层数 × KV head 数 × head 维度 × 序列长度 × batch × 每元素字节数，显存随 KV head 数线性变化。例如 KV head 数从 32 降到 8，显存降为原来的 1/4。此外，精度从 fp16 降到 fp8 或 int8 可使显存减半。\n\n需注意：检索片段未说明 GQA 对多头注意力中 Q head 数量的具体处理方式，也未给出 GQA 与 MHA 在计算量上的对比，这部分信息不足。"
+  },
+  {
+    "qid": "q016",
+    "question": "LangGraph 的 Checkpointer 机制主要提供哪四种核心能力？",
+    "ground_truth": "跨会话记忆、Human-in-the-Loop（人工介入/暂停确认）、错误恢复、时间旅行（Time Travel）。",
+    "clean_answer": "LangGraph 的 Checkpointer 机制提供四种核心能力：\n\n1. **跨会话记忆**：同一用户下次对话时恢复上次的 State，无需重新开始；\n2. **Human-in-the-Loop**：执行到某一步时暂停，等待人工确认后继续；\n3. **错误恢复**：从最后一个成功的 Checkpoint 重新执行，而非从头开始；\n4. **时间旅行（Time Travel）**：回退到历史某个 State，重新分叉执行。\n\n其原理是在每一步执行后保存 State 快照，从而实现上述持久化能力。"
+  },
+  {
+    "qid": "q014",
+    "question": "根据 Harness 的关键结论，若要让 Agent 在开发任务中发挥最大效能，团队应如何调整任务属性并设定验收标准？",
+    "ground_truth": "应将任务推进到“目标明确、结果可以自动验证”的右上角区域。验收标准应设定为机器可执行的判断标准，以替代人工审查，从而突破吞吐量天花板。",
+    "clean_answer": "根据 Harness 的关键结论，团队应把任务推向“目标明确、结果可自动验证”的右上角区域，让对错有机器可执行的判断标准，而不是靠人盯。\n\n具体调整方向：\n- **任务属性**：明确任务目标，同时提升验证自动化程度。若任务清楚但验收靠人，吞吐量天花板就是人的审查速度；若有自动反馈但目标模糊，系统会高效地跑向错误方向。\n- **验收标准**：绑定验收标准，补齐验证闭环（反模式第 3 条），用工具验证、Linter、Hook 等机制落实约束，而非依赖期望（反模式第 8 条）。\n- **配套 Harness**：围绕 Agent 建设验收基线、执行边界、反馈信号和回退手段四部分基础设施。\n\n需注意：该判断在代码编写这类高可验证任务上最成立；开放式研究、多轮协商等弱验证任务中，模型上限本身仍更关键。"
+  },
+  {
+    "qid": "q028",
+    "question": "MCP 中的 MCP Server 对外暴露哪三类内容？",
+    "ground_truth": "工具（Tools）、资源（Resources）和提示模板（Prompts）。",
+    "clean_answer": "MCP Server 对外暴露三类内容：**工具（Tools）、资源（Resources）、提示模板（Prompts）**。Agent/LLM 应用作为 MCP Client，通过统一协议调用各种 MCP Server，从而实现工具生态的标准化。"
+  },
+  {
+    "qid": "q024",
+    "question": "HNSW 的 ef_search 参数控制什么？调整它需要重建索引吗？",
+    "ground_truth": "ef_search 是检索阶段的动态候选集大小，控制检索精度；可以在不重建索引的情况下动态调整。",
+    "clean_answer": "HNSW 的 `ef_search` 是检索阶段的动态候选集大小，控制检索精度：值越大召回越高，但搜索时延和成本也越大（Milvus 要求 ef 不小于 top_k）。它可以在不重建索引的情况下动态调整，与构建阶段的 `ef_construction`（控制建图质量，越大越慢）不同。"
+  },
+  {
+    "qid": "q019",
+    "question": "当 Agent 运行出现“上下文爆炸（Context Overflow）”问题时，文档推荐了哪些具体解法？",
+    "ground_truth": "使用滑动窗口或摘要压缩策略；将中间结果存入长期记忆而非全部保留在上下文中。",
+    "clean_answer": "文档推荐的解法包括：使用滑动窗口或摘要压缩策略管理 message history 长度；将中间结果存入长期记忆，而非全部保留在上下文中。此外，相关上下文工程实践还建议按信息使用频率和稳定性分层管理（常驻层、按需加载、运行时注入、记忆层、系统层），并把确定性逻辑交给 Hooks 或代码规则处理，不放入上下文。"
+  },
+  {
+    "qid": "q050",
+    "question": "在 OpenAI 的 Agent 优先开发实践中，AGENTS.md 保留多少行？它起什么作用？",
+    "ground_truth": "约 100 行，只作为索引，细节拆到各 docs 目录按需引用。",
+    "clean_answer": "AGENTS.md 只保留约 100 行，作为索引使用，细节拆到各 docs 目录按需引用。\n\n其背后的原则是\"Agent 看不到的内容等于不存在\"：知识必须存在于代码库本身，外部文档对运行中的 Agent 不可见，因此用精简的 AGENTS.md 做入口索引，避免把大量细节堆在一处。"
+  },
+  {
+    "qid": "q015",
+    "question": "在工具设计的第三代演进中，采用“Programmatic Tool Calling（代码编排）”方式后，token 消耗大约能从多少降低到多少？",
+    "ground_truth": "token 消耗可从约 150,000 降到约 2,000。",
+    "clean_answer": "根据检索片段，采用 Programmatic Tool Calling（代码编排）后，token 消耗可从约 **150,000** 降到约 **2,000**。其做法是让模型用代码编排多个工具调用，中间结果在执行环境中流转，不进入 LLM 上下文。"
+  },
+  {
+    "qid": "q023",
+    "question": "IVF 索引中把 nprobe 调大会带来什么影响？",
+    "ground_truth": "nprobe 越大，搜索的簇越多，召回率越高，但速度越慢；nprobe 等于 nlist 时退化为暴力搜索。",
+    "clean_answer": "调大 `nprobe` 会让检索时搜索的簇数量增多，从而**提高召回率，但速度变慢**。当 `nprobe = nlist` 时，IVF 退化为暴力搜索。"
+  },
+  {
+    "qid": "q001",
+    "question": "原始 Transformer 使用什么函数生成位置编码？这些编码在训练过程中是否参与梯度更新？",
+    "ground_truth": "使用正余弦函数生成，且不参与梯度更新。",
+    "clean_answer": "原始 Transformer 使用**正余弦函数**生成位置编码，且这些编码**不参与梯度更新**。\n\n补充依据：正余弦编码泛化性强，可生成任意位置的编码、不受训练序列长度限制，且无需额外可学习参数、不占模型容量。"
+  },
+  {
+    "qid": "q018",
+    "question": "在 LangGraph 中实现 Function Call 时，为什么推荐使用“独立 Tool 节点”而非“共享 Tool 节点”？",
+    "ground_truth": "独立 Tool 节点逻辑清晰且维护简单；而共享 Tool 节点需要额外编写路由逻辑来判断工具归属并正确返回结果，实现复杂度更高，因此一般不推荐。",
+    "clean_answer": "推荐独立 Tool 节点的核心原因是**实现复杂度更低**。根据检索片段：\n\n- **独立 Tool 节点（推荐）**：为每个 Sub-Agent 配备独立的 Tool 节点，逻辑清晰、维护简单。\n- **共享 Tool 节点**：所有 Sub-Agent 共用一个统一 Tool 节点，需要额外编写路由逻辑，判断工具属于哪个 Agent 并将结果正确返回，实现复杂度更高，因此一般不推荐。\n\n简言之，共享方案需自行承担工具归属判断与结果回传的路由负担，而独立方案省去这层逻辑，结构更清晰、更易维护。"
+  },
+  {
+    "qid": "q022",
+    "question": "Encoder-Decoder 架构的 Cross-Attention 中，Q、K、V 分别来自哪里？",
+    "ground_truth": "Q 来自 Decoder 的隐层输出，K 和 V 来自 Encoder 的最终输出。",
+    "clean_answer": "在 Encoder-Decoder 架构的 Cross-Attention 中，**Q 来自 Decoder 的隐层输出**，**K 和 V 来自 Encoder 的最终输出**。Decoder 通过 Q·Kᵀ·V 的计算，在生成每个 token 时\"查阅\" Encoder 对输入全文的理解。这与 self-attention 不同——后者 Q、K、V 均来自同一序列。"
+  },
+  {
+    "qid": "q058",
+    "question": "DiskANN 是如何把向量索引放在 SSD 上，同时保持较低检索延迟的？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "检索片段中没有关于 DiskANN 的任何信息。片段仅涉及 HNSW、IVF、PQ、Flat 等索引类型，以及 HyDE、BM25/dense 混合检索和 Naive RAG 架构，未提及 DiskANN 的 SSD 存储机制或延迟优化方法。因此无法基于现有资料回答该问题，建议补充 DiskANN 相关文档。"
+  },
+  {
+    "qid": "q017",
+    "question": "相比原始的 ReAct 框架，Reflexion 框架的核心优势是什么？",
+    "ground_truth": "对中间结果的质量做显式检查，允许 Agent 从失败中学习并在同一任务内自我纠错。",
+    "clean_answer": "Reflexion 的核心优势是**对中间结果的质量做显式检查**，允许 Agent 从失败中学习并在同一任务内自我纠错，这是原始 ReAct 框架无法做到的。\n\n具体机制上，Reflexion 在 ReAct 基础上增加了自我反思（Self-Reflection）能力，其 Reflection 模块会：评估 Observation 输出内容、判断行动结果质量是否达标；生成自然语言形式的反思建议，指出当前轨迹的错误或不足；将反思建议注入下一轮 Thought 的 Prompt，引导 Agent 修正策略。"
+  },
+  {
+    "qid": "q052",
+    "question": "Corrective RAG（CRAG）中，检索评估器判断检索结果质量差时会采取什么动作？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "检索片段中没有关于 Corrective RAG（CRAG）及其检索评估器的任何内容，无法回答该问题。片段仅涉及 Naive RAG、Self-RAG 及检索质量评估指标（Recall、Precision、MRR、NDCG、Context Relevancy 等），未提及 CRAG 的纠错动作。建议补充相关文档。"
+  },
+  {
+    "qid": "q043",
+    "question": "Agent 出现幻觉工具调用时，有哪些解法？",
+    "ground_truth": "完善工具描述；对工具调用结果做参数校验；使用 strict 模式的 JSON Schema。",
+    "clean_answer": "根据检索片段，幻觉工具调用（LLM 调用不存在的工具或传入错误格式参数）的解法包括：\n\n1. **完善工具描述**——工具描述不够清晰是诱因之一；\n2. **对工具调用结果做参数校验**；\n3. **使用 strict 模式的 JSON Schema**。\n\n其成因是工具描述不够清晰或 LLM 过度自信。"
+  },
+  {
+    "qid": "q038",
+    "question": "几个子智能体并发干完活后，各自把产出存进一个共用字段，如果不做合并设置会出什么问题？",
+    "ground_truth": "后完成的 Agent 会直接覆盖先完成的 Agent 的结果，导致数据丢失。用 operator.add 这类 Reducer，可以把多个 Sub-Agent 的输出安全地合并到同一个列表字段中。",
+    "clean_answer": "检索片段中没有直接讨论\"多个子智能体并发写入共用字段、不做合并设置\"的问题，无法据此给出确切结论。\n\n可间接参考的两点：\n\n- 片段指出，子任务顺序依赖强、频繁改同一批文件时，多 Agent 只会增加冲突和沟通成本；验证协作收益需比较文件冲突次数等指标。\n- 片段提到，多用户共享同一资料库且无 owner 隔离属于正确性问题，应先补隔离与过滤。\n\n但这两点分别针对多 Agent 适用场景和用户隔离，并非针对\"并发写共用字段\"的具体后果，因此不足以回答该问题。"
+  },
+  {
+    "qid": "q047",
+    "question": "解析 PDF 时，为什么表格模块需要单独做专项解析？",
+    "ground_truth": "仅靠 OCR 很难完整识别出表格的准确含义，所以要筛选出标签为「表格」的模块，用专门的模型和工具进行深度解析。",
+    "clean_answer": "因为仅靠 OCR 很难完整识别出表格的准确含义，所以需要筛选出标签为“表格”的模块，用专门的模型和工具进行深度解析（片段1）。此外，表格需与文本模块分开提取、独立进行后续解析处理；长表格按行切块时每块重复表头，以保证后面的块也能看到列名（片段1、3）。"
+  },
+  {
+    "qid": "q006",
+    "question": "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为哪三个步骤？",
+    "ground_truth": "索引 → 检索 → 生成",
+    "clean_answer": "Naive RAG 的标准流程固定为三个步骤：**索引 → 检索 → 生成**。\n\n- **索引**：文档解析 → 分块 → Embedding → 存入向量数据库\n- **检索**：用户 Query 向量化后做相似度检索，取 Top-K\n- **生成**：将检索结果拼入 Prompt，送入 LLM 生成回答\n\n该流程为固定线性结构，灵活性低，主要适用于原型验证场景。"
+  },
+  {
+    "qid": "q004",
+    "question": "在训练用于文本生成的 Decoder 模型时，为了防止模型“偷看答案”，应在注意力分数矩阵的哪个具体区域填充 -∞？这属于哪种 Mask 机制？",
+    "ground_truth": "应在注意力分数矩阵（Q·Kᵀ 之后、Softmax 之前）的右上三角区域填充 -∞。这属于 Causal Mask（因果掩码）机制。",
+    "clean_answer": "应在注意力分数矩阵（Q·Kᵀ 之后、Softmax 之前）的**右上三角区域**填充 -∞，Softmax 后这些位置的权重变为 0。这属于 **Causal Mask（因果掩码）**，仅 Decoder 使用，确保第 i 个位置只能看到第 1 到第 i 个位置，防止训练时\"偷看答案\"，同时支持并行计算所有位置。"
+  },
+  {
+    "qid": "q033",
+    "question": "提问只有一句话、资料却是大段说明时，先让模型凭空写一份设想的回复，再拿这份回复去查找资料，为什么能找得更准？",
+    "ground_truth": "这是 HyDE。短问题的向量与长文档的向量天然存在语义差距；先让 LLM 生成一段假设性回答，这段回答的向量与数据库中真实答案的向量更接近，所以检索效果更好。",
+    "clean_answer": "检索片段中没有关于“先让模型凭空写设想回复、再据此查找资料”这一做法的任何信息，无法回答该问题。片段讨论的是 Faithfulness、拒答与来源标注，讲工具 JSON 校验，是术语表，均未涉及这种检索策略。"
+  },
+  {
+    "qid": "q035",
+    "question": "用户换一种说法问同一件事时，只按原文逐字比对来复用旧结果的机制为什么会失灵？应该改成什么做法？",
+    "ground_truth": "普通缓存（如 Redis）基于精确字符串匹配，语义相同但表述不同的问题无法命中。Semantic Cache 改为按向量相似度匹配：新问题与缓存中某个问题的相似度高于阈值时，直接返回缓存结果，跳过检索和 LLM 调用。",
+    "clean_answer": "检索片段中没有关于“按原文逐字比对复用旧结果”这一机制的内容，也没有说明应改成什么做法。片段只提到检索证据不跨请求缓存、新计划会重新检索，以及可在 checkpoint 上按依赖图做增量重跑，但未涉及用户换说法时的语义匹配问题。信息不足，无法回答。"
+  },
+  {
+    "qid": "q044",
+    "question": "Agent 压缩上下文时，保留优先级从高到低是怎样的？",
+    "ground_truth": "1. 架构决策，不得摘要；2. 已修改文件和关键变更；3. 验证状态（pass/fail）；4. 未解决的 TODO 和回滚笔记；5. 工具输出，可删，只保留 pass/fail 结论。",
+    "clean_answer": "根据检索片段，压缩时的保留优先级从高到低为：\n\n1. **架构决策**——不得摘要\n2. **已修改文件和关键变更**\n3. **验证状态**（pass/fail）\n4. **未解决的 TODO 和回滚笔记**\n5. **工具输出**——可删，只保留 pass/fail 结论\n\n此外还有一条关键约束：UUID、hash、IP、端口、URL、文件名等标识符必须原样保留，改错一位（如 PR 编号或 commit hash）会导致后续工具调用失效。片段还指出，压缩最常见的问题不是摘要不够短，而是保留顺序设错——早期 tool output 最先被移除时，相关的架构决策、约束理由和失败路径也容易一并丢失。"
+  },
+  {
+    "qid": "q021",
+    "question": "BPE 分词器是按照什么流程构建词表的？",
+    "ground_truth": "先把词表中的所有词拆成最小的字符单元；统计每两个相邻字符对的出现频率；把频率最高的字符对合并为一个新 token 加入词表；重复统计和合并，直到词表达到预设大小。",
+    "clean_answer": "BPE 分词器构建词表的流程（据片段）：\n\n1. 将词表中所有词拆分为最小的字符单元；\n2. 统计每两个相邻字符对的出现频率；\n3. 将频率最高的字符对合并为新 token，加入词表；\n4. 重复步骤 2–3，直到词表达到预设大小。\n\n其核心思想是从字符层面出发，把出现频率最高的相邻字符对合并为一个 token。实际生产中多用 tiktoken（OpenAI）和 SentencePiece（Google），而非手写 BPE。"
+  },
+  {
+    "qid": "q029",
+    "question": "Agent 评测中，Pass@k 和 Pass^k 分别适合什么阶段？",
+    "ground_truth": "Pass@k 适合开发阶段，用来回答能力边界；Pass^k 适合上线前，用来保证质量。",
+    "clean_answer": "根据检索片段，Pass@k 适合**开发阶段**，用于回答能力边界；Pass^k 适合**上线前**，用于保证质量。"
+  },
+  {
+    "qid": "q060",
+    "question": "Google 提出的 A2A（Agent2Agent）协议中，Agent Card 用来描述什么？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "根据检索片段，A2A 协议中的 Agent Card 用来**描述 Agent 的能力和地址**，使一个 Agent 能把任务交给另一个独立的 Agent（片段）。\n\n需注意：片段的“注意”部分标注，Agent Card 的具体路径（是否为 `/.well-known/agent-card.json`）尚待核实，本次仅确认了 A2A 规范版本 v1.0.0 和任务状态列表。此外，检索内容未提及 A2A 由 Google 提出这一归属信息，无法据此确认。"
+  },
+  {
+    "qid": "q053",
+    "question": "RoPE（旋转位置编码）是如何把相对位置信息注入注意力计算的？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "RoPE 把 q 和 k 按各自位置旋转一个角度，旋转后的点积只依赖内容与相对距离 m−n，从而将相对位置信息注入注意力计算。由于旋转位置编码与线性投影不满足交换律，MLA 将 Key 拆分为可压缩的“内容路径”和不可压缩但维度极小的“位置路径”并拼接，以解决低秩压缩与 RoPE 的冲突。"
+  },
+  {
+    "qid": "q036",
+    "question": "把同一份资料分别按不同粒度切开、各建一套库，怎样比较出哪种粒度最好？",
+    "ground_truth": "给定几个不同量级的块大小（如 128、256、512 token），按每个量级分别切块并存入对应的向量数据库，针对用户提问生成回复，再用「忠诚度测试」和「相关性测试」给不同块大小的回复打分，选出最优量级。",
+    "clean_answer": "检索片段中没有直接回答“如何比较不同切块粒度优劣”的完整方法，只能归纳出相关线索：\n\n- 片段提到当前750字符/75重叠是启发式选择，重叠只用于强切超长段落；并建议“可提出固定题集做粒度消融”，即用固定题目集对比不同粒度的效果。\n- 片段说明父子分块：child用于小粒度召回，parent用于组织章节和概念提取，检索与学习记录可独立演进。\n- 片段提到评测中覆盖率和自然语言质量是两类指标。\n\n因此可推断：需固定题集，对不同粒度分别建库，比较召回/覆盖率与诊断质量等指标。但检索片段未给出具体实验设计或判定标准，信息不足。"
+  },
+  {
+    "qid": "q012",
+    "question": "根据文档，Workflow 和 Agent 的核心区别是什么？",
+    "ground_truth": "核心区别在于控制权掌握在谁手里。Workflow 的执行路径由代码预先写死，而 Agent 的下一步由 LLM 动态决定。",
+    "clean_answer": "根据文档，Workflow 和 Agent 的核心区别在于**控制权掌握在谁手里**：执行路径由代码预先写死的是 Workflow，由 LLM 动态决定下一步的是 Agent（来源）。文档还指出，现实中很多标着 Agent 的产品其实更接近 Workflow，但两者并无高下之分，关键是给任务找到更适合的解决方案（来源）。"
+  },
+  {
+    "qid": "q039",
+    "question": "为什么一份很少改动、篇幅很长的开场指令，反而可能比经常改动的短指令更省钱？",
+    "ground_truth": "Prompt Caching 要求输入前缀精确一致才能命中。稳定的大系统提示写入缓存的成本只付一次，后续每次调用读取可以打到约 90% 的折扣；经常改动的提示会破坏前缀匹配，无法命中缓存。",
+    "clean_answer": "因为 Prompt Caching 的命中前提是**精确前缀匹配**：只要输入前缀与之前请求完全一致，这部分 KV 就无需重算，直接从缓存读取。稳定的大系统提示、工具定义、长文档在多轮请求中基本不变，天然适合缓存——写入成本只付一次，后续每次调用读取折扣可达 90%。而频繁变动的小提示会不断破坏前缀匹配，导致缓存反复失效。所以「常驻层短而稳定」不仅省 token，也在保护缓存命中；反直觉的是，稳定的大提示实际成本更低。"
+  },
+  {
+    "qid": "q051",
+    "question": "RAPTOR 方法如何通过递归聚类和摘要构建树状索引来改进 RAG 检索？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "检索片段中未提及 RAPTOR 方法，无法回答该问题。片段仅涉及 GraphRAG、Naive RAG、Multi-hop RAG 和 HNSW 索引，没有关于递归聚类或树状索引的内容。建议补充相关文档。"
+  },
+  {
+    "qid": "q030",
+    "question": "Cursor 在 MCP 工具上验证 Dynamic Context Discovery 时，A/B 测试的结果是什么？",
+    "ground_truth": "Cursor 把工具描述同步到文件夹，Agent 默认只看到工具名，需要时再查询具体定义；A/B 测试中，调用 MCP 工具的任务总 token 消耗减少了 46.9%。",
+    "clean_answer": "根据检索片段，Cursor 在 MCP 工具上验证 Dynamic Context Discovery 时，把工具描述同步到文件夹，Agent 默认只看到工具名，需要时再查询具体定义。A/B 测试结果显示：调用 MCP 工具的任务总 token 消耗减少了 **46.9%**。"
+  },
+  {
+    "qid": "q040",
+    "question": "搭建大模型应用时，有哪几种把模型调用串起来、分流或同时跑的基础套路？",
+    "ground_truth": "五种：提示链（Prompt Chaining）、路由（Routing）、并行（Parallelization）、编排器-工作者（Orchestrator-Workers）、评估器-优化器（Evaluator-Optimizer）。",
+    "clean_answer": "检索片段中没有关于“把模型调用串起来、分流或同时跑的基础套路”（如链式、路由、并行等编排模式）的内容。片段仅涉及模型选型与成本评估、上下文压缩与恢复、主循环数据流、turn/调用/工具执行的区别等，未提及模型调用编排的通用套路。信息不足，无法回答。"
+  },
+  {
+    "qid": "q034",
+    "question": "在把每个文本片段写入库之前，先让模型给它补一两句交代来龙去脉的话，这样做能把找不到资料的情况减少多少？",
+    "ground_truth": "这是 Contextual Retrieval。Anthropic 的测试数据显示，它配合 BM25 可以把检索失败率降低约 49%。",
+    "clean_answer": "检索片段中没有提到“写入前让模型给每个文本片段补一两句交代来龙去脉”这种做法，也没有任何关于它能减少多少“找不到资料”情况的数据或结论。因此无法回答该问题，信息不足。\n\n片段只提到标题增强（把标题路径加入 dense 编码输入和 BM25 索引文本）能让两路召回同时受益，但这是标题路径，不是模型生成的上下文说明，也未给出量化效果。"
+  },
+  {
+    "qid": "q026",
+    "question": "LangGraph 的 MemorySaver、SqliteSaver 和 PostgresSaver 分别适合什么场景？",
+    "ground_truth": "MemorySaver 存在进程内存里，适合开发调试和单次会话；SqliteSaver 存在 SQLite 文件里，适合本地持久化和轻量生产；PostgresSaver 存在 PostgreSQL 里，适合生产环境和多实例部署。",
+    "clean_answer": "根据检索片段，三种 Checkpointer 的适用场景如下：\n\n- **MemorySaver**：内存（进程内）存储，适合开发调试、单次会话。\n- **SqliteSaver**：SQLite 文件存储，适合本地持久化、轻量生产。\n- **PostgresSaver**：PostgreSQL 存储，适合生产环境、多实例部署。\n\n使用方式上，以 MemorySaver 为例，先实例化 `MemorySaver()`，再通过 `graph.compile(checkpointer=checkpointer)` 挂载到图上。"
+  },
+  {
+    "qid": "q013",
+    "question": "为什么在上下文分层管理中强调“别把确定性逻辑放进上下文”？正确的处理方式是什么？",
+    "ground_truth": "因为将确定性逻辑放入上下文会降低信息密度，使模型难以注意到真正有用的部分。正确的处理方式是将其交给外部系统（如 Hooks、代码规则或工具约束）来处理，而不是让模型反复读取。",
+    "clean_answer": "因为确定性逻辑若放进上下文，会与稳定规则、动态状态混在一起，降低信息密度，让真正有用的内容更难被注意到；同时上下文越长，关键信号越容易被噪声稀释，导致决策质量下滑（Context Rot）。正确的处理方式是交给外部系统：用 Hooks、代码规则或工具约束来表达，完全不进上下文，而不是让模型反复读取。"
+  },
+  {
+    "qid": "q056",
+    "question": "MoE（混合专家）模型中的路由器如何为每个 token 选择专家？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "clean_answer": "根据检索片段，MoE 中的路由器（Router / Gating Network）负责决定每个 token 由哪个专家处理，通常采用 **Top-k 路由**方式，即把输入分配给一组专家层中的一小部分（专家为多个独立的 FFN 层）。这种稀疏激活机制使模型在不显著增加推理 FLOPs 的情况下扩大参数量、提升模型容量。\n\n片段未说明 Top-k 的具体打分或选择细节，也未提及负载均衡等路由策略，这部分信息不足。"
+  },
+  {
+    "qid": "q049",
+    "question": "Human-in-the-Loop 的典型使用场景有哪些？",
+    "ground_truth": "执行危险操作前（发送邮件、删除文件、调用付费 API）需要人工确认；Agent 给出中间规划后，人工审查计划再执行；需要人工补充信息才能继续的场景。",
+    "clean_answer": "Human-in-the-Loop 的典型使用场景包括：\n\n1. **执行危险操作前**（如发送邮件、删除文件、调用付费 API）需要人工确认；\n2. **Agent 给出中间规划**，由人工审查计划后再执行；\n3. **需要人工补充信息**才能继续的场景。\n\n其核心机制是在工作流关键节点暂停，等待人工确认或修改后再继续（如 LangGraph 中通过 `interrupt_before`/`interrupt_after` 指定暂停节点）。"
+  },
+  {
+    "qid": "q003",
+    "question": "Pre-Norm 和 Post-Norm 在 Layer Normalization 的放置位置上有何区别？为什么现代大模型普遍采用 Pre-Norm？",
+    "ground_truth": "Post-Norm 将 LayerNorm 放在残差连接之后，而 Pre-Norm 将其放在残差连接之前。现代模型采用 Pre-Norm 是因为它能保持残差路径通畅，使梯度回传更稳定，训练更容易收敛。",
+    "clean_answer": "**位置区别**：Post-Norm 将 LayerNorm 放在残差连接**之后**；Pre-Norm 将其放在残差连接**之前**（子层之前）。\n\n**现代大模型普遍采用 Pre-Norm 的原因**：\n- Post-Norm 对残差路径也进行归一化，会缩放梯度，训练初期不稳定，通常需要 Warm-up；原始 Transformer 采用此结构，容易导致收敛不稳定。\n- Pre-Norm 使残差路径保持通畅，保护了残差连接的梯度流动，梯度回传更稳定，训练更容易收敛，因此成为现代大模型的标配。\n\n此外，部分模型还将 LayerNorm 替换为 RMSNorm 以进一步提升训练效率。"
+  },
+  {
+    "qid": "q027",
+    "question": "在 LangGraph 的 State 定义里，Annotated[list, operator.add] 有什么作用？",
+    "ground_truth": "它是追加模式：新值追加到列表末尾，不覆盖原有内容，多用于 messages 字段；不加 Annotated 时，后写入的值直接覆盖先写入的值。",
+    "clean_answer": "`Annotated[list, operator.add]` 为 State 字段指定了 Reducer，作用是**追加合并而非覆盖**：新值会追加到列表末尾，保留原有内容，常用于 `messages` 字段。不加 `Annotated` 的字段则是直接覆盖，后写入的值会覆盖先写入的值。\n\n这在 Multi-Agent 场景中很关键：Orchestrator 架构下多个 Sub-Agent 并行写回同一 State，若无 Reducer，后完成的 Agent 会覆盖先完成的结果导致数据丢失；用 `operator.add` 可安全地把多个 Sub-Agent 的输出合并到同一列表字段中。"
+  },
+  {
+    "qid": "q008",
+    "question": "OpenAI 的 text-embedding 系列模型与 E5 系列模型在处理输入前缀时有什么主要区别？",
+    "ground_truth": "OpenAI 的 text-embedding 系列不需要加前缀，对称使用即可；而 E5 系列需要分别为 query 添加 'query: ' 前缀，为 document 添加 'passage: ' 前缀。",
+    "clean_answer": "OpenAI 的 text-embedding 系列不需要加前缀，query 和 document 对称使用即可；而 E5 系列在训练时对 query 和 document 采用了不同的编码策略（非对称训练），使用时需分别加不同前缀——query 加 \"query: \"，document 加 \"passage: \"。若混用会导致向量空间不对齐，相似度计算失准。"
+  },
+  {
+    "qid": "q011",
+    "question": "在 Agent 的记忆系统设计中，MEMORY.md 对应的是哪一种记忆类型？",
+    "ground_truth": "语义记忆。",
+    "clean_answer": "MEMORY.md 对应的是**语义记忆**。\n\n依据：检索片段明确将 Agent 记忆分为四类——上下文窗口（工作记忆）、Skills 文件（程序性记忆）、JSONL 会话历史（情景记忆）和 MEMORY.md（语义记忆）。该片段还指出，MEMORY.md 属于精选事实，需要 Agent 主动维护，其整合触发基于 token 使用率阈值，失败时写入存档而非删除，以保持可回退特性。"
+  },
+  {
+    "qid": "q042",
+    "question": "Self-Attention 中 Softmax 起什么作用？",
+    "ground_truth": "把注意力分数（logits）转化为归一化的注意力权重（概率分布），使所有权重之和为 1。",
+    "clean_answer": "Softmax 将注意力分数（logits）转化为归一化的注意力权重（概率分布），使所有权重之和为 1，再用于对 V 加权求和。公式为 Attention(Q,K,V) = softmax(QK^T/√d_k)·V。\n\n此外，Softmax 前需除以 √d_k：d_k 较大时点积方差很大，分数过大会使 Softmax 输出趋近 one-hot 分布，导致梯度消失；除以 √d_k 可将方差稳定在约 1，训练更稳定。"
+  },
+  {
+    "qid": "q041",
+    "question": "Transformer 为什么需要 LayerNorm？",
+    "ground_truth": "如果不做标准化，各层输出的数值范围可能差异很大（部分值极大、部分极小），下一层难以处理，训练过程会非常不稳定。",
+    "clean_answer": "Transformer 需要 LayerNorm，核心原因是**稳定训练**：若不标准化，各层输出数值范围可能差异很大（部分极大、部分极小），下一层难以处理，训练会非常不稳定。LayerNorm 将每层输出标准化为**均值 0、方差 1**。\n\n此外，LayerNorm 的放置位置也影响稳定性：Post-Norm 放在残差连接之后，会缩放梯度，训练初期不稳定，通常需要 Warm-up；Pre-Norm 放在残差连接之前，残差路径通畅、梯度回传更稳定，更易收敛，因此成为现代大模型主流方案，部分模型还用 RMSNorm 替代 LayerNorm 以提升训练效率。"
+  },
+  {
+    "qid": "q025",
+    "question": "混合检索用 RRF（Reciprocal Rank Fusion）融合时，公式是什么？k 通常取多少？",
+    "ground_truth": "RRF 不依赖原始分数，而是按各检索结果在各自列表中的排名融合，公式为 score = Σ 1/(k + rank_i)，k 通常为 60。",
+    "clean_answer": "RRF 公式为：score = Σ 1/(k + rank_i)，即每个候选在每一路的名次 r（从 1 开始）贡献 1/(k + r)，各路求和后排序；只出现在一路的候选只拿一项分数。\n\nk 是平滑参数（不是返回条数），k 越小头部名次权重越集中，k 越大名次差别越平。k=60 是 RRF 原论文（Cormack 等，2009）的经验值，也是 Milvus RRF 融合的默认值。返回条数由 top_k 控制，与 k 无关。\n\n例：A 在 dense 第 1、BM25 第 3，得 1/61+1/63；B 在 dense 第 2、BM25 第 1，得 1/62+1/61，B 略高。"
+  },
+  {
+    "qid": "q005",
+    "question": "Feed Forward Network (FFN) 在处理数据时，其内部维度的标准变化流程是怎样的？",
+    "ground_truth": "先将 d_model 维升维到高维（通常为 4 × d_model），在高维空间应用非线性激活函数后，再降维投射回 d_model 维。",
+    "clean_answer": "FFN 内部维度的标准变化流程为三步：\n\n1. **升维**：将 d_model 维投射到更高维度，通常为 4 × d_model（如 512 → 2048）；\n2. **非线性激活**：在高维空间应用 ReLU 或 GELU 等激活函数，作为非线性过滤器，决定哪些知识被提取；\n3. **降维**：将高维表示投射回 d_model 维，精炼语义信息并写回 Token 表示，以便进行后续残差连接。\n\n其目的是通过高维非线性变换让模型学习更丰富的语义表示。"
+  },
+  {
+    "qid": "q037",
+    "question": "先让模型把整件复杂工作排出完整的步骤单，然后照单逐项完成，这种智能体设计的长处和短处各是什么？",
+    "ground_truth": "这是 Plan-and-Execute 架构。优点是对复杂长任务结构更清晰，减少中间跑偏；缺点是初始计划的质量强依赖 LLM 能力，中途出错时重新规划的代价较高。",
+    "clean_answer": "这种设计即 Plan-and-Execute 架构：Plan 阶段由 LLM 一次性把复杂任务拆成有序子任务列表，Execute 阶段按计划逐步执行，每步后可选择性重新规划。\n\n**长处**：对复杂长任务结构更清晰，能减少中间跑偏。\n\n**短处**：初始 Plan 质量强依赖 LLM 能力；中途出错时重新规划代价较高。\n\n补充：SecondBrain 项目采用类似思路——planner 输出带依赖的步骤，程序校验后按依赖执行，后一步用前一步结果改写参数；但为控制复杂度，单步计划直接透传、跳过 review，planner 默认不拆分，因为复杂度必须有可测收益。"
+  }
+]

@@ -18,6 +18,11 @@ Query decomposition is handled by the Orchestrator plan_node.
 This agent focuses on single-concept retrieval and answering.
 
 Tools: rag_search
+
+Citations: each chunk returned by rag_search gets an `id` that is unique
+within one run_qa_agent() call. With citation_mode "prompt", "filter" or
+"fallback" the answer cites these ids, and apply_citations() post-processes the
+final answer. "fallback" uses FALLBACK_RULES instead of CITATION_RULES.
 """
 
 import asyncio
@@ -25,6 +30,8 @@ import json
 import logging
 
 from app.agent.tools.rag_search import rag_search as _rag_search_sync
+from app.config import settings
+from app.services.citations import CITATION_RULES, FALLBACK_RULES, apply_citations
 from app.services.llm_client import llm_client
 from app.services.milvus_client import milvus_service
 from app.services.tracing import observe
@@ -54,6 +61,16 @@ REACT_SYSTEM_PROMPT = """\
 - 篇幅控制在 200 字以内，只保留核心结论和关键依据
 """
 
+# Citation variant: same requirements plus CITATION_RULES; the `id` field of
+# each rag_search chunk is its 片段编号.
+_REACT_WITH_IDS = REACT_SYSTEM_PROMPT.replace(
+    "从知识库中检索相关文档片段。",
+    "从知识库中检索相关文档片段。每个片段的 `id` 字段就是它的片段编号。",
+)
+REACT_CITATION_SYSTEM_PROMPT = _REACT_WITH_IDS + CITATION_RULES + "\n"
+# Fallback variant: as above, but answer from own knowledge when the chunks have no answer.
+REACT_FALLBACK_SYSTEM_PROMPT = _REACT_WITH_IDS + FALLBACK_RULES + "\n"
+
 REFLECTION_SYSTEM_PROMPT = """\
 你是一个答案质量审查器。你需要判断回答是否充分覆盖了用户问题。
 
@@ -74,6 +91,11 @@ REFLECTION_SYSTEM_PROMPT = """\
 }
 ```
 """
+
+REFLECTION_CITATION_SYSTEM_PROMPT = REFLECTION_SYSTEM_PROMPT.replace(
+    "回答是否有检索结果支撑，没有编造？",
+    "回答是否有检索结果支撑，每句话都有引用，没有编造？",
+)
 
 # ── Tool schema ──────────────────────────────────────────────
 
@@ -105,8 +127,14 @@ TOOL_SCHEMAS = [
 # ── Tool execution ───────────────────────────────────────────
 
 
-async def _execute_tool_call(tool_call: dict) -> str:
-    """Execute a single tool call and return the result string."""
+async def _execute_tool_call(tool_call: dict, chunks: dict[int, dict]) -> str:
+    """Execute a single tool call and return the result string.
+
+    Args:
+        tool_call: The tool call from the LLM response.
+        chunks: id → chunk map for this run_qa_agent() call. New rag_search
+            chunks get the next ids and are added to it.
+    """
     name = tool_call["function"]["name"]
     args = json.loads(tool_call["function"]["arguments"])
 
@@ -115,18 +143,18 @@ async def _execute_tool_call(tool_call: dict) -> str:
             results = await asyncio.to_thread(
                 _rag_search_sync, query=args["query"], top_k=args.get("top_k", 5)
             )
-            return json.dumps(
-                [
-                    {
-                        "text": r.text,
-                        "source_doc": r.source_doc,
-                        "heading_path": r.heading_path,
-                        "rerank_score": round(r.rerank_score, 4),
-                    }
-                    for r in results
-                ],
-                ensure_ascii=False,
-            )
+            items = []
+            for r in results:
+                item = {
+                    "id": len(chunks) + 1,
+                    "text": r.text,
+                    "source_doc": r.source_doc,
+                    "heading_path": r.heading_path,
+                    "rerank_score": round(r.rerank_score, 4),
+                }
+                chunks[item["id"]] = item
+                items.append(item)
+            return json.dumps(items, ensure_ascii=False)
         else:
             return json.dumps({"error": f"Unknown tool: {name}"})
     except Exception as e:
@@ -140,16 +168,27 @@ MAX_REACT_ITERATIONS = 2
 
 
 @observe(name="qa_react")
-async def _react(query: str, feedback: str | None = None) -> tuple[str, list[str]]:
+async def _react(
+    query: str,
+    chunks: dict[int, dict],
+    citation_mode: str = "off",
+    feedback: str | None = None,
+) -> tuple[str, list[str]]:
     """Run ReAct loop: LLM decides tool calls, execute, observe.
 
     Args:
         query: The user's question.
+        chunks: id → chunk map shared across this run_qa_agent() call.
+        citation_mode: "off" uses the plain prompt; otherwise the citation prompt.
         feedback: Optional reflection feedback for retry.
 
     Returns:
-        (answer, sources) tuple.
+        (answer, sources) tuple. The answer still contains citation markers.
     """
+    system_prompt = {
+        "off": REACT_SYSTEM_PROMPT,
+        "fallback": REACT_FALLBACK_SYSTEM_PROMPT,
+    }.get(citation_mode, REACT_CITATION_SYSTEM_PROMPT)
     user_content = query
     if feedback:
         user_content = (
@@ -159,7 +198,7 @@ async def _react(query: str, feedback: str | None = None) -> tuple[str, list[str
         )
 
     messages: list[dict] = [
-        {"role": "system", "content": REACT_SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content},
     ]
 
@@ -184,7 +223,7 @@ async def _react(query: str, feedback: str | None = None) -> tuple[str, list[str
         # Execute tools and append to messages
         messages.append(response)
         for tc in tool_calls:
-            result_str = await _execute_tool_call(tc)
+            result_str = await _execute_tool_call(tc, chunks)
             messages.append(
                 {
                     "role": "tool",
@@ -192,15 +231,14 @@ async def _react(query: str, feedback: str | None = None) -> tuple[str, list[str
                     "content": result_str,
                 }
             )
-            # Track sources
+            # Track sources. Use a new name: `chunks` is the id map for later tool calls.
             if tc["function"]["name"] == "rag_search":
                 try:
-                    chunks = json.loads(result_str)
-                    for c in chunks:
-                        if c.get("source_doc"):
-                            sources.append(c["source_doc"])
+                    items = json.loads(result_str)
                 except (json.JSONDecodeError, TypeError):
-                    pass
+                    items = None
+                if isinstance(items, list):  # an error result is a dict
+                    sources.extend(c["source_doc"] for c in items if c.get("source_doc"))
 
     # Max iterations reached — force a final answer from current context
     logger.warning("ReAct hit max iterations for: %s", query[:50])
@@ -212,14 +250,17 @@ async def _react(query: str, feedback: str | None = None) -> tuple[str, list[str
 
 
 @observe(name="qa_reflect")
-async def _reflect(query: str, answer: str) -> dict:
+async def _reflect(query: str, answer: str, citation_mode: str = "off") -> dict:
     """Reflect on answer quality.
 
     Returns:
         dict with keys: passed (bool), feedback (str).
     """
+    system_prompt = (
+        REFLECTION_SYSTEM_PROMPT if citation_mode == "off" else REFLECTION_CITATION_SYSTEM_PROMPT
+    )
     messages = [
-        {"role": "system", "content": REFLECTION_SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {
             "role": "user",
             "content": (
@@ -301,30 +342,44 @@ async def run_qa_agent(query: str, user_id: str = "default") -> dict:
             "sources": [],
         }
 
+    citation_mode = settings.citation_mode
+    chunks: dict[int, dict] = {}  # id → chunk, shared by every rag_search in this call
     all_sources: list[str] = []
 
     # Phase 1: ReAct
-    answer, sources = await _react(query)
+    answer, sources = await _react(query, chunks, citation_mode)
     all_sources.extend(sources)
 
-    # Phase 2: Reflection
-    reflection = await _reflect(query, answer)
+    # Phase 2: Reflection (sees the answer with citation markers)
+    reflection = await _reflect(query, answer, citation_mode)
 
     if reflection["passed"]:
         logger.info("QA agent: reflection passed for: %s", query[:50])
         return {
-            "answer": answer,
+            "answer": _apply_citations(answer, chunks, citation_mode),
             "confidence": "high",
             "sources": list(set(all_sources)),
         }
 
     # Phase 3: ReAct retry with feedback
     logger.info("QA agent: reflection failed, retrying with feedback: %s", reflection["feedback"])
-    answer, sources = await _react(query, feedback=reflection["feedback"])
+    answer, sources = await _react(query, chunks, citation_mode, feedback=reflection["feedback"])
     all_sources.extend(sources)
 
     return {
-        "answer": answer,
+        "answer": _apply_citations(answer, chunks, citation_mode),
         "confidence": "low",
         "sources": list(set(all_sources)),
     }
+
+
+def _apply_citations(answer: str, chunks: dict[int, dict], citation_mode: str) -> str:
+    """Post-process the final answer with every chunk id seen in this call."""
+    result = apply_citations(answer, set(chunks), citation_mode)
+    if citation_mode != "off":
+        logger.info(
+            "QA agent citations: kept %d/%d units, %d invalid, fully_refused=%s",
+            result.units_kept, result.units_total,
+            result.invalid_citations, result.fully_refused,
+        )
+    return result.clean_answer

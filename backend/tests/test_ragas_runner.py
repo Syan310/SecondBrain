@@ -2,6 +2,7 @@ from evaluation.ragas_runner import (
     build_ragas_samples,
     build_ragas_judge_llm_kwargs,
     compute_ragas_means,
+    strip_unsupported_sampling_args,
 )
 
 
@@ -41,10 +42,14 @@ def test_compute_ragas_means_ignores_non_numeric_columns_and_nan():
     }
 
 
-def test_build_ragas_judge_llm_kwargs_disable_kimi_thinking():
-    assert build_ragas_judge_llm_kwargs("kimi-k2.5") == {
-        "extra_body": {"thinking": {"type": "disabled"}},
-        "temperature": 0.6,
-        "top_p": 0.95,
-        "max_tokens": 8192,
-    }
+def test_build_ragas_judge_llm_kwargs_only_sets_max_tokens():
+    assert build_ragas_judge_llm_kwargs("anthropic/claude-sonnet-5.5") == {"max_tokens": 8192}
+
+
+def test_strip_unsupported_sampling_args_removes_ragas_defaults():
+    class FakeLLM:
+        model_args = {"temperature": 0.01, "top_p": 0.1, "max_tokens": 8192}
+
+    llm = strip_unsupported_sampling_args(FakeLLM())
+
+    assert llm.model_args == {"max_tokens": 8192}

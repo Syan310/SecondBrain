@@ -1,0 +1,1150 @@
+{
+  "a": {
+    "label": "R1",
+    "files": [
+      "evaluation/results/rag/rag_eval_20261102_220755.json",
+      "evaluation/results/rag/rag_eval_20261102_221242.json",
+      "evaluation/results/rag/rag_eval_20261102_221817.json"
+    ]
+  },
+  "b": {
+    "label": "LC1",
+    "files": [
+      "evaluation/results/rag/rag_eval_20261102_222941.json",
+      "evaluation/results/rag/rag_eval_20261102_223128.json",
+      "evaluation/results/rag/rag_eval_20261102_223306.json"
+    ]
+  },
+  "settings": {
+    "same_threshold": 0.05,
+    "n_bootstrap": 1000,
+    "seed": 20261102
+  },
+  "subset_sizes": {
+    "original_20": 20,
+    "answerable": 50,
+    "type_term": 10,
+    "type_paraphrase": 10,
+    "type_heading": 5
+  },
+  "metrics": {
+    "recall_at_k": {
+      "original_20": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.88,
+          "min": 0.88,
+          "max": 0.88,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.4000000000000001,
+          "min": 0.4,
+          "max": 0.4,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "rr": {
+      "original_20": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.8156666666666667,
+          "min": 0.8156666666666667,
+          "max": 0.8156666666666667,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 0.9499999999999998,
+          "min": 0.95,
+          "max": 0.95,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.12833333333333333,
+          "min": 0.12833333333333333,
+          "max": 0.12833333333333333,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "rr_raw": {
+      "original_20": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.844,
+          "min": 0.8440000000000001,
+          "max": 0.8440000000000001,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 0.9499999999999998,
+          "min": 0.95,
+          "max": 0.95,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.27,
+          "min": 0.27,
+          "max": 0.27,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "rr_reranked": {
+      "original_20": {
+        "range_a": {
+          "mean": 0.9016666666666667,
+          "min": 0.9016666666666666,
+          "max": 0.9016666666666666,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.8113333333333334,
+          "min": 0.8113333333333334,
+          "max": 0.8113333333333334,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 0.9499999999999998,
+          "min": 0.95,
+          "max": 0.95,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.4200000000000001,
+          "min": 0.42000000000000004,
+          "max": 0.42000000000000004,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 0.7666666666666666,
+          "min": 0.7666666666666666,
+          "max": 0.7666666666666666,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "reranker_lift": {
+      "original_20": {
+        "range_a": {
+          "mean": -0.09833333333333334,
+          "min": -0.09833333333333334,
+          "max": -0.09833333333333334,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": -0.03266666666666667,
+          "min": -0.03266666666666667,
+          "max": -0.03266666666666667,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.15,
+          "min": 0.15,
+          "max": 0.15,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": -0.2333333333333333,
+          "min": -0.23333333333333334,
+          "max": -0.23333333333333334,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "faithfulness": {
+      "original_20": {
+        "range_a": {
+          "mean": 0.9421069766290354,
+          "min": 0.9223295454545454,
+          "max": 0.9595343137254903,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.9275562401994292,
+          "min": 0.921359090685716,
+          "max": 0.9319242424242425,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 0.9866666666666667,
+          "min": 0.96,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.7923586707410237,
+          "min": 0.7785106315253374,
+          "max": 0.804040404040404,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 0.9898245614035087,
+          "min": 0.9800000000000001,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "answer_relevancy": {
+      "original_20": {
+        "range_a": {
+          "mean": 0.8533253968185233,
+          "min": 0.8443513579093068,
+          "max": 0.8618579160780113,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.7115359302573007,
+          "min": 0.7029736859838741,
+          "max": 0.717603744006909,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 0.8704798583126973,
+          "min": 0.8520313495643828,
+          "max": 0.8910946112874919,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.17919194398948915,
+          "min": 0.17329124756269065,
+          "max": 0.1823655884970962,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 0.7656623481762906,
+          "min": 0.7482363152075711,
+          "max": 0.7761536457182487,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "context_precision": {
+      "original_20": {
+        "range_a": {
+          "mean": 0.9347453703049569,
+          "min": 0.9282638888232192,
+          "max": 0.9379861110461173,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.7745185184648178,
+          "min": 0.7660555555019049,
+          "max": 0.7804722221688196,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 0.9887499999286146,
+          "min": 0.9887499999286146,
+          "max": 0.9887499999286146,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.20333333332155556,
+          "min": 0.18666666665655557,
+          "max": 0.21166666665405556,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 0.7614814814320248,
+          "min": 0.7499999999491667,
+          "max": 0.7844444443977407,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "context_recall": {
+      "original_20": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.86,
+          "min": 0.86,
+          "max": 0.86,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.3,
+          "min": 0.3,
+          "max": 0.3,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": null,
+          "min": null,
+          "max": null,
+          "runs": 0
+        },
+        "paired": {
+          "n": 0
+        }
+      }
+    },
+    "correctness_score": {
+      "original_20": {
+        "range_a": {
+          "mean": 0.9916666666666667,
+          "min": 0.975,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": 0.9916666666666667,
+          "min": 0.975,
+          "max": 1.0,
+          "runs": 3
+        },
+        "paired": {
+          "n": 20,
+          "mean_a": 0.9916666666666668,
+          "mean_b": 0.9916666666666668,
+          "diff": 0.0,
+          "better": 0,
+          "same": 20,
+          "worse": 0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "verdict": "flat"
+        }
+      },
+      "answerable": {
+        "range_a": {
+          "mean": 0.8633333333333333,
+          "min": 0.85,
+          "max": 0.87,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": 0.9666666666666667,
+          "min": 0.96,
+          "max": 0.97,
+          "runs": 3
+        },
+        "paired": {
+          "n": 50,
+          "mean_a": 0.8633333333333334,
+          "mean_b": 0.9666666666666667,
+          "diff": 0.10333333333333333,
+          "better": 7,
+          "same": 41,
+          "worse": 2,
+          "ci95": [
+            -0.006666666666666665,
+            0.21333333333333335
+          ],
+          "verdict": "flat"
+        }
+      },
+      "type_term": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": 0.9499999999999998,
+          "min": 0.95,
+          "max": 0.95,
+          "runs": 3
+        },
+        "paired": {
+          "n": 10,
+          "mean_a": 1.0,
+          "mean_b": 0.95,
+          "diff": -0.05,
+          "better": 0,
+          "same": 9,
+          "worse": 1
+        }
+      },
+      "type_paraphrase": {
+        "range_a": {
+          "mean": 0.3333333333333333,
+          "min": 0.3,
+          "max": 0.35,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": 0.9,
+          "min": 0.9,
+          "max": 0.9,
+          "runs": 3
+        },
+        "paired": {
+          "n": 10,
+          "mean_a": 0.3333333333333333,
+          "mean_b": 0.9,
+          "diff": 0.5666666666666667,
+          "better": 7,
+          "same": 2,
+          "worse": 1
+        }
+      },
+      "type_heading": {
+        "range_a": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "range_b": {
+          "mean": 1.0,
+          "min": 1.0,
+          "max": 1.0,
+          "runs": 3
+        },
+        "paired": {
+          "n": 5,
+          "mean_a": 1.0,
+          "mean_b": 1.0,
+          "diff": 0.0,
+          "better": 0,
+          "same": 5,
+          "worse": 0
+        }
+      }
+    }
+  },
+  "refusal": {
+    "a": {
+      "per_run": [
+        {
+          "refusal_correct": 5,
+          "refusal_total": 5,
+          "false_refusals": 4,
+          "answerable_total": 50,
+          "unjudged": 0,
+          "excluded": [
+            "q053",
+            "q054",
+            "q055",
+            "q056",
+            "q060"
+          ],
+          "fully_refused": 0
+        },
+        {
+          "refusal_correct": 5,
+          "refusal_total": 5,
+          "false_refusals": 4,
+          "answerable_total": 50,
+          "unjudged": 0,
+          "excluded": [
+            "q053",
+            "q054",
+            "q055",
+            "q056",
+            "q060"
+          ],
+          "fully_refused": 0
+        },
+        {
+          "refusal_correct": 5,
+          "refusal_total": 5,
+          "false_refusals": 5,
+          "answerable_total": 50,
+          "unjudged": 0,
+          "excluded": [
+            "q053",
+            "q054",
+            "q055",
+            "q056",
+            "q060"
+          ],
+          "fully_refused": 0
+        }
+      ],
+      "refusal_accuracy": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0,
+        "runs": 3
+      },
+      "false_refusal_rate": {
+        "mean": 0.08666666666666667,
+        "min": 0.08,
+        "max": 0.1,
+        "runs": 3
+      }
+    },
+    "b": {
+      "per_run": [
+        {
+          "refusal_correct": 5,
+          "refusal_total": 5,
+          "false_refusals": 0,
+          "answerable_total": 50,
+          "unjudged": 0,
+          "excluded": [
+            "q053",
+            "q054",
+            "q055",
+            "q056",
+            "q060"
+          ],
+          "fully_refused": 0
+        },
+        {
+          "refusal_correct": 5,
+          "refusal_total": 5,
+          "false_refusals": 0,
+          "answerable_total": 50,
+          "unjudged": 0,
+          "excluded": [
+            "q053",
+            "q054",
+            "q055",
+            "q056",
+            "q060"
+          ],
+          "fully_refused": 0
+        },
+        {
+          "refusal_correct": 5,
+          "refusal_total": 5,
+          "false_refusals": 0,
+          "answerable_total": 50,
+          "unjudged": 0,
+          "excluded": [
+            "q053",
+            "q054",
+            "q055",
+            "q056",
+            "q060"
+          ],
+          "fully_refused": 0
+        }
+      ],
+      "refusal_accuracy": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0,
+        "runs": 3
+      },
+      "false_refusal_rate": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "runs": 3
+      }
+    }
+  },
+  "latency": {
+    "a": {
+      "latency_p50_ms": {
+        "mean": 1484.2665333344485,
+        "min": 1326.5603999971063,
+        "max": 1710.0370000043768,
+        "runs": 3
+      },
+      "latency_p95_ms": {
+        "mean": 2159.2268666669647,
+        "min": 1884.8400999995647,
+        "max": 2518.290200001502,
+        "runs": 3
+      }
+    },
+    "b": {
+      "latency_p50_ms": {
+        "mean": 2858.0153666698607,
+        "min": 2697.687500003667,
+        "max": 2999.2978000009316,
+        "runs": 3
+      },
+      "latency_p95_ms": {
+        "mean": 3771.6614333330654,
+        "min": 3407.37850000005,
+        "max": 4274.447199997667,
+        "runs": 3
+      }
+    }
+  },
+  "usage": {
+    "a": {
+      "input_tokens": {
+        "mean": 1207.3,
+        "min": 1207.3,
+        "max": 1207.3,
+        "runs": 3
+      },
+      "output_tokens": {
+        "mean": 106.89999999999999,
+        "min": 102.66666666666667,
+        "max": 109.43333333333334,
+        "runs": 3
+      },
+      "cost_usd_actual": {
+        "mean": 0.0002711966333333333,
+        "min": 0.00019276230000000004,
+        "max": 0.00042706529999999996,
+        "runs": 3
+      },
+      "cost_usd_no_cache": {
+        "mean": 0.0004904699999999999,
+        "min": 0.0004853899999999998,
+        "max": 0.0004935099999999998,
+        "runs": 3
+      }
+    },
+    "b": {
+      "input_tokens": {
+        "mean": 351586.5833333333,
+        "min": 351586.5833333333,
+        "max": 351586.5833333333,
+        "runs": 3
+      },
+      "output_tokens": {
+        "mean": 90.97222222222223,
+        "min": 86.16666666666667,
+        "max": 93.4,
+        "runs": 3
+      },
+      "cost_usd_actual": {
+        "mean": 0.0022853016666666663,
+        "min": 0.002279534999999999,
+        "max": 0.0022882149999999993,
+        "runs": 3
+      },
+      "cost_usd_no_cache": {
+        "mean": 0.10558514166666667,
+        "min": 0.105579375,
+        "max": 0.10558805500000003,
+        "runs": 3
+      }
+    }
+  }
+}

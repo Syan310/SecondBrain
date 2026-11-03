@@ -1,12 +1,12 @@
-"""Judge LLM client — evaluation judge via Kimi K2.5 (OpenAI-compatible API).
+"""Judge LLM client — evaluation judge via an OpenAI-compatible API.
 
 Used for LLM-as-Judge evaluation (Faithfulness, Relevancy, Quiz Quality, etc.)
-Separated from main LLM client to avoid self-evaluation bias (Qwen judges Qwen).
+Separated from the main LLM client to avoid self-evaluation bias: the judge
+(Claude Sonnet via OpenRouter) comes from a different vendor than the app model.
 
-Kimi K2.5 constraints (per official docs):
-- temperature, top_p, frequency_penalty, presence_penalty, n are NOT modifiable
-- Use max_completion_tokens (not max_tokens) for output length control
-- thinking: {"type": "disabled"} to skip reasoning for judge tasks
+Claude constraints:
+- temperature, top_p, top_k are rejected (HTTP 400), so they are never sent
+- reasoning parameters are left at the OpenRouter default
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ import logging
 from openai import AsyncOpenAI
 
 from app.config import settings
+from app.services.llm_client import build_routing_extra_body, make_async_openai
 
 logger = logging.getLogger(__name__)
 
@@ -24,40 +25,44 @@ def build_judge_request_kwargs(
     model: str,
     messages: list[dict],
     max_completion_tokens: int | None = None,
+    extra_body: dict | None = None,
 ) -> dict:
-    """Build Kimi K2.5 Chat Completions kwargs for the judge path.
+    """Build Chat Completions kwargs for the judge path.
 
-    Kimi K2.5 does not accept temperature, top_p, frequency_penalty,
-    presence_penalty, or n — these are fixed by the model and must be omitted.
+    No sampling parameters are sent: Claude rejects temperature/top_p/top_k.
+    ``extra_body`` carries OpenRouter provider routing.
     """
     create_kwargs: dict = {
         "model": model,
         "messages": messages,
-        "extra_body": {"thinking": {"type": "disabled"}},
     }
 
+    if extra_body:
+        create_kwargs["extra_body"] = extra_body
     if max_completion_tokens is not None:
         create_kwargs["max_completion_tokens"] = max_completion_tokens
 
     logger.info(
-        "Judge request: model='%s', thinking=disabled, max_completion_tokens=%s",
+        "Judge request: model='%s', max_completion_tokens=%s, extra_body=%s",
         model,
         max_completion_tokens,
+        extra_body,
     )
     return create_kwargs
 
 
 class JudgeClient:
-    """Async wrapper for evaluation judging via Kimi K2.5."""
+    """Async wrapper for evaluation judging."""
 
     def __init__(self) -> None:
         self._client: AsyncOpenAI | None = None
 
     def _get_client(self) -> AsyncOpenAI:
         if self._client is None:
-            self._client = AsyncOpenAI(
+            self._client = make_async_openai(
                 api_key=settings.judge_api_key,
                 base_url=settings.judge_base_url,
+                role="judge",
             )
         return self._client
 
@@ -72,6 +77,9 @@ class JudgeClient:
             model=settings.judge_model,
             messages=messages,
             max_completion_tokens=max_completion_tokens,
+            extra_body=build_routing_extra_body(
+                settings.judge_base_url, settings.judge_provider_order
+            ),
         )
         response = await client.chat.completions.create(**create_kwargs)
         return response.choices[0].message.content or ""

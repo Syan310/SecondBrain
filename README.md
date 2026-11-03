@@ -6,7 +6,7 @@ A RAG + quiz + knowledge gap diagnosis system built on personal notes. Upload yo
 
 | Feature | Description |
 | --- | --- |
-| **Question Answering (QA)** | Document-grounded RAG QA for complex questions such as comparison, causality, and parallel analysis, using a ReAct + Reflection workflow. |
+| **Question Answering (QA)** | Document-grounded RAG QA for complex questions such as comparison, causality, and parallel analysis, using a ReAct + Reflection workflow. Answers cite chunk ids. If the notes have no answer, the reply starts with `笔记里没有找到相关内容。` and then answers from model knowledge (`CITATION_MODE=fallback`, the default). |
 | **Quiz Generation** | Generates multiple-choice questions from document content and user weak points, then updates mastery in real time with a time-decay model. |
 | **Knowledge Gap Diagnosis** | Compares knowledge base concepts with user mastery and produces a report with four levels: unseen, weak, needs reinforcement, and mastered. |
 | **Document Management** | Supports PDF, Word, and Markdown upload, then automatically parses, chunks, extracts concepts, and writes vectors. |
@@ -18,9 +18,9 @@ A RAG + quiz + knowledge gap diagnosis system built on personal notes. Upload yo
 | --- | --- |
 | Frontend | React 19 + Vite + TypeScript + Tailwind CSS v4 |
 | Backend | FastAPI + LangGraph + Python 3.11 |
-| Embedding | BGE-m3 (1024 dimensions, bilingual, dense + sparse dual encoding with heading augmentation) |
+| Embedding | BGE-m3 dense (1024 dimensions, bilingual, heading-augmented input) |
 | LLM | Qwen3-Plus (chat / stream / tool-calling) |
-| Vector Store | Milvus Standalone (HNSW + SPARSE_INVERTED_INDEX with RRF hybrid retrieval) |
+| Vector Store | Milvus Standalone v2.6: hybrid retrieval = BGE-m3 dense (HNSW) + BM25 (built-in Function, jieba analyzer), fused with RRF (k=60) |
 | Database | SQLite (aiosqlite + SQLAlchemy Async, WAL mode) |
 | PDF Parsing | magic-pdf (MinerU) |
 | Deployment | Docker Compose (Milvus + etcd + MinIO + Backend) |
@@ -53,6 +53,7 @@ LLM_MODEL=claude-opus-4-6
 EMBEDDING_MODEL_PATH=./models/bge-m3
 RERANKER_MODEL_PATH=./models/bge-reranker-v2-m3
 ENABLE_RERANKER=false
+CITATION_MODE=fallback
 
 MILVUS_HOST=milvus
 MILVUS_PORT=19530
@@ -175,6 +176,8 @@ VITE_PROXY_TARGET=http://localhost:8000 npm run dev
   Check `docker compose logs -f backend` and confirm `backend/models/` contains both BGE models.
 - Backend cannot connect to Milvus in local mode:
   Set `MILVUS_HOST=localhost` before starting `uvicorn`.
+- Upgrading from the Milvus 2.4 setup:
+  The compose file now uses new volumes (`*_v26`), so 2.4 data is not reused. Re-upload your documents after the first start. When you no longer need the old data, remove the old volumes with `docker volume ls` and `docker volume rm`.
 - API works but frontend requests fail:
   Check `VITE_PROXY_TARGET` and make sure the frontend is pointing to the same backend port you started.
 - First request is slow:
@@ -185,3 +188,5 @@ VITE_PROXY_TARGET=http://localhost:8000 npm run dev
 - Core QA, quiz, gap analysis, ingestion, and memory flows are implemented.
 - Frontend and backend are both runnable locally.
 - Evaluation tooling for RAG and agent performance exists under `backend/evaluation/`.
+- `CITATION_MODE` values: `off` (no citations), `prompt` (strip markers), `filter` (drop uncited sentences; refuse if none left), `fallback` (default).
+- Evaluation reports are in `docs/eval-report-*.md`. The latest is `docs/eval-report-2026-11-03-fallback.md`.

@@ -1,0 +1,3144 @@
+{
+  "meta": {
+    "run_id": "rag_20261102_142307",
+    "run_log_file": "C:\\Users\\Shaoyu Yan\\Desktop\\SecondBrain\\backend\\evaluation\\results\\logs_rag\\eval_rag_20261102_142307.log",
+    "timezone": "America/Los_Angeles",
+    "started_at": "2026-11-02T14:23:07.925864-08:00",
+    "finished_at": "2026-11-02T14:27:04.684341-08:00",
+    "profile": "full",
+    "dataset": {
+      "name": "qa_l0_v1.json",
+      "sha256": "ee47c4ecc71352f628a4ca46fe3d73d6f12be187aefc70bdc871d6fcf6c2d0db",
+      "items": 60,
+      "answerable": 50,
+      "refusal": 10,
+      "type_counts": {
+        "original": 20,
+        "term": 10,
+        "paraphrase": 10,
+        "heading": 5,
+        "factual": 5,
+        "refusal": 10
+      }
+    },
+    "output_file": "C:\\Users\\Shaoyu Yan\\Desktop\\SecondBrain\\backend\\evaluation\\results\\rag\\rag_eval_20261102_142307.json",
+    "status": "completed",
+    "health_issues": [],
+    "completed_phases": [
+      "ir",
+      "refusal",
+      "ragas"
+    ],
+    "commit": {
+      "sha": "4130dc685bf6af41b92ee9236589f6535b87b045",
+      "dirty": false
+    },
+    "config": {
+      "enable_reranker": false,
+      "reranker_use_heading": false,
+      "citation_mode": "off",
+      "reranker_max_length": 1024,
+      "top_k": 5,
+      "candidate_k": 15,
+      "rrf_k": 60,
+      "bm25_k1": 1.2,
+      "bm25_b": 0.75,
+      "qa_temperature": 0.1,
+      "qa_max_tokens": 1024
+    },
+    "prompt_sha256": "9222d3ceeffd",
+    "refusal_judge_prompt_sha256": "b2bf34152599",
+    "corpus": {
+      "dir": "C:\\Users\\Shaoyu Yan\\Desktop\\LLM_Learn",
+      "files": {
+        "Agent 复习.md": {
+          "sha256": "ff0038ecfd356dc7a7c0fcb14db20999987d206f474ccd2c5b6f7bb14652d15a",
+          "chunks": 52
+        },
+        "RAG复习.md": {
+          "sha256": "49e7980d9bc8ca6c3a5eb6d5f2c5ee8f391e7ff3d6e67f6c1507669b9e720557",
+          "chunks": 81
+        },
+        "Transformer 复习.md": {
+          "sha256": "4e0af6eb3a8bb1995481166c317ab8c7fe514116a36e0cdf9b1dcf99bfb53e81",
+          "chunks": 21
+        },
+        "你不知道的Agent-原理架构与工程实践.md": {
+          "sha256": "8f544c38718654a8962c18a6f07530aa42e36740a4adfb16af5448156bf0f473",
+          "chunks": 33
+        }
+      }
+    },
+    "models": {
+      "llm": {
+        "model": "deepseek-flash",
+        "base_url": "https://api.deepseek.com",
+        "provider_order": [],
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        }
+      },
+      "judge": {
+        "model": "anthropic/claude-haiku-5.5",
+        "base_url": "https://openrouter.ai/api/v1",
+        "provider_order": [
+          "anthropic"
+        ],
+        "extra_body": {
+          "usage": {
+            "include": true
+          },
+          "provider": {
+            "order": [
+              "anthropic"
+            ],
+            "allow_fallbacks": false
+          }
+        },
+        "sampling": "temperature/top_p not sent (provider default)",
+        "reasoning": "not sent (OpenRouter default)"
+      },
+      "embedding": {
+        "name": "BAAI/bge-m3",
+        "path": "./models/bge-m3"
+      },
+      "reranker": {
+        "name": "BAAI/bge-reranker-v2-m3",
+        "path": "./models/bge-reranker-v2-m3"
+      }
+    },
+    "versions": {
+      "python": "3.11.15",
+      "pymilvus": "2.6.17",
+      "milvus_server": "2.6.25",
+      "ragas": "0.4.3",
+      "langgraph": "1.2.19",
+      "openai": "1.109.1",
+      "FlagEmbedding": "1.4.2",
+      "transformers": "4.57.6",
+      "torch": "2.11.0+cu128"
+    },
+    "usage": {
+      "llm": {
+        "requests": 60,
+        "prompt_tokens": 55920,
+        "completion_tokens": 6121,
+        "cost_usd": 0.0,
+        "providers": {
+          "api.deepseek.com": 60
+        },
+        "models": {
+          "deepseek-flash": 60
+        }
+      },
+      "judge": {
+        "requests": 510,
+        "prompt_tokens": 885046,
+        "completion_tokens": 249569,
+        "cost_usd": 0.21328910000000015,
+        "providers": {
+          "Anthropic": 510
+        },
+        "models": {
+          "anthropic/claude-haiku-5.5": 510
+        }
+      }
+    },
+    "provider_problems": [],
+    "run_problems": []
+  },
+  "subset": {
+    "answerable_limit": null,
+    "answerable_types": null,
+    "refusal_limit": null,
+    "answerable_selected": 50,
+    "refusal_selected": 10,
+    "selected": 60,
+    "group_counts": {
+      "Transformer 复习.md": 12,
+      "RAG复习.md": 14,
+      "你不知道的Agent-原理架构与工程实践.md": 12,
+      "Agent 复习.md": 12
+    },
+    "ids": [
+      "q001",
+      "q006",
+      "q011",
+      "q016",
+      "q002",
+      "q007",
+      "q012",
+      "q017",
+      "q003",
+      "q008",
+      "q013",
+      "q018",
+      "q004",
+      "q009",
+      "q014",
+      "q019",
+      "q005",
+      "q010",
+      "q015",
+      "q020",
+      "q021",
+      "q023",
+      "q029",
+      "q026",
+      "q022",
+      "q024",
+      "q030",
+      "q027",
+      "q031",
+      "q025",
+      "q039",
+      "q028",
+      "q032",
+      "q033",
+      "q040",
+      "q037",
+      "q041",
+      "q034",
+      "q044",
+      "q038",
+      "q042",
+      "q035",
+      "q045",
+      "q043",
+      "q046",
+      "q036",
+      "q050",
+      "q049",
+      "q047",
+      "q048",
+      "q051",
+      "q052",
+      "q053",
+      "q054",
+      "q055",
+      "q056",
+      "q057",
+      "q058",
+      "q059",
+      "q060"
+    ]
+  },
+  "ir_metrics": {
+    "n": 50,
+    "recall_at_k": 0.96,
+    "mrr": 0.95,
+    "mrr_raw": 0.9206666666666667,
+    "mrr_reranked": 0.97,
+    "reranker_lift": 0.04933333333333323,
+    "latency_p50_ms": 1249.5202999998583,
+    "latency_p95_ms": 2021.238600000288,
+    "latency_n": 60
+  },
+  "per_question": [
+    {
+      "id": "q001",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "原始 Transformer 使用什么函数生成位置编码？这些编码在训练过程中是否参与梯度更新？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "原始 Transformer 使用**正余弦函数**生成位置编码，且这些编码**不参与梯度更新**（[1]）。这样做的优点是泛化性强、不占模型容量（无需额外可学习参数）（[3]）。",
+      "clean_answer": "原始 Transformer 使用**正余弦函数**生成位置编码，且这些编码**不参与梯度更新**。这样做的优点是泛化性强、不占模型容量（无需额外可学习参数）。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）",
+          "child_id": "3a7b524a-c1af-4178-9f0a-ef06b310a937"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "2. Token Embedding",
+          "child_id": "c1ee8657-f6de-4b24-acbb-cf76d460f276"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）/为什么用正余弦而不是可学习的位置编码？",
+          "child_id": "e31956c3-031d-4995-9e7c-19f644c3291b"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）/关键要点",
+          "child_id": "00a5b46b-018c-4d8c-9307-b733808916a8"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/Pre-Norm vs Post-Norm",
+          "child_id": "d127c412-c71e-42b6-ad75-9f12f1cd06e1"
+        }
+      ],
+      "latency_ms": 1725.6598999993003,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接指出原始Transformer使用正余弦函数生成位置编码，并说明编码不参与梯度更新，给出了针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9373209211222694,
+      "context_precision": 0.8055555555287036,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q006",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为哪三个步骤？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "Naive RAG 的标准流程固定为三个步骤：**索引 → 检索 → 生成**。\n\n- **索引**：文档解析 → 分块 → Embedding → 存入向量数据库\n- **检索**：用户 Query 向量化后做相似度检索，取 Top-K\n- **生成**：将检索结果拼入 Prompt，送入 LLM 生成回答\n\n该流程为固定线性结构，灵活性低，主要适用于原型验证场景。",
+      "clean_answer": "Naive RAG 的标准流程固定为三个步骤：**索引 → 检索 → 生成**。\n\n- **索引**：文档解析 → 分块 → Embedding → 存入向量数据库\n- **检索**：用户 Query 向量化后做相似度检索，取 Top-K\n- **生成**：将检索结果拼入 Prompt，送入 LLM 生成回答\n\n该流程为固定线性结构，灵活性低，主要适用于原型验证场景。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Naive RAG（朴素 RAG）",
+          "child_id": "986b480b-68d7-4c88-b60b-981d05123119"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Modular RAG（模块化 RAG）",
+          "child_id": "6b069d86-08f1-4bf7-8c14-615e4a8385cb"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Advanced RAG（增强 RAG）",
+          "child_id": "c2be6500-22b9-4c1d-9e14-ed25b77e9adc"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/核心问题",
+          "child_id": "5c0cc890-cde4-4545-b396-6a348307f7da"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/冷启动面临的三个核心挑战",
+          "child_id": "6984a862-671e-4bea-afc4-dda25027576e"
+        }
+      ],
+      "latency_ms": 1809.0025000001333,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了索引、检索、生成三个步骤及其具体内容，没有表示资料不足，属于针对问题的实质性回答。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8656888050221507,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q011",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在 Agent 的记忆系统设计中，MEMORY.md 对应的是哪一种记忆类型？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "MEMORY.md 对应的是**语义记忆**。\n\n依据片段[1]，Agent 记忆分为四类：上下文窗口（工作记忆）、Skills 文件（程序性记忆）、JSONL 会话历史（情景记忆）和 MEMORY.md（语义记忆）。该片段还指出，MEMORY.md 属于精选事实，需要 Agent 主动维护，整合触发基于 token 使用率阈值，失败时将消息写入存档而非删除，以保持可回退特性。",
+      "clean_answer": "MEMORY.md 对应的是**语义记忆**。\n\n依据片段，Agent 记忆分为四类：上下文窗口（工作记忆）、Skills 文件（程序性记忆）、JSONL 会话历史（情景记忆）和 MEMORY.md（语义记忆）。该片段还指出，MEMORY.md 属于精选事实，需要 Agent 主动维护，整合触发基于 token 使用率阈值，失败时将消息写入存档而非删除，以保持可回退特性。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/5. 记忆系统设计",
+          "child_id": "7a857b89-ce60-474a-80e1-16621d3eacab"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 记忆模块",
+          "child_id": "34a002b1-a0e4-4d71-aa14-eabcf2a31d1f"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "长期记忆管理：Memory Consolidation（记忆整合）",
+          "child_id": "42fb359b-d5a8-48a0-8784-ccb731558df6"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 记忆模块/短期记忆（Short-term Memory）",
+          "child_id": "a19f42b6-53ba-4a73-a1a0-b163ad122385"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 记忆模块/长期记忆（Long-term Memory）",
+          "child_id": "005a791f-a0d7-485f-abaa-29aaec34c280"
+        }
+      ],
+      "latency_ms": 1937.4001999985921,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接指出 MEMORY.md 对应语义记忆，并给出了四类记忆的划分及相关说明等实质内容，没有表示资料不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8856298863904066,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q016",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "LangGraph 的 Checkpointer 机制主要提供哪四种核心能力？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "LangGraph 的 Checkpointer 机制提供四种核心能力：\n\n1. **跨会话记忆**：同一用户下次对话时恢复上次的 State，无需重新开始；\n2. **Human-in-the-Loop**：执行到某一步时暂停，等待人工确认后继续；\n3. **错误恢复**：从最后一个成功的 Checkpoint 重新执行，而非从头开始；\n4. **时间旅行（Time Travel）**：回退到历史某个 State，重新分叉执行。\n\n其原理是在每一步执行后保存 State 快照，从而实现上述能力。",
+      "clean_answer": "LangGraph 的 Checkpointer 机制提供四种核心能力：\n\n1. **跨会话记忆**：同一用户下次对话时恢复上次的 State，无需重新开始；\n2. **Human-in-the-Loop**：执行到某一步时暂停，等待人工确认后继续；\n3. **错误恢复**：从最后一个成功的 Checkpoint 重新执行，而非从头开始；\n4. **时间旅行（Time Travel）**：回退到历史某个 State，重新分叉执行。\n\n其原理是在每一步执行后保存 State 快照，从而实现上述能力。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化",
+          "child_id": "80d85a51-4651-4922-8d5b-12079e21cc6e"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化/使用方式",
+          "child_id": "b24f4ad4-2ecb-4360-9b00-878045d1c21a"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：条件边的实现",
+          "child_id": "a8978bfd-50da-46f1-ac2f-36242448a9b0"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化/常用 Checkpointer",
+          "child_id": "c41b24f2-4457-418d-a877-1e63748abace"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：State Reducer 机制",
+          "child_id": "7016d158-3489-49dd-bde1-e2af0cfc0e95"
+        }
+      ],
+      "latency_ms": 1803.2383999998274,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了四种核心能力并逐一解释，给出了针对问题的实质内容，没有表示资料不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.991614398807372,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q002",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "为什么多头注意力（Multi-Head Attention）机制在增加 head 数量的同时不会增加整体计算量？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "多头注意力不增加计算量的关键在于**维度均分**：将整个 d_model 维度按 head 数量均分，每个 head 在低维子空间中独立计算注意力，最后将所有 head 的输出拼接回原始维度。因此虽然 head 数量增加，但每个 head 处理的维度相应降低，整体计算量保持不变。这样做的收益是让不同的 head 并行地关注不同方面的语义特征，弥补单头注意力只能关注一种特征模式的局限。",
+      "clean_answer": "多头注意力不增加计算量的关键在于**维度均分**：将整个 d_model 维度按 head 数量均分，每个 head 在低维子空间中独立计算注意力，最后将所有 head 的输出拼接回原始维度。因此虽然 head 数量增加，但每个 head 处理的维度相应降低，整体计算量保持不变。这样做的收益是让不同的 head 并行地关注不同方面的语义特征，弥补单头注意力只能关注一种特征模式的局限。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention",
+          "child_id": "e19e66a0-5283-4e25-8961-0b37984a54f8"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention/Mask 机制",
+          "child_id": "ac4f35a6-d832-4d1c-898e-5f8417f5f2c9"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制",
+          "child_id": "951fff31-b8f2-46c5-86e3-410dd1c1ea40"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "6. Feed Forward Network（FFN）",
+          "child_id": "6488c459-a0d1-4424-99f8-a70a12cb01d4"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制/Softmax 的作用",
+          "child_id": "7a99a4cc-8bd3-4eeb-a068-27d061b894e6"
+        }
+      ],
+      "latency_ms": 2063.09549999969,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接解释了多头注意力通过将 d_model 维度均分到各 head 来保持总计算量不变，并给出了并行关注不同语义特征的收益，属于针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8968168806252245,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q007",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "为什么 E5 系列模型不能混用 query 和 document 的编码策略？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "因为 E5 系列在训练时对 query 和 document 采用了不同的编码策略（asymmetric training），query 需加 `\"query: \"` 前缀、document 需加 `\"passage: \"` 前缀。若混用，会导致两者的向量空间不对齐，相似度计算失准，检索效果显著下降。这是使用 BGE、E5 等模型时最常见的踩坑点。相比之下，OpenAI 的 text-embedding 系列不需要加前缀，对称使用即可。",
+      "clean_answer": "因为 E5 系列在训练时对 query 和 document 采用了不同的编码策略（asymmetric training），query 需加 `\"query: \"` 前缀、document 需加 `\"passage: \"` 前缀。若混用，会导致两者的向量空间不对齐，相似度计算失准，检索效果显著下降。这是使用 BGE、E5 等模型时最常见的踩坑点。相比之下，OpenAI 的 text-embedding 系列不需要加前缀，对称使用即可。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）",
+          "child_id": "a3e27760-c2b5-4c41-857b-cd8f2cb09f81"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量化与索引/Embedding 的非对称编码（Query/Document Asymmetry）",
+          "child_id": "ebdd1c42-33f9-4c52-b470-8d0624954120"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/为什么需要 Reranking？",
+          "child_id": "c7a9e116-3e68-4345-93db-772c4c6ee56b"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Query-Doc 语义鸿沟",
+          "child_id": "ae62b837-28b1-4af6-ae64-df80f0a342de"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量化与索引/Embedding 模型的选择",
+          "child_id": "800f7074-eb49-4bbb-985c-69c190c74293"
+        }
+      ],
+      "latency_ms": 2021.238600000288,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接解释了 E5 模型 query 与 passage 前缀的非对称训练机制及混用后果，给出了针对问题的实质内容，未表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8323950969330212,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q012",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "根据文档，Workflow 和 Agent 的核心区别是什么？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据文档，Workflow 和 Agent 的核心区别在于**控制权掌握在谁手里**：执行路径由代码预先写死的是 Workflow，由 LLM 动态决定下一步的是 Agent。文档也指出，现实中很多标着 Agent 的产品其实更接近 Workflow，但两者并无高下之分，关键是给任务找到更适合的解决方案。",
+      "clean_answer": "根据文档，Workflow 和 Agent 的核心区别在于**控制权掌握在谁手里**：执行路径由代码预先写死的是 Workflow，由 LLM 动态决定下一步的是 Agent。文档也指出，现实中很多标着 Agent 的产品其实更接近 Workflow，但两者并无高下之分，关键是给任务找到更适合的解决方案。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/Workflow 和 Agent 有什么区别",
+          "child_id": "6787ddab-7c2a-44c7-bf01-0cb94d29f7e7"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/7. 多 Agent 组织",
+          "child_id": "6aa92b59-fc6e-430f-ac52-8b61c5c95f3b"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph",
+          "child_id": "b26c1f3e-7b3f-4216-b196-ad3abd989e8d"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式",
+          "child_id": "a017f781-632b-4837-8345-61834677b3f0"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/GraphRAG（知识图谱 RAG）",
+          "child_id": "f202d270-1e4c-4649-afb0-ad188cdfecae"
+        }
+      ],
+      "latency_ms": 1812.1762000009767,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了Workflow与Agent核心区别（控制权归属）的实质内容，没有声明资料不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9789551883429598,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q017",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "相比原始的 ReAct 框架，Reflexion 框架的核心优势是什么？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "Reflexion 在 ReAct 基础上加入了自我反思（Self-Reflection）能力，其核心优势是**对中间结果的质量做显式检查**，允许 Agent 从失败中学习并在同一任务内自我纠错，这是原始 ReAct 框架无法做到的。\n\n具体而言，Reflection 模块会评估 Observation 输出的质量、生成自然语言形式的反思建议，并将其注入下一轮 Thought 的 Prompt 中，引导 Agent 修正策略。",
+      "clean_answer": "Reflexion 在 ReAct 基础上加入了自我反思（Self-Reflection）能力，其核心优势是**对中间结果的质量做显式检查**，允许 Agent 从失败中学习并在同一任务内自我纠错，这是原始 ReAct 框架无法做到的。\n\n具体而言，Reflection 模块会评估 Observation 输出的质量、生成自然语言形式的反思建议，并将其注入下一轮 Thought 的 Prompt 中，引导 Agent 修正策略。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Reflexion 框架",
+          "child_id": "abc2d8e7-6134-428c-9019-c944685f7a6f"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "ReAct 框架",
+          "child_id": "6f57f218-0367-467c-a3fb-266ed27f58a2"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/GraphRAG（知识图谱 RAG）",
+          "child_id": "f202d270-1e4c-4649-afb0-ad188cdfecae"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/Agentic RAG（智能体 RAG）",
+          "child_id": "cbf36acf-6fd5-473f-bd16-eb2b2b986f3b"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/3. 上下文工程为什么决定稳定性",
+          "child_id": "24dfd5bf-1377-4a51-bef5-ff32a9e2ab18"
+        }
+      ],
+      "latency_ms": 1982.5973000006343,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接围绕问题给出了Reflexion相比ReAct的核心优势（显式自我反思与失败后自我纠错）及其机制说明，没有声明资料不足，属于实质性回答。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8603911290441923,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q003",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "Pre-Norm 和 Post-Norm 在 Layer Normalization 的放置位置上有何区别？为什么现代大模型普遍采用 Pre-Norm？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "**位置区别**：Post-Norm 将 LayerNorm 放在残差连接**之后**；Pre-Norm 放在残差连接**之前**。\n\n**现代大模型采用 Pre-Norm 的原因**：Post-Norm 对残差路径也进行归一化，会缩放梯度，导致训练初期不稳定，通常需要 Warm-up；而 Pre-Norm 使残差路径保持通畅，梯度回传更稳定，训练更容易收敛。此外，部分模型还将 LayerNorm 替换为 RMSNorm 以进一步提升训练效率。",
+      "clean_answer": "**位置区别**：Post-Norm 将 LayerNorm 放在残差连接**之后**；Pre-Norm 放在残差连接**之前**。\n\n**现代大模型采用 Pre-Norm 的原因**：Post-Norm 对残差路径也进行归一化，会缩放梯度，导致训练初期不稳定，通常需要 Warm-up；而 Pre-Norm 使残差路径保持通畅，梯度回传更稳定，训练更容易收敛。此外，部分模型还将 LayerNorm 替换为 RMSNorm 以进一步提升训练效率。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/Pre-Norm vs Post-Norm",
+          "child_id": "d127c412-c71e-42b6-ad75-9f12f1cd06e1"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/为什么需要 LayerNorm？",
+          "child_id": "6972e74c-89fb-4069-b06e-11ce1c5c0ca2"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization",
+          "child_id": "16810792-d431-4458-bb0b-0f9f40bd437a"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）/为什么用正余弦而不是可学习的位置编码？",
+          "child_id": "e31956c3-031d-4995-9e7c-19f644c3291b"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）",
+          "child_id": "3a7b524a-c1af-4178-9f0a-ef06b310a937"
+        }
+      ],
+      "latency_ms": 1085.112000000663,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接说明了Pre-Norm与Post-Norm的放置位置区别，并给出了梯度稳定、残差路径通畅等采用Pre-Norm的具体原因，属于针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8710465259295123,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q008",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "OpenAI 的 text-embedding 系列模型与 E5 系列模型在处理输入前缀时有什么主要区别？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "OpenAI 的 text-embedding 系列不需要加前缀，query 和 document 对称使用即可；而 E5 系列需要加不同前缀（query 加 \"query: \"，document 加 \"passage: \"），因为这类模型训练时对 query 和 document 采用了不同的编码策略（asymmetric training），混用会导致向量空间不对齐、相似度计算失准。使用其他开源模型前务必查阅对应文档。",
+      "clean_answer": "OpenAI 的 text-embedding 系列不需要加前缀，query 和 document 对称使用即可；而 E5 系列需要加不同前缀（query 加 \"query: \"，document 加 \"passage: \"），因为这类模型训练时对 query 和 document 采用了不同的编码策略（asymmetric training），混用会导致向量空间不对齐、相似度计算失准。使用其他开源模型前务必查阅对应文档。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量化与索引/Embedding 模型的选择",
+          "child_id": "800f7074-eb49-4bbb-985c-69c190c74293"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）",
+          "child_id": "a3e27760-c2b5-4c41-857b-cd8f2cb09f81"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量化与索引/Embedding 的非对称编码（Query/Document Asymmetry）",
+          "child_id": "ebdd1c42-33f9-4c52-b470-8d0624954120"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "2. Token Embedding",
+          "child_id": "c1ee8657-f6de-4b24-acbb-cf76d460f276"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销",
+          "child_id": "60324320-aa9b-4f24-b0e3-35cdac0ac6f6"
+        }
+      ],
+      "latency_ms": 932.7426999989257,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了两类模型在前缀使用上的具体区别（OpenAI 无需前缀，E5 需分别加 query/passage 前缀）并解释了原因，属于针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8335974480193517,
+      "context_precision": 0.49999999995,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q013",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "为什么在上下文分层管理中强调“别把确定性逻辑放进上下文”？正确的处理方式是什么？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "强调这一点，是因为上下文越长，关键信号越容易被噪声稀释（注意力复杂度 O(n²)），无关内容占比过大时会出现 Context Rot，决策质量明显下滑[2]。确定性逻辑若放进上下文，会让模型反复读取本可外部化的内容，挤占真正有用的信息。\n\n正确做法是交给外部系统处理：凡是能通过 Hooks、代码规则或工具约束表达的内容，都放到系统层，完全不进上下文[1]。相应地，常驻层只保留身份定义、项目约定、绝对禁止项等短而硬的内容；Skills 和领域知识按需加载，描述符常驻、完整内容触发时再注入；动态信息运行时按需拼入；跨会话经验写入记忆层，需要时才读取[1][4]。",
+      "clean_answer": "强调这一点，是因为上下文越长，关键信号越容易被噪声稀释（注意力复杂度 O(n²)），无关内容占比过大时会出现 Context Rot，决策质量明显下滑。确定性逻辑若放进上下文，会让模型反复读取本可外部化的内容，挤占真正有用的信息。\n\n正确做法是交给外部系统处理：凡是能通过 Hooks、代码规则或工具约束表达的内容，都放到系统层，完全不进上下文。相应地，常驻层只保留身份定义、项目约定、绝对禁止项等短而硬的内容；Skills 和领域知识按需加载，描述符常驻、完整内容触发时再注入；动态信息运行时按需拼入；跨会话经验写入记忆层，需要时才读取。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/上下文为什么要分层",
+          "child_id": "a1e3ae91-1961-4ab1-8548-8c1bdd0de9bf"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/3. 上下文工程为什么决定稳定性",
+          "child_id": "24dfd5bf-1377-4a51-bef5-ff32a9e2ab18"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "生成环节（Generation）/3. Faithfulness（忠实度）",
+          "child_id": "3440207c-c053-4cdb-a573-22cc07c77a6a"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "b1c916f2-2b46-48b5-8a58-bd7de22c5580"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "上下文压缩（Contextual Compression）",
+          "child_id": "abb362f2-20a6-4fd0-b832-b4e78f8899ba"
+        }
+      ],
+      "latency_ms": 1551.9648999998026,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接解释了为何不应把确定性逻辑放进上下文，并给出了具体的处理方式（外部化到 Hooks、代码规则等系统层，以及分层加载策略），实质性地回应了问题。",
+      "faithfulness": 0.9375,
+      "answer_relevancy": 0.7567855427148124,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q018",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在 LangGraph 中实现 Function Call 时，为什么推荐使用“独立 Tool 节点”而非“共享 Tool 节点”？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "推荐独立 Tool 节点的核心原因是**实现简单、逻辑清晰**：为每个 Sub-Agent 配备独立的 Tool 节点，维护简单；而共享 Tool 节点需要额外编写路由逻辑，判断工具属于哪个 Agent 并将结果正确返回，实现复杂度更高，因此一般不推荐。",
+      "clean_answer": "推荐独立 Tool 节点的核心原因是**实现简单、逻辑清晰**：为每个 Sub-Agent 配备独立的 Tool 节点，维护简单；而共享 Tool 节点需要额外编写路由逻辑，判断工具属于哪个 Agent 并将结果正确返回，实现复杂度更高，因此一般不推荐。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Function Call（工具调用）/LangGraph 中的 Function Call 实现",
+          "child_id": "a9a4657e-f64c-4426-9fa3-5a8c8f71c1ed"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：条件边的实现/典型用法",
+          "child_id": "4a7ce752-82ca-4c73-b919-7d5d864c86c4"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph",
+          "child_id": "b26c1f3e-7b3f-4216-b196-ad3abd989e8d"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Human-in-the-Loop（人工介入）/在 LangGraph 中的实现",
+          "child_id": "14654f19-57ea-4d2f-b422-cb6af823f469"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Function Call（工具调用）",
+          "child_id": "0a3cf5e1-7a9c-40b7-bc5c-4e369e76baeb"
+        }
+      ],
+      "latency_ms": 1375.9300999990955,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了独立 Tool 节点实现更简单、共享节点需要额外路由逻辑等针对问题的实质理由。",
+      "faithfulness": 0.8571428571428571,
+      "answer_relevancy": 0.7774505964788774,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q004",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在训练用于文本生成的 Decoder 模型时，为了防止模型“偷看答案”，应在注意力分数矩阵的哪个具体区域填充 -∞？这属于哪种 Mask 机制？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "应在注意力分数矩阵（Q·Kᵀ 之后、Softmax 之前）的**右上三角**区域填充 -∞。这属于 **Causal Mask**（因果掩码），仅 Decoder 使用，目的是确保当前 token 只能看到自身及之前已生成的 token，无法看到未来 token，从而防止训练时“偷看答案”，迫使模型进行自回归推理。",
+      "clean_answer": "应在注意力分数矩阵（Q·Kᵀ 之后、Softmax 之前）的**右上三角**区域填充 -∞。这属于 **Causal Mask**（因果掩码），仅 Decoder 使用，目的是确保当前 token 只能看到自身及之前已生成的 token，无法看到未来 token，从而防止训练时“偷看答案”，迫使模型进行自回归推理。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention/Mask 机制",
+          "child_id": "ac4f35a6-d832-4d1c-898e-5f8417f5f2c9"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder",
+          "child_id": "09262a4e-4206-4dae-9875-41ce03b1c14d"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder/Encoder-Decoder 的 Cross-Attention",
+          "child_id": "ceac9014-012b-427d-9c8b-e975a7e63854"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "生成环节（Generation）/2. 幻觉（Hallucination）控制",
+          "child_id": "f93629b9-f0b8-4af2-899b-c5fd1865d921"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/Reranking 模型的训练目标",
+          "child_id": "4a21b079-65af-464d-bdcc-2cc693d75abe"
+        }
+      ],
+      "latency_ms": 1033.827700000984,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接指出应在Q·Kᵀ之后、Softmax之前的右上三角区域填充-∞，并说明这是Causal Mask及其作用，给出了针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.797935648806805,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q009",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在实际工程中，如果缺乏历史数据来评估 RAG 系统，文档推荐的最常用构建测试集方案是什么？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "文档推荐的最常用方案是**利用 LLM 自动生成测试集**：在没有历史数据的情况下，直接让 LLM 从已有文档中生成问题-答案对。\n\n这一方案针对的正是冷启动的核心挑战——新系统缺乏 RAGAS 等框架所需的（问题、标准答案、相关文档）三元组数据集。此外，文档还提到可用更强的 LLM（如 GPT-4）作为评判者进行自动评估，并结合人工评估校准可靠性。",
+      "clean_answer": "文档推荐的最常用方案是**利用 LLM 自动生成测试集**：在没有历史数据的情况下，直接让 LLM 从已有文档中生成问题-答案对。\n\n这一方案针对的正是冷启动的核心挑战——新系统缺乏 RAGAS 等框架所需的（问题、标准答案、相关文档）三元组数据集。此外，文档还提到可用更强的 LLM（如 GPT-4）作为评判者进行自动评估，并结合人工评估校准可靠性。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/解决方案",
+          "child_id": "96cb4e6f-7104-4706-987d-e755ff393958"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/冷启动面临的三个核心挑战",
+          "child_id": "6984a862-671e-4bea-afc4-dda25027576e"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/RAG 系统冷启动问题",
+          "child_id": "1b5f51f0-657b-4335-85fb-b98ce501e177"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 系统评估",
+          "child_id": "22fe2ac4-4c41-44e8-838c-606eb6fbdfb2"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 系统评估/端到端评估方法",
+          "child_id": "9f1b16a1-85e3-45a7-a219-2b7c36b9c4b9"
+        }
+      ],
+      "latency_ms": 995.5071999993379,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接指出文档推荐的方案是利用 LLM 从已有文档自动生成问题-答案对，并补充了评判与人工校准等实质内容，没有表示信息不足。",
+      "faithfulness": 0.8571428571428571,
+      "answer_relevancy": 0.7791138223316565,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q014",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "根据 Harness 的关键结论，若要让 Agent 在开发任务中发挥最大效能，团队应如何调整任务属性并设定验收标准？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据 Harness 的关键结论，团队应把任务推向\"目标明确、结果可自动验证\"的右上角区域，让对错有机器可执行的判断标准，而非靠人盯。\n\n具体调整方向：\n- **任务属性**：提升任务清晰度与验证自动化程度。避免落入\"目标模糊但有自动反馈\"（系统会高效地往错误方向跑）或\"两者都缺\"（Agent 基本不起作用）的区域；\"任务清楚但需人验收\"的吞吐量天花板是人的审查速度。\n- **验收标准**：Harness 需包含验收基线、执行边界、反馈信号和回退手段四部分，并绑定验收标准、补齐验证闭环（对应反模式\"验证闭环缺失\"）。\n\n需注意：该判断在代码编写这类高可验证任务上最成立；在开放式研究等弱验证任务中，模型上限本身仍更关键。",
+      "clean_answer": "根据 Harness 的关键结论，团队应把任务推向\"目标明确、结果可自动验证\"的右上角区域，让对错有机器可执行的判断标准，而非靠人盯。\n\n具体调整方向：\n- **任务属性**：提升任务清晰度与验证自动化程度。避免落入\"目标模糊但有自动反馈\"（系统会高效地往错误方向跑）或\"两者都缺\"（Agent 基本不起作用）的区域；\"任务清楚但需人验收\"的吞吐量天花板是人的审查速度。\n- **验收标准**：Harness 需包含验收基线、执行边界、反馈信号和回退手段四部分，并绑定验收标准、补齐验证闭环（对应反模式\"验证闭环缺失\"）。\n\n需注意：该判断在代码编写这类高可验证任务上最成立；在开放式研究等弱验证任务中，模型上限本身仍更关键。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/Harness 的关键结论",
+          "child_id": "529cea09-9bc1-4932-9c7f-67e043e0bc1c"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/2. 为什么 Harness 比模型更关键",
+          "child_id": "5fcab166-920f-452c-b509-8972bc10342d"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/常见反模式",
+          "child_id": "f60e1640-4d72-4c7d-a5cd-3c96cce4a0dd"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/0. 太长不读",
+          "child_id": "9ebb09c5-958e-4186-b704-47488a9b226e"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/8. Agent 评测",
+          "child_id": "c8167ac5-4b30-4998-8978-395c3035b5ac"
+        }
+      ],
+      "latency_ms": 1694.8630000006233,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了任务属性调整方向（提升清晰度与验证自动化）和验收标准的具体组成部分（验收基线、执行边界、反馈信号、回退手段），并附带适用范围说明，属于针对问题的实质内容，并未表示资料不足而拒绝作答。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8660528252806433,
+      "context_precision": 0.9999999999666667,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q019",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "当 Agent 运行出现“上下文爆炸（Context Overflow）”问题时，文档推荐了哪些具体解法？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "文档推荐的解法包括：\n\n1. **长度管理**：对 message history 使用滑动窗口或摘要压缩策略，避免历史无限增长。\n2. **中间结果外置**：将中间结果存入长期记忆或写入文件，而非全部保留在上下文中；Agent 通过 grep、rg 或脚本按需读取（Cursor 的 Dynamic Context Discovery 思路，其 MCP 工具 A/B 测试中总 token 消耗减少 46.9%）。\n3. **可追溯压缩**：压缩触发时把聊天记录完整保留为文件，摘要只引用文件路径，需要时可回查，避免不可恢复的硬截断。\n4. **分层管理**：按使用频率和稳定性分层（常驻层、按需加载、运行时注入、记忆层、系统层），确定性逻辑交给 Hooks 或代码规则，完全不进上下文。",
+      "clean_answer": "文档推荐的解法包括：\n\n1. **长度管理**：对 message history 使用滑动窗口或摘要压缩策略，避免历史无限增长。\n2. **中间结果外置**：将中间结果存入长期记忆或写入文件，而非全部保留在上下文中；Agent 通过 grep、rg 或脚本按需读取（Cursor 的 Dynamic Context Discovery 思路，其 MCP 工具 A/B 测试中总 token 消耗减少 46.9%）。\n3. **可追溯压缩**：压缩触发时把聊天记录完整保留为文件，摘要只引用文件路径，需要时可回查，避免不可恢复的硬截断。\n4. **分层管理**：按使用频率和稳定性分层（常驻层、按需加载、运行时注入、记忆层、系统层），确定性逻辑交给 Hooks 或代码规则，完全不进上下文。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 常见失败模式/3. 上下文爆炸（Context Overflow）",
+          "child_id": "e13413e0-1ef1-4775-84fd-d5d180fed5f3"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/3. 上下文工程为什么决定稳定性",
+          "child_id": "24dfd5bf-1377-4a51-bef5-ff32a9e2ab18"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口",
+          "child_id": "469fa90b-1dca-4abc-9530-87e5133263bf"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/上下文为什么要分层",
+          "child_id": "a1e3ae91-1961-4ab1-8548-8c1bdd0de9bf"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/10. OpenClaw 实现",
+          "child_id": "8afd01ba-d4a4-4d90-baef-5b5952145a4d"
+        }
+      ],
+      "latency_ms": 1667.1521999996912,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 0.25,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了四类具体解法（长度管理、中间结果外置、可追溯压缩、分层管理）并给出了说明，属于针对问题的实质内容。",
+      "faithfulness": 0.9411764705882353,
+      "answer_relevancy": 0.5651862521885074,
+      "context_precision": 0.8333333332916666,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q005",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "Feed Forward Network (FFN) 在处理数据时，其内部维度的标准变化流程是怎样的？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "FFN 内部维度变化流程为三步：先**升维**，将 d_model 维投射到更高维度（通常为 4 × d_model）；再在高维空间进行**非线性激活**（ReLU 或 GELU）；最后**降维**，投射回 d_model 维，以便进行后续的残差连接。其目的是通过高维非线性变换让模型学习更丰富的语义表示。",
+      "clean_answer": "FFN 内部维度变化流程为三步：先**升维**，将 d_model 维投射到更高维度（通常为 4 × d_model）；再在高维空间进行**非线性激活**（ReLU 或 GELU）；最后**降维**，投射回 d_model 维，以便进行后续的残差连接。其目的是通过高维非线性变换让模型学习更丰富的语义表示。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "6. Feed Forward Network（FFN）/工作流程",
+          "child_id": "7c5945d3-8836-4772-a41a-e0d285c15d73"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "6. Feed Forward Network（FFN）",
+          "child_id": "6488c459-a0d1-4424-99f8-a70a12cb01d4"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "6. Feed Forward Network（FFN）/ReLU vs GELU",
+          "child_id": "88fe66fb-8dd2-4f27-bc46-9ce17d522730"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/核心问题",
+          "child_id": "5c0cc890-cde4-4545-b396-6a348307f7da"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/为什么需要 LayerNorm？",
+          "child_id": "6972e74c-89fb-4069-b06e-11ce1c5c0ca2"
+        }
+      ],
+      "latency_ms": 1002.3387000001094,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了FFN升维、非线性激活、降维的具体维度变化流程，属于针对问题的实质内容，没有声明信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.7576929368616031,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q010",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在计算 RAGAS 的 Faithfulness（忠实度）指标时，具体的计算公式是什么？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "根据检索片段，RAGAS 的 Faithfulness 计算步骤为：先将生成回答拆解为若干原子性陈述（atomic claims），再用 LLM 判断每个陈述能否从检索上下文中推断出来（NLI 风格判断），最后计算：\n\n**Faithfulness = 可被上下文支持的陈述数 / 总陈述数**\n\n其核心含义是衡量生成回答是否忠实于检索到的上下文、有无幻觉（片段[2][3]）。",
+      "clean_answer": "根据检索片段，RAGAS 的 Faithfulness 计算步骤为：先将生成回答拆解为若干原子性陈述（atomic claims），再用 LLM 判断每个陈述能否从检索上下文中推断出来（NLI 风格判断），最后计算：\n\n**Faithfulness = 可被上下文支持的陈述数 / 总陈述数**\n\n其核心含义是衡量生成回答是否忠实于检索到的上下文、有无幻觉（片段）。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 系统评估/RAGAS 核心指标的计算方式",
+          "child_id": "16a9bb27-1d10-4618-ad46-ded66792a4d3"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 系统评估/生成质量评估",
+          "child_id": "03b058ce-a533-4876-9f6b-c89a57241268"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "生成环节（Generation）/3. Faithfulness（忠实度）",
+          "child_id": "3440207c-c053-4cdb-a573-22cc07c77a6a"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 评估体系/常用评估框架",
+          "child_id": "0f0b4d03-8540-4857-ae49-a26642c6d260"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索环节/检索质量评估指标",
+          "child_id": "b044b75d-8260-4564-8ea2-c5f0a4d3b242"
+        }
+      ],
+      "latency_ms": 898.4197999998287,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了 Faithfulness 的计算步骤和公式（可被支持的陈述数 / 总陈述数），没有表示资料不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9238768976875323,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q015",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "在工具设计的第三代演进中，采用“Programmatic Tool Calling（代码编排）”方式后，token 消耗大约能从多少降低到多少？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据检索片段，采用 Programmatic Tool Calling（代码编排）后，token 消耗可从约 **150,000** 降到约 **2,000**。其做法是让模型用代码编排多个工具调用，中间结果在执行环境中流转，不进入 LLM 上下文。",
+      "clean_answer": "根据检索片段，采用 Programmatic Tool Calling（代码编排）后，token 消耗可从约 **150,000** 降到约 **2,000**。其做法是让模型用代码编排多个工具调用，中间结果在执行环境中流转，不进入 LLM 上下文。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/工具设计如何演进",
+          "child_id": "f3731dc1-783a-4ebf-b5ba-1c96db90ca46"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/4. 工具设计决定 Agent 能做什么",
+          "child_id": "4bbc6f57-c8e0-4130-9100-75f326af80ed"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销",
+          "child_id": "60324320-aa9b-4f24-b0e3-35cdac0ac6f6"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Parallel Tool Call（并行工具调用）/优势与注意点",
+          "child_id": "d4faf545-b9c6-46fa-a448-437bfc5b325f"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Parallel Tool Call（并行工具调用）/工作流程",
+          "child_id": "67d449da-7def-4085-b21c-6103fa13fed6"
+        }
+      ],
+      "latency_ms": 777.7507000009791,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了具体的 token 数值（约150,000降到约2,000）并解释了做法，属于针对问题的实质内容，且未表明信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9114235193683162,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q020",
+      "type": "original",
+      "answerable": true,
+      "origin": "original_v1",
+      "question": "根据文档中的正反示例对比，一个“好的工具描述”应当包含哪些关键要素？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "根据文档中的正反示例对比，好的工具描述应包含以下关键要素：\n\n1. **明确的使用场景与范围**：说明工具在什么环境中做什么，如“在公司内部知识库中搜索技术文档”。\n2. **输入参数说明**：描述参数类型，如“输入关键词（字符串）”。\n3. **输出结果说明**：说明返回内容及数量，如“返回最相关的 5 篇文档标题和摘要”。\n4. **适用与不适用边界**：明确排除场景，如“仅用于查询内部文档，不适用于搜索互联网信息”。\n\n文档强调，LLM 完全依赖工具的文字描述来决定是否调用及如何调用，描述质量直接影响 Agent 行为准确性（片段[2]）。此外，还可配合 1-5 个真实调用示例，弥补 JSON Schema 无法表达调用方式的不足（片段[3]）。",
+      "clean_answer": "根据文档中的正反示例对比，好的工具描述应包含以下关键要素：\n\n1. **明确的使用场景与范围**：说明工具在什么环境中做什么，如“在公司内部知识库中搜索技术文档”。\n2. **输入参数说明**：描述参数类型，如“输入关键词（字符串）”。\n3. **输出结果说明**：说明返回内容及数量，如“返回最相关的 5 篇文档标题和摘要”。\n4. **适用与不适用边界**：明确排除场景，如“仅用于查询内部文档，不适用于搜索互联网信息”。\n\n文档强调，LLM 完全依赖工具的文字描述来决定是否调用及如何调用，描述质量直接影响 Agent 行为准确性（片段）。此外，还可配合 1-5 个真实调用示例，弥补 JSON Schema 无法表达调用方式的不足（片段）。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Tool 设计规范/示例对比",
+          "child_id": "f2c7517d-7c18-4335-9521-1a3f2e2e42d6"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Tool 设计规范",
+          "child_id": "e172e5eb-f61d-4c41-baec-6fac33a8f548"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/工具设计如何演进",
+          "child_id": "f3731dc1-783a-4ebf-b5ba-1c96db90ca46"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/ACI 工具设计原则",
+          "child_id": "c1cd2c9b-cf41-4b54-9c7d-eae120d7d440"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 的 Prompt Engineering/System Prompt 的核心组成",
+          "child_id": "7b508945-773d-435c-b23e-45a2a733af45"
+        }
+      ],
+      "latency_ms": 1548.1670999997732,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了好的工具描述应包含的四类关键要素并附有具体示例，给出了针对问题的实质内容，没有表示资料不足。",
+      "faithfulness": 0.75,
+      "answer_relevancy": 0.9193551720487618,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q021",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "BPE 分词器是按照什么流程构建词表的？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "BPE 分词器构建词表的流程为：先将词表中所有词拆分为最小字符单元；再统计每两个相邻字符对的出现频率；然后将频率最高的字符对合并为新 token 并加入词表；重复上述统计与合并步骤，直到词表达到预设大小。实际生产中主要使用 tiktoken（OpenAI）和 SentencePiece（Google）等工具，而非手写 BPE。",
+      "clean_answer": "BPE 分词器构建词表的流程为：先将词表中所有词拆分为最小字符单元；再统计每两个相邻字符对的出现频率；然后将频率最高的字符对合并为新 token 并加入词表；重复上述统计与合并步骤，直到词表达到预设大小。实际生产中主要使用 tiktoken（OpenAI）和 SentencePiece（Google）等工具，而非手写 BPE。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "1. BPE 分词器",
+          "child_id": "4a91e81e-deed-4aea-a002-3763a6329836"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "2. Token Embedding",
+          "child_id": "c1ee8657-f6de-4b24-acbb-cf76d460f276"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解",
+          "child_id": "f9d08601-eaff-41c4-8dcf-c8e0b6aa0ae5"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索环节/混合检索（Hybrid Search）",
+          "child_id": "8e5b5d3f-5869-4d23-99bb-8efff0651379"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 分块（Chunking）/切块方法",
+          "child_id": "b47bb529-c1fb-4bfb-bae1-893b4e8e76a4"
+        }
+      ],
+      "latency_ms": 1307.567799998651,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了BPE构建词表的具体步骤（拆分字符、统计相邻字符对频率、合并高频对、重复至预设大小），属于针对问题的实质内容，且未表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9319942910841967,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q023",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "IVF 索引中把 nprobe 调大会带来什么影响？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "调大 `nprobe` 会让检索时搜索的簇数量增多，从而**提高召回率**，但**速度变慢**。当 `nprobe = nlist` 时，IVF 退化为暴力搜索。",
+      "clean_answer": "调大 `nprobe` 会让检索时搜索的簇数量增多，从而**提高召回率**，但**速度变慢**。当 `nprobe = nlist` 时，IVF 退化为暴力搜索。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解",
+          "child_id": "f9d08601-eaff-41c4-8dcf-c8e0b6aa0ae5"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/HNSW 原理详解",
+          "child_id": "bfe527be-9f4a-4847-9ad6-c87d92ff5104"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/向量数据库与索引策略",
+          "child_id": "6189197f-ed4c-407d-a0a2-f06029a62ea0"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/0. 太长不读",
+          "child_id": "9ebb09c5-958e-4186-b704-47488a9b226e"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制/为什么需要除以 √d_k 进行缩放？",
+          "child_id": "193b4997-92b9-4d7b-92c5-faa375a20800"
+        }
+      ],
+      "latency_ms": 1175.5326000002242,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接说明调大 nprobe 会提高召回率、降低速度，并给出退化为暴力搜索的实质内容，没有表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8465861924201199,
+      "context_precision": 0.8333333332916666,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q029",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Agent 评测中，Pass@k 和 Pass^k 分别适合什么阶段？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据检索片段 [1]：Pass@k 适合**开发阶段**，用于回答能力边界；Pass^k 适合**上线前**，用于保证质量。",
+      "clean_answer": "根据检索片段：Pass@k 适合**开发阶段**，用于回答能力边界；Pass^k 适合**上线前**，用于保证质量。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/8. Agent 评测",
+          "child_id": "c8167ac5-4b30-4998-8978-395c3035b5ac"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/0. 太长不读",
+          "child_id": "9ebb09c5-958e-4186-b704-47488a9b226e"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/Workflow 和 Agent 有什么区别",
+          "child_id": "6787ddab-7c2a-44c7-bf01-0cb94d29f7e7"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/ACI 工具设计原则",
+          "child_id": "c1cd2c9b-cf41-4b54-9c7d-eae120d7d440"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/保留优先级",
+          "child_id": "d5ac21b3-247d-4695-bc97-1c15a43adfd5"
+        }
+      ],
+      "latency_ms": 883.038600000873,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了 Pass@k 适合开发阶段、Pass^k 适合上线前的实质内容，没有表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9010997660324127,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q026",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "LangGraph 的 MemorySaver、SqliteSaver 和 PostgresSaver 分别适合什么场景？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "根据检索片段，三种 Checkpointer 的适用场景如下：\n\n- **MemorySaver**：内存（进程内）存储，适合开发调试、单次会话。\n- **SqliteSaver**：SQLite 文件存储，适合本地持久化、轻量生产。\n- **PostgresSaver**：PostgreSQL 存储，适合生产环境、多实例部署。\n\nCheckpointer 的作用是在每一步执行后保存 State 快照，从而支持跨会话记忆、Human-in-the-Loop、错误恢复和时间旅行等能力。",
+      "clean_answer": "根据检索片段，三种 Checkpointer 的适用场景如下：\n\n- **MemorySaver**：内存（进程内）存储，适合开发调试、单次会话。\n- **SqliteSaver**：SQLite 文件存储，适合本地持久化、轻量生产。\n- **PostgresSaver**：PostgreSQL 存储，适合生产环境、多实例部署。\n\nCheckpointer 的作用是在每一步执行后保存 State 快照，从而支持跨会话记忆、Human-in-the-Loop、错误恢复和时间旅行等能力。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化/常用 Checkpointer",
+          "child_id": "c41b24f2-4457-418d-a877-1e63748abace"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化/使用方式",
+          "child_id": "b24f4ad4-2ecb-4360-9b00-878045d1c21a"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph",
+          "child_id": "b26c1f3e-7b3f-4216-b196-ad3abd989e8d"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/GraphRAG（知识图谱 RAG）",
+          "child_id": "f202d270-1e4c-4649-afb0-ad188cdfecae"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：Checkpointer 与持久化",
+          "child_id": "80d85a51-4651-4922-8d5b-12079e21cc6e"
+        }
+      ],
+      "latency_ms": 999.3749000004755,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接逐一说明了三种 Checkpointer 的适用场景并补充了作用说明，给出了针对问题的实质内容，且未表明资料不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8146958464859534,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q022",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Encoder-Decoder 架构的 Cross-Attention 中，Q、K、V 分别来自哪里？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "在 Encoder-Decoder 架构的 Cross-Attention 中：\n\n- **Q** 来自 Decoder 的隐层输出\n- **K** 和 **V** 来自 Encoder 的最终输出\n\n通过 Q·Kᵀ·V 的计算，Decoder 在生成每个 token 时能够\"查阅\" Encoder 对输入全文的理解。",
+      "clean_answer": "在 Encoder-Decoder 架构的 Cross-Attention 中：\n\n- **Q** 来自 Decoder 的隐层输出\n- **K** 和 **V** 来自 Encoder 的最终输出\n\n通过 Q·Kᵀ·V 的计算，Decoder 在生成每个 token 时能够\"查阅\" Encoder 对输入全文的理解。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder/Encoder-Decoder 的 Cross-Attention",
+          "child_id": "ceac9014-012b-427d-9c8b-e975a7e63854"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder",
+          "child_id": "09262a4e-4206-4dae-9875-41ce03b1c14d"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention/Mask 机制",
+          "child_id": "ac4f35a6-d832-4d1c-898e-5f8417f5f2c9"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/为什么需要 Reranking？",
+          "child_id": "c7a9e116-3e68-4345-93db-772c4c6ee56b"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制/QKV 的含义",
+          "child_id": "710b7eb0-fe5e-4790-bbd8-14e13ed152bf"
+        }
+      ],
+      "latency_ms": 1185.288099999525,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接明确地说明了 Q 来自 Decoder 隐层输出、K 和 V 来自 Encoder 最终输出，并给出了计算作用的解释，属于针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9574881684390184,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q024",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "HNSW 的 ef_search 参数控制什么？调整它需要重建索引吗？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "`ef_search` 是 HNSW 检索阶段的动态候选集大小，用于控制检索精度。根据片段[1]，它可以在不重建索引的情况下动态调整。",
+      "clean_answer": "`ef_search` 是 HNSW 检索阶段的动态候选集大小，用于控制检索精度。根据片段，它可以在不重建索引的情况下动态调整。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/HNSW 原理详解",
+          "child_id": "bfe527be-9f4a-4847-9ad6-c87d92ff5104"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/向量数据库与索引策略",
+          "child_id": "6189197f-ed4c-407d-a0a2-f06029a62ea0"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解",
+          "child_id": "f9d08601-eaff-41c4-8dcf-c8e0b6aa0ae5"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索环节/混合检索（Hybrid Search）",
+          "child_id": "8e5b5d3f-5869-4d23-99bb-8efff0651379"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索时自动压缩每个返回的 chunk/与 Reranking 的关系",
+          "child_id": "4d350fb7-be59-455f-8304-bb55785aee2b"
+        }
+      ],
+      "latency_ms": 1003.293499999927,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接说明了 ef_search 控制检索阶段的动态候选集大小，并回答了无需重建索引即可调整，没有表示资料不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9115342266607978,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q030",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Cursor 在 MCP 工具上验证 Dynamic Context Discovery 时，A/B 测试的结果是什么？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据检索片段 [1]，Cursor 在 MCP 工具上验证 Dynamic Context Discovery 时，A/B 测试结果显示：**调用 MCP 工具的任务总 token 消耗减少了 46.9%**。\n\n其做法是把工具描述同步到文件夹，Agent 默认只看到工具名，需要时再查询具体定义，从而避免一次性加载全部工具描述。",
+      "clean_answer": "根据检索片段，Cursor 在 MCP 工具上验证 Dynamic Context Discovery 时，A/B 测试结果显示：**调用 MCP 工具的任务总 token 消耗减少了 46.9%**。\n\n其做法是把工具描述同步到文件夹，Agent 默认只看到工具名，需要时再查询具体定义，从而避免一次性加载全部工具描述。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口",
+          "child_id": "469fa90b-1dca-4abc-9530-87e5133263bf"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "MCP（Model Context Protocol）",
+          "child_id": "14aaadd3-8db3-481e-ad44-18a5592f54cd"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "53927508-64d1-4dab-a1ef-0d16534e6a8c"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/2. 为什么 Harness 比模型更关键",
+          "child_id": "5fcab166-920f-452c-b509-8972bc10342d"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Contextual Retrieval（上下文检索）/效果",
+          "child_id": "657a622b-01b9-4378-8c98-5a24adad08d2"
+        }
+      ],
+      "latency_ms": 1196.577900000193,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了A/B测试的具体结果（总token消耗减少46.9%）以及对应做法，属于针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8554648480495364,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q027",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "在 LangGraph 的 State 定义里，Annotated[list, operator.add] 有什么作用？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "`Annotated[list, operator.add]` 为 State 字段指定了 Reducer，作用是**追加合并而非覆盖**：新值会追加到列表末尾，保留原有内容，常用于 `messages` 字段。不加 `Annotated` 的字段则是普通覆盖模式，后写入的值会覆盖先写入的值。\n\n这一机制在 Multi-Agent 场景中很关键：Orchestrator 架构下多个 Sub-Agent 并行写回同一 State，若无 Reducer，后完成的 Agent 会覆盖先完成的结果导致数据丢失；用 `operator.add` 可安全地把多个 Sub-Agent 的输出合并到同一列表字段中。",
+      "clean_answer": "`Annotated[list, operator.add]` 为 State 字段指定了 Reducer，作用是**追加合并而非覆盖**：新值会追加到列表末尾，保留原有内容，常用于 `messages` 字段。不加 `Annotated` 的字段则是普通覆盖模式，后写入的值会覆盖先写入的值。\n\n这一机制在 Multi-Agent 场景中很关键：Orchestrator 架构下多个 Sub-Agent 并行写回同一 State，若无 Reducer，后完成的 Agent 会覆盖先完成的结果导致数据丢失；用 `operator.add` 可安全地把多个 Sub-Agent 的输出合并到同一列表字段中。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：State Reducer 机制/基本用法",
+          "child_id": "31311131-a9ff-4b3c-b37b-080b96e6ee48"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：State Reducer 机制/为什么在 Multi-Agent 中很重要",
+          "child_id": "3bb8c19a-cf62-4798-a971-048ee83d5547"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：State Reducer 机制",
+          "child_id": "7016d158-3489-49dd-bde1-e2af0cfc0e95"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：条件边的实现/典型用法",
+          "child_id": "4a7ce752-82ca-4c73-b919-7d5d864c86c4"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph/LangGraph 主要实现流程",
+          "child_id": "107b7ea5-6d25-4b13-907b-343526de65b2"
+        }
+      ],
+      "latency_ms": 1354.924999999639,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接解释了 Annotated[list, operator.add] 作为 Reducer 的追加合并作用，并给出了与普通覆盖模式的对比和多 Agent 场景的应用说明，没有表明信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.858426386595414,
+      "context_precision": 0.9999999999666667,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q031",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "词向量在送进模型之前，为什么要先放大一个跟模型宽度有关的倍数？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "检索片段中没有提到\"词向量送进模型前放大一个与模型宽度有关的倍数\"这一内容，无法据此回答。片段仅涉及 RAG 分块、Metadata Filter、Reranking（Bi-Encoder/Cross-Encoder）以及 Agent 上下文分层等主题，均未涉及该问题。建议补充相关文档。",
+      "clean_answer": "检索片段中没有提到\"词向量送进模型前放大一个与模型宽度有关的倍数\"这一内容，无法据此回答。片段仅涉及 RAG 分块、Metadata Filter、Reranking（Bi-Encoder/Cross-Encoder）以及 Agent 上下文分层等主题，均未涉及该问题。建议补充相关文档。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 分块（Chunking）",
+          "child_id": "091e836f-065a-4fdf-ba04-7db451caf930"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量数据库的 Metadata Filter/核心思路",
+          "child_id": "d3470e17-ca93-497a-b51a-d80c91f4f9e5"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/为什么需要 Reranking？",
+          "child_id": "c7a9e116-3e68-4345-93db-772c4c6ee56b"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/上下文为什么要分层",
+          "child_id": "a1e3ae91-1961-4ab1-8548-8c1bdd0de9bf"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "53927508-64d1-4dab-a1ef-0d16534e6a8c"
+        }
+      ],
+      "latency_ms": 1451.0276000000886,
+      "recall_at_k": 0.0,
+      "rr": 0.0,
+      "rr_raw": 0.25,
+      "rr_reranked": 1.0,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确表示检索片段中没有相关内容，并列出片段涉及的其他主题，没有给出针对“放大倍数”问题的任何实质解释。",
+      "faithfulness": 0.375,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "q025",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "混合检索用 RRF（Reciprocal Rank Fusion）融合时，公式是什么？k 通常取多少？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "RRF 的公式为：$score = \\sum \\frac{1}{k + rank_i}$，其中 k 通常取 60。该方法不依赖原始分数，而是根据各检索结果在各自列表中的排名进行融合。",
+      "clean_answer": "RRF 的公式为：$score = \\sum \\frac{1}{k + rank_i}$，其中 k 通常取 60。该方法不依赖原始分数，而是根据各检索结果在各自列表中的排名进行融合。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索环节/混合检索（Hybrid Search）",
+          "child_id": "8e5b5d3f-5869-4d23-99bb-8efff0651379"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量数据库的 Metadata Filter/与 Hybrid Search 的关系",
+          "child_id": "2b170980-8a16-4505-8e4f-3df363045b27"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索环节/检索质量评估指标",
+          "child_id": "b044b75d-8260-4564-8ea2-c5f0a4d3b242"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/为什么需要 Reranking？",
+          "child_id": "c7a9e116-3e68-4345-93db-772c4c6ee56b"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解",
+          "child_id": "f9d08601-eaff-41c4-8dcf-c8e0b6aa0ae5"
+        }
+      ],
+      "latency_ms": 1249.5202999998583,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了RRF的公式和k的常用取值（60），并补充了方法原理，属于针对问题的实质内容，且未表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8068460178651555,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q039",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "为什么一份很少改动、篇幅很长的开场指令，反而可能比经常改动的短指令更省钱？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据检索片段，这个问题可以从两个角度理解，但片段并未直接给出\"少改动 vs 常改动\"的成本对比结论，只能做间接归纳：\n\n**1. 常驻上下文的累积成本**：片段[1]指出，每个启用的 Skill 描述符都常驻上下文，Skill 一多，长描述的累积成本很可观；系统提示只保留索引、完整知识按需加载才更省 token。这说明\"篇幅长\"本身不是问题，关键在于是否常驻。\n\n**2. 工具定义的开销**：片段[2]提到，仅 5 个 MCP 服务器就可能带来约 55,000 tokens 的工具定义开销，在 200K 上下文里还没开始对话就用掉近三成。\n\n**3. 按需加载的收益**：片段[3]中 Cursor 把工具描述同步到文件夹、默认只给工具名，A/B 测试中任务总 token 消耗减少 46.9%。\n\n因此，片段支持\"默认少给、按需读取\"更省成本，但**没有直接证据**说明\"很少改动\"本身能省钱——这需要缓存等机制的信息，检索片段中未提及，无法据此回答。",
+      "clean_answer": "根据检索片段，这个问题可以从两个角度理解，但片段并未直接给出\"少改动 vs 常改动\"的成本对比结论，只能做间接归纳：\n\n**1. 常驻上下文的累积成本**：片段指出，每个启用的 Skill 描述符都常驻上下文，Skill 一多，长描述的累积成本很可观；系统提示只保留索引、完整知识按需加载才更省 token。这说明\"篇幅长\"本身不是问题，关键在于是否常驻。\n\n**2. 工具定义的开销**：片段提到，仅 5 个 MCP 服务器就可能带来约 55,000 tokens 的工具定义开销，在 200K 上下文里还没开始对话就用掉近三成。\n\n**3. 按需加载的收益**：片段中 Cursor 把工具描述同步到文件夹、默认只给工具名，A/B 测试中任务总 token 消耗减少 46.9%。\n\n因此，片段支持\"默认少给、按需读取\"更省成本，但**没有直接证据**说明\"很少改动\"本身能省钱——这需要缓存等机制的信息，检索片段中未提及，无法据此回答。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "b1c916f2-2b46-48b5-8a58-bd7de22c5580"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/4. 工具设计决定 Agent 能做什么",
+          "child_id": "4bbc6f57-c8e0-4130-9100-75f326af80ed"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口",
+          "child_id": "469fa90b-1dca-4abc-9530-87e5133263bf"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG vs Fine-tuning：如何选择？/核心判断维度",
+          "child_id": "252b8401-1191-4dc6-bd50-c2da97281612"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/0. 太长不读",
+          "child_id": "9ebb09c5-958e-4186-b704-47488a9b226e"
+        }
+      ],
+      "latency_ms": 2296.6630999999325,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "partial",
+      "refusal_reason": "回答明确说明片段没有直接给出结论，但仍列出了常驻上下文成本、工具定义开销和按需加载等与问题相关的实质内容。",
+      "faithfulness": 0.7857142857142857,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "q028",
+      "type": "term",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "MCP 中的 MCP Server 对外暴露哪三类内容？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "MCP Server 对外暴露三类内容：**工具（Tools）、资源（Resources）、提示模板（Prompts）**。MCP Client（Agent/LLM 应用）通过统一协议调用各类 MCP Server，从而实现工具生态的标准化。",
+      "clean_answer": "MCP Server 对外暴露三类内容：**工具（Tools）、资源（Resources）、提示模板（Prompts）**。MCP Client（Agent/LLM 应用）通过统一协议调用各类 MCP Server，从而实现工具生态的标准化。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "MCP（Model Context Protocol）",
+          "child_id": "14aaadd3-8db3-481e-ad44-18a5592f54cd"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "53927508-64d1-4dab-a1ef-0d16534e6a8c"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/4. 工具设计决定 Agent 能做什么",
+          "child_id": "4bbc6f57-c8e0-4130-9100-75f326af80ed"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口",
+          "child_id": "469fa90b-1dca-4abc-9530-87e5133263bf"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 分块（Chunking）/复杂结构文档的层级保留",
+          "child_id": "e215a236-c35e-4a7e-ba7f-2d3cadf78db3"
+        }
+      ],
+      "latency_ms": 1071.530299999722,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了 MCP Server 对外暴露的三类内容（工具、资源、提示模板），并补充了相关说明，属于针对问题的实质内容，且未表达信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9893227827168859,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q032",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "让每一层的原始信息绕过该层、原样并入它的结果，这种设计主要为了解决什么训练难题？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "这种设计是**残差连接**，主要为了解决**深层网络中的梯度消失问题**。做法是将每一子层的输入直接加到其输出上（output = x + sublayer(x)），这样即使某层学到的变换效果不佳，也能保留原始输入信息，保证梯度顺利回传。",
+      "clean_answer": "这种设计是**残差连接**，主要为了解决**深层网络中的梯度消失问题**。做法是将每一子层的输入直接加到其输出上（output = x + sublayer(x)），这样即使某层学到的变换效果不佳，也能保留原始输入信息，保证梯度顺利回传。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "7. 残差连接（Residual Connection）",
+          "child_id": "f1948f60-f295-4146-9af6-94d27db8e3ac"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/为什么需要 LayerNorm？",
+          "child_id": "6972e74c-89fb-4069-b06e-11ce1c5c0ca2"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization",
+          "child_id": "16810792-d431-4458-bb0b-0f9f40bd437a"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/HNSW 原理详解",
+          "child_id": "bfe527be-9f4a-4847-9ad6-c87d92ff5104"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销",
+          "child_id": "60324320-aa9b-4f24-b0e3-35cdac0ac6f6"
+        }
+      ],
+      "latency_ms": 1094.6841000004497,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 0.5,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接指出该设计是残差连接，并给出解决梯度消失问题的实质解释和公式，没有表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.681192789019173,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q033",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "提问只有一句话、资料却是大段说明时，先让模型凭空写一份设想的回复，再拿这份回复去查找资料，为什么能找得更准？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "这种做法对应检索片段中的 **HyDE（Hypothetical Document Embeddings）**：先让大模型根据 query 生成一个假设性的回答文档，再用假设文档的向量去检索真实文档。\n\n之所以更准，是因为它针对的是 **Query-Doc 语义鸿沟**——当用户 query 与原文差距过大时，直接检索效果不佳。假设回复在表述风格和内容形态上更接近真实文档，从而缩小了语义差距。片段中列出的同类策略还有文档端增强（构建 QA 问答对）和查询端增强（改写或扩展 query）。",
+      "clean_answer": "这种做法对应检索片段中的 **HyDE（Hypothetical Document Embeddings）**：先让大模型根据 query 生成一个假设性的回答文档，再用假设文档的向量去检索真实文档。\n\n之所以更准，是因为它针对的是 **Query-Doc 语义鸿沟**——当用户 query 与原文差距过大时，直接检索效果不佳。假设回复在表述风格和内容形态上更接近真实文档，从而缩小了语义差距。片段中列出的同类策略还有文档端增强（构建 QA 问答对）和查询端增强（改写或扩展 query）。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "查询改写（Query Rewriting）",
+          "child_id": "2e009fe9-d5ec-4a60-871a-5490e4acc54a"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/上下文为什么要分层",
+          "child_id": "a1e3ae91-1961-4ab1-8548-8c1bdd0de9bf"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Query-Doc 语义鸿沟",
+          "child_id": "ae62b837-28b1-4af6-ae64-df80f0a342de"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "b1c916f2-2b46-48b5-8a58-bd7de22c5580"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 分块（Chunking）/切块大小如何选择？",
+          "child_id": "2673aa9f-682d-49d6-9155-c670a670fd37"
+        }
+      ],
+      "latency_ms": 1498.0715999990935,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接解释了HyDE方法及其更准的原因（缩小query与文档的语义鸿沟），给出了实质内容。",
+      "faithfulness": 0.8333333333333334,
+      "answer_relevancy": 0.6187609458158974,
+      "context_precision": 0.3333333333,
+      "context_recall": 0.75
+    },
+    {
+      "id": "q040",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "搭建大模型应用时，有哪几种把模型调用串起来、分流或同时跑的基础套路？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据检索片段，常见的基础控制模式有五种：\n\n1. **提示链（Prompt Chaining）**：任务拆成顺序步骤，每步 LLM 处理上一步输出，中间可加代码检查点，适合线性流程。\n2. **路由（Routing）**：对输入分类后定向到专用处理流程，如简单问题走轻量模型、复杂问题走强模型。\n3. **并行（Parallelization）**：分段法把任务拆成独立子任务并发跑；投票法把同一任务跑多次取共识，适合高风险决策。\n4. **编排器-工作者（Orchestrator-Workers）**：中央 LLM 动态分解任务，委派给工作者 LLM 并综合结果。\n5. **评估器-优化器（Evaluator-Optimizer）**：生成器产出、评估器反馈，循环直到达标，适合质量标准难以用代码定义的任务。\n\n片段指出，多数 AI 系统是这几种模式的组合，很多场景无需完整 Agent 自主权，关键看任务适合哪种设计。",
+      "clean_answer": "根据检索片段，常见的基础控制模式有五种：\n\n1. **提示链（Prompt Chaining）**：任务拆成顺序步骤，每步 LLM 处理上一步输出，中间可加代码检查点，适合线性流程。\n2. **路由（Routing）**：对输入分类后定向到专用处理流程，如简单问题走轻量模型、复杂问题走强模型。\n3. **并行（Parallelization）**：分段法把任务拆成独立子任务并发跑；投票法把同一任务跑多次取共识，适合高风险决策。\n4. **编排器-工作者（Orchestrator-Workers）**：中央 LLM 动态分解任务，委派给工作者 LLM 并综合结果。\n5. **评估器-优化器（Evaluator-Optimizer）**：生成器产出、评估器反馈，循环直到达标，适合质量标准难以用代码定义的任务。\n\n片段指出，多数 AI 系统是这几种模式的组合，很多场景无需完整 Agent 自主权，关键看任务适合哪种设计。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/五种常见控制模式",
+          "child_id": "f1de1042-c656-4f15-a18d-46cdb92144d6"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Function Call（工具调用）",
+          "child_id": "0a3cf5e1-7a9c-40b7-bc5c-4e369e76baeb"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量化与索引/Embedding 模型的选择",
+          "child_id": "800f7074-eb49-4bbb-985c-69c190c74293"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/ACI 工具设计原则",
+          "child_id": "77b81a18-23d8-46bf-a026-604a2e5f12bb"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "53927508-64d1-4dab-a1ef-0d16534e6a8c"
+        }
+      ],
+      "latency_ms": 1844.8795999993308,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 0.3333333333333333,
+      "rr_reranked": 0.25,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了五种具体的模型调用编排模式，并逐一说明了各自的做法和适用场景，给出了针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.45662877467861746,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q037",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "先让模型把整件复杂工作排出完整的步骤单，然后照单逐项完成，这种智能体设计的长处和短处各是什么？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "根据检索片段，这种设计对应**提示链（Prompt Chaining）**：任务拆成顺序步骤，每步 LLM 处理上一步输出，中间可加代码检查点，适合\"先写大纲再写正文\"这类线性流程。\n\n**长处**：流程线性可控，步骤间有明确衔接，可在中间插入代码检查点做校验；适合步骤边界清晰的顺序任务。\n\n**短处**：片段未直接评价其缺陷，但可作对比推理——它属于\"不需要完整 Agent 自主权\"的简化模式，缺乏 Agentic RAG 那种\"自主决定何时检索、是否重新检索\"的灵活性；也不像编排器-工作者模式能由中央 LLM **动态分解**任务，因此面对步骤无法预先确定的复杂任务时适应性有限。\n\n需注意：检索片段未对提示链的优缺点做专门论述，以上短处部分为基于片段间对比的推断。",
+      "clean_answer": "根据检索片段，这种设计对应**提示链（Prompt Chaining）**：任务拆成顺序步骤，每步 LLM 处理上一步输出，中间可加代码检查点，适合\"先写大纲再写正文\"这类线性流程。\n\n**长处**：流程线性可控，步骤间有明确衔接，可在中间插入代码检查点做校验；适合步骤边界清晰的顺序任务。\n\n**短处**：片段未直接评价其缺陷，但可作对比推理——它属于\"不需要完整 Agent 自主权\"的简化模式，缺乏 Agentic RAG 那种\"自主决定何时检索、是否重新检索\"的灵活性；也不像编排器-工作者模式能由中央 LLM **动态分解**任务，因此面对步骤无法预先确定的复杂任务时适应性有限。\n\n需注意：检索片段未对提示链的优缺点做专门论述，以上短处部分为基于片段间对比的推断。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/Agentic RAG（智能体 RAG）",
+          "child_id": "cbf36acf-6fd5-473f-bd16-eb2b2b986f3b"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/五种常见控制模式",
+          "child_id": "f1de1042-c656-4f15-a18d-46cdb92144d6"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/工具设计如何演进",
+          "child_id": "f3731dc1-783a-4ebf-b5ba-1c96db90ca46"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "53927508-64d1-4dab-a1ef-0d16534e6a8c"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/上下文为什么要分层",
+          "child_id": "a1e3ae91-1961-4ab1-8548-8c1bdd0de9bf"
+        }
+      ],
+      "latency_ms": 1883.008200000404,
+      "recall_at_k": 0.0,
+      "rr": 0.0,
+      "rr_raw": 0.25,
+      "rr_reranked": 1.0,
+      "refusal_label": "partial",
+      "refusal_reason": "回答说明检索片段没有直接评价缺点、短处部分是推断，但仍给出了长处和短处的实质内容。",
+      "faithfulness": 0.5,
+      "answer_relevancy": 0.6581077548477349,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "q041",
+      "type": "heading",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Transformer 为什么需要 LayerNorm？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "Transformer 需要 LayerNorm 的原因：若不进行标准化，各层输出的数值范围可能差异很大（部分值极大、部分极小），导致下一层难以处理，使训练过程非常不稳定。LayerNorm 将每层输出标准化为均值为 0、方差为 1，从而稳定训练。\n\n此外，LayerNorm 的放置位置也影响稳定性：Post-Norm 放在残差连接之后，会缩放梯度，训练初期不稳定，通常需要 Warm-up；Pre-Norm 放在残差连接之前，残差路径保持通畅，梯度回传更稳定，训练更易收敛，因此现代大模型普遍采用 Pre-Norm，部分模型还用 RMSNorm 替代 LayerNorm 以提升训练效率。",
+      "clean_answer": "Transformer 需要 LayerNorm 的原因：若不进行标准化，各层输出的数值范围可能差异很大（部分值极大、部分极小），导致下一层难以处理，使训练过程非常不稳定。LayerNorm 将每层输出标准化为均值为 0、方差为 1，从而稳定训练。\n\n此外，LayerNorm 的放置位置也影响稳定性：Post-Norm 放在残差连接之后，会缩放梯度，训练初期不稳定，通常需要 Warm-up；Pre-Norm 放在残差连接之前，残差路径保持通畅，梯度回传更稳定，训练更易收敛，因此现代大模型普遍采用 Pre-Norm，部分模型还用 RMSNorm 替代 LayerNorm 以提升训练效率。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/为什么需要 LayerNorm？",
+          "child_id": "6972e74c-89fb-4069-b06e-11ce1c5c0ca2"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/Pre-Norm vs Post-Norm",
+          "child_id": "d127c412-c71e-42b6-ad75-9f12f1cd06e1"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/3. 上下文工程为什么决定稳定性",
+          "child_id": "24dfd5bf-1377-4a51-bef5-ff32a9e2ab18"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization",
+          "child_id": "16810792-d431-4458-bb0b-0f9f40bd437a"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么工具消息也要隔离",
+          "child_id": "c81597c2-cb46-4dbe-9672-2e2750fad4d8"
+        }
+      ],
+      "latency_ms": 1723.0030999999144,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接解释了 LayerNorm 的作用（稳定训练、标准化数值）以及 Post-Norm 与 Pre-Norm 的差异，给出了针对问题的实质内容，没有表示资料不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8430738189124838,
+      "context_precision": 0.7499999999625,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q034",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "在把每个文本片段写入库之前，先让模型给它补一两句交代来龙去脉的话，这样做能把找不到资料的情况减少多少？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "检索片段中没有提到这种做法能减少多少“找不到资料”的情况，无法给出具体数字。\n\n片段[4]提到文档端增强的一种做法：在每个 chunk 中用大模型构建几个 QA 问答对，检索时同时检索原文和问答对，以弥补 query 与原文的语义鸿沟——这与“补交代来龙去脉”思路相近，但片段未给出任何量化效果。\n\n片段[1]中唯一的具体数据是 Cursor 在 MCP 工具描述上的 A/B 测试：任务总 token 消耗减少 46.9%，但这与“减少找不到资料”无关，不能套用。\n\n如需量化结论，需补充包含该实验数据的资料。",
+      "clean_answer": "检索片段中没有提到这种做法能减少多少“找不到资料”的情况，无法给出具体数字。\n\n片段提到文档端增强的一种做法：在每个 chunk 中用大模型构建几个 QA 问答对，检索时同时检索原文和问答对，以弥补 query 与原文的语义鸿沟——这与“补交代来龙去脉”思路相近，但片段未给出任何量化效果。\n\n片段中唯一的具体数据是 Cursor 在 MCP 工具描述上的 A/B 测试：任务总 token 消耗减少 46.9%，但这与“减少找不到资料”无关，不能套用。\n\n如需量化结论，需补充包含该实验数据的资料。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口",
+          "child_id": "469fa90b-1dca-4abc-9530-87e5133263bf"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/三种主流方案",
+          "child_id": "0a646488-83f6-44ca-9e48-caee3151754c"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/OpenAI 的 Agent 优先开发实践",
+          "child_id": "a86492dd-1113-47f8-aa90-b58cf3a33ae5"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Query-Doc 语义鸿沟",
+          "child_id": "ae62b837-28b1-4af6-ae64-df80f0a342de"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/压缩最容易丢掉什么",
+          "child_id": "c1cc178f-c7cb-4ef9-af30-325e49e38f2f"
+        }
+      ],
+      "latency_ms": 1803.037800000311,
+      "recall_at_k": 1.0,
+      "rr": 0.5,
+      "rr_raw": 0.2,
+      "rr_reranked": 1.0,
+      "refusal_label": "partial",
+      "refusal_reason": "回答说明资料中没有量化结论，但仍给出了相近做法（每个 chunk 生成 QA 问答对以弥补语义鸿沟）的实质描述。",
+      "faithfulness": 0.5833333333333334,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "q044",
+      "type": "heading",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Agent 压缩上下文时，保留优先级从高到低是怎样的？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据检索片段，Agent 压缩上下文时的保留优先级从高到低为：\n\n1. **架构决策**——不得摘要\n2. **已修改文件和关键变更**\n3. **验证状态**（pass/fail）\n4. **未解决的 TODO 和回滚笔记**\n5. **工具输出**——可删，只保留 pass/fail 结论\n\n此外还有一条关键约束：UUID、hash、IP、端口、URL、文件名等标识符必须原样保留，改动一位就可能导致后续工具调用失效。\n\n片段还指出，压缩最常见的问题不是摘要不够短，而是保留顺序设错——LLM 往往优先删除\"看似可重新获取\"的信息，早期 tool output 最先被移除，但相关的架构决策、约束理由和失败路径也容易一并丢失，因此建议在 CLAUDE.md 等文档中明确写出该优先级。",
+      "clean_answer": "根据检索片段，Agent 压缩上下文时的保留优先级从高到低为：\n\n1. **架构决策**——不得摘要\n2. **已修改文件和关键变更**\n3. **验证状态**（pass/fail）\n4. **未解决的 TODO 和回滚笔记**\n5. **工具输出**——可删，只保留 pass/fail 结论\n\n此外还有一条关键约束：UUID、hash、IP、端口、URL、文件名等标识符必须原样保留，改动一位就可能导致后续工具调用失效。\n\n片段还指出，压缩最常见的问题不是摘要不够短，而是保留顺序设错——LLM 往往优先删除\"看似可重新获取\"的信息，早期 tool output 最先被移除，但相关的架构决策、约束理由和失败路径也容易一并丢失，因此建议在 CLAUDE.md 等文档中明确写出该优先级。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/三种常见压缩策略",
+          "child_id": "aaca2bdd-9ad5-4069-9c46-e0fccf7fa672"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/保留优先级",
+          "child_id": "d5ac21b3-247d-4695-bc97-1c15a43adfd5"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/压缩最容易丢掉什么",
+          "child_id": "c1cc178f-c7cb-4ef9-af30-325e49e38f2f"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口",
+          "child_id": "469fa90b-1dca-4abc-9530-87e5133263bf"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "上下文压缩（Contextual Compression）",
+          "child_id": "abb362f2-20a6-4fd0-b832-b4e78f8899ba"
+        }
+      ],
+      "latency_ms": 1423.0853999997635,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了压缩上下文时的保留优先级（从高到低五级）并补充了标识符保留约束和常见问题，给出了针对问题的实质内容，没有声明信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9858995799516546,
+      "context_precision": 0.49999999995,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q038",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "几个子智能体并发干完活后，各自把产出存进一个共用字段，如果不做合并设置会出什么问题？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "会出问题：后完成的子智能体会直接覆盖先完成者的结果，导致数据丢失。\n\n依据：在 Orchestrator 架构中，多个 Sub-Agent 并行运行并写回同一个 State；LangGraph 的 State 默认不是简单赋值覆盖，而是支持自定义 Reducer 来控制并发写入的合并行为。若没有 Reducer，后完成的 Agent 会覆盖先完成的结果；通过 `operator.add` 这类 Reducer，可安全地把多个 Sub-Agent 的输出合并到同一个列表字段中。",
+      "clean_answer": "会出问题：后完成的子智能体会直接覆盖先完成者的结果，导致数据丢失。\n\n依据：在 Orchestrator 架构中，多个 Sub-Agent 并行运行并写回同一个 State；LangGraph 的 State 默认不是简单赋值覆盖，而是支持自定义 Reducer 来控制并发写入的合并行为。若没有 Reducer，后完成的 Agent 会覆盖先完成的结果；通过 `operator.add` 这类 Reducer，可安全地把多个 Sub-Agent 的输出合并到同一个列表字段中。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：State Reducer 机制",
+          "child_id": "7016d158-3489-49dd-bde1-e2af0cfc0e95"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "LangGraph 深入：State Reducer 机制/为什么在 Multi-Agent 中很重要",
+          "child_id": "3bb8c19a-cf62-4798-a971-048ee83d5547"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/五种常见控制模式",
+          "child_id": "f1de1042-c656-4f15-a18d-46cdb92144d6"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "并行对多个子问题检索/其他工程化优化手段",
+          "child_id": "bcb4a828-911a-47da-b154-aea115e3b370"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "长期记忆管理：Memory Consolidation（记忆整合）",
+          "child_id": "42fb359b-d5a8-48a0-8784-ccb731558df6"
+        }
+      ],
+      "latency_ms": 1368.985999999495,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接指出了并发写入会导致后完成者覆盖先完成者结果的问题，并给出了使用 Reducer（如 operator.add）合并输出的具体解决方案。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.586201644391753,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q042",
+      "type": "heading",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Self-Attention 中 Softmax 起什么作用？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "Softmax 将注意力分数（logits）转化为归一化的注意力权重（概率分布），使所有权重之和为 1，从而按关联程度为各 token 分配注意力。此外，当 Q·Kᵀ 点积数值过大时，Softmax 输出会趋近 one-hot 分布并引起梯度消失，因此需除以 √d_k 稳定方差。",
+      "clean_answer": "Softmax 将注意力分数（logits）转化为归一化的注意力权重（概率分布），使所有权重之和为 1，从而按关联程度为各 token 分配注意力。此外，当 Q·Kᵀ 点积数值过大时，Softmax 输出会趋近 one-hot 分布并引起梯度消失，因此需除以 √d_k 稳定方差。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制/Softmax 的作用",
+          "child_id": "7a99a4cc-8bd3-4eeb-a068-27d061b894e6"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制/为什么需要除以 √d_k 进行缩放？",
+          "child_id": "193b4997-92b9-4d7b-92c5-faa375a20800"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制",
+          "child_id": "951fff31-b8f2-46c5-86e3-410dd1c1ea40"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention/Mask 机制",
+          "child_id": "ac4f35a6-d832-4d1c-898e-5f8417f5f2c9"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention",
+          "child_id": "e19e66a0-5283-4e25-8961-0b37984a54f8"
+        }
+      ],
+      "latency_ms": 963.8849000002665,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答没有表达资料不足，直接解释了 Softmax 将分数归一化为概率权重的作用，并补充了缩放的原因，属于实质性内容。",
+      "faithfulness": 0.8333333333333334,
+      "answer_relevancy": 0.8244790930080608,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q035",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "用户换一种说法问同一件事时，只按原文逐字比对来复用旧结果的机制为什么会失灵？应该改成什么做法？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "只按原文逐字比对复用旧结果会失灵，是因为用户 query 与原文之间存在**语义鸿沟**：换一种说法后字面不同，逐字比对无法识别两者语义等价，导致本可复用的结果被漏掉。\n\n应改为语义层面的匹配与增强，常见做法包括：\n\n1. **文档端增强**：在每个 chunk 中用大模型构建 QA 问答对，检索时同时检索原文和问答对，弥补语义鸿沟。\n2. **查询端增强**：对用户 query 进行改写或扩展（如 Query Expansion、Query Rewrite with LLM 等）。\n3. **HyDE**：先让大模型根据 query 生成假设性回答文档，再用其向量检索真实文档，缩小语义差距。\n\n核心是把\"字面比对\"换成\"语义比对\"。",
+      "clean_answer": "只按原文逐字比对复用旧结果会失灵，是因为用户 query 与原文之间存在**语义鸿沟**：换一种说法后字面不同，逐字比对无法识别两者语义等价，导致本可复用的结果被漏掉。\n\n应改为语义层面的匹配与增强，常见做法包括：\n\n1. **文档端增强**：在每个 chunk 中用大模型构建 QA 问答对，检索时同时检索原文和问答对，弥补语义鸿沟。\n2. **查询端增强**：对用户 query 进行改写或扩展（如 Query Expansion、Query Rewrite with LLM 等）。\n3. **HyDE**：先让大模型根据 query 生成假设性回答文档，再用其向量检索真实文档，缩小语义差距。\n\n核心是把\"字面比对\"换成\"语义比对\"。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Query-Doc 语义鸿沟",
+          "child_id": "ae62b837-28b1-4af6-ae64-df80f0a342de"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制/为什么需要除以 √d_k 进行缩放？",
+          "child_id": "193b4997-92b9-4d7b-92c5-faa375a20800"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "查询改写（Query Rewriting）",
+          "child_id": "2e009fe9-d5ec-4a60-871a-5490e4acc54a"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/为什么 Skills 要按需加载",
+          "child_id": "b1c916f2-2b46-48b5-8a58-bd7de22c5580"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/为什么需要 Reranking？",
+          "child_id": "c7a9e116-3e68-4345-93db-772c4c6ee56b"
+        }
+      ],
+      "latency_ms": 1692.4094000005425,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 0.5,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接解释了逐字比对失效的原因（语义鸿沟），并给出了文档端增强、查询端改写、HyDE 等具体的替代做法，属于针对问题的实质内容。",
+      "faithfulness": 0.5625,
+      "answer_relevancy": 0.8979466617049034,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "q045",
+      "type": "heading",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Agent 的可观测性与追踪要记录哪三个关键节点？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "根据检索片段 [1]，Trace 记录三个关键节点：**tool_start、tool_end、turn_end**。完整 Trace 会同步落盘，并分发给日志系统、UI 更新、在线评测等下游。",
+      "clean_answer": "根据检索片段，Trace 记录三个关键节点：**tool_start、tool_end、turn_end**。完整 Trace 会同步落盘，并分发给日志系统、UI 更新、在线评测等下游。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/9. 可观测性与追踪",
+          "child_id": "aed9fffe-54cc-4f56-a507-8dacde011cea"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/OpenAI 的 Agent 优先开发实践",
+          "child_id": "a86492dd-1113-47f8-aa90-b58cf3a33ae5"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/8. Agent 评测",
+          "child_id": "c8167ac5-4b30-4998-8978-395c3035b5ac"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/工具设计如何演进",
+          "child_id": "f3731dc1-783a-4ebf-b5ba-1c96db90ca46"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 评估体系/常用评估框架",
+          "child_id": "0f0b4d03-8540-4857-ae49-a26642c6d260"
+        }
+      ],
+      "latency_ms": 804.4240999988688,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了三个关键节点（tool_start、tool_end、turn_end）并补充了落盘与分发的相关实质内容，未表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.5705069223689404,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q043",
+      "type": "heading",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Agent 出现幻觉工具调用时，有哪些解法？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "根据检索片段，幻觉工具调用（LLM 调用不存在的工具或传入错误格式参数）的解法有三点：\n\n1. **完善工具描述**——让工具定义更清晰，减少 LLM 误判；\n2. **对工具调用结果做参数校验**——在调用后检查参数是否合法；\n3. **使用 strict 模式的 JSON Schema**——约束参数格式。\n\n其成因是工具描述不够清晰或 LLM 过度自信。",
+      "clean_answer": "根据检索片段，幻觉工具调用（LLM 调用不存在的工具或传入错误格式参数）的解法有三点：\n\n1. **完善工具描述**——让工具定义更清晰，减少 LLM 误判；\n2. **对工具调用结果做参数校验**——在调用后检查参数是否合法；\n3. **使用 strict 模式的 JSON Schema**——约束参数格式。\n\n其成因是工具描述不够清晰或 LLM 过度自信。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 常见失败模式/1. 幻觉工具调用（Hallucinated Tool Call）",
+          "child_id": "e138fe29-78e3-408c-a3dc-42154edad6e5"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 常见失败模式/5. 过度工具调用（Over-Calling）",
+          "child_id": "90fcc640-5471-42ea-a967-585a126ea6fa"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 常见失败模式/2. 无限循环（Infinite Loop）",
+          "child_id": "d954cff3-2095-4c52-b299-c78a0d3020f7"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 常见失败模式/4. 工具选择错误（Wrong Tool Selection）",
+          "child_id": "6bb1b722-3638-49e1-a1a9-919873d646cb"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Agent 常见失败模式/3. 上下文爆炸（Context Overflow）",
+          "child_id": "e13413e0-1ef1-4775-84fd-d5d180fed5f3"
+        }
+      ],
+      "latency_ms": 1247.2539999998844,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了三条针对幻觉工具调用的具体解法并说明了成因，给出了实质内容，没有以资料不足为由拒答。",
+      "faithfulness": 0.9090909090909091,
+      "answer_relevancy": 0.7588889209373089,
+      "context_precision": 0.7499999999625,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q046",
+      "type": "factual",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Encoder、Decoder 和 Encoder-Decoder 三种架构的代表模型分别是什么？",
+      "source_doc": "Transformer 复习.md",
+      "raw_answer": "根据检索片段 [1]：\n\n- **Encoder**：代表模型是 **BERT**，采用双向注意力，适用于文本分类、NER、语义理解等任务。\n- **Decoder**：代表模型是 **GPT 系列**，使用 Causal Mask 实现单向注意力，适用于文本生成、对话、代码补全等任务。\n- **Encoder-Decoder**：代表模型是 **T5、BART**，通过 Cross-Attention 融合两端信息，适用于翻译、摘要、问答等任务。",
+      "clean_answer": "根据检索片段：\n\n- **Encoder**：代表模型是 **BERT**，采用双向注意力，适用于文本分类、NER、语义理解等任务。\n- **Decoder**：代表模型是 **GPT 系列**，使用 Causal Mask 实现单向注意力，适用于文本生成、对话、代码补全等任务。\n- **Encoder-Decoder**：代表模型是 **T5、BART**，通过 Cross-Attention 融合两端信息，适用于翻译、摘要、问答等任务。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder",
+          "child_id": "09262a4e-4206-4dae-9875-41ce03b1c14d"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder/Encoder-Decoder 的 Cross-Attention",
+          "child_id": "ceac9014-012b-427d-9c8b-e975a7e63854"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/为什么需要 Reranking？",
+          "child_id": "c7a9e116-3e68-4345-93db-772c4c6ee56b"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention/Mask 机制",
+          "child_id": "ac4f35a6-d832-4d1c-898e-5f8417f5f2c9"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/常见的 Reranking 方案",
+          "child_id": "b494060d-d332-4ef2-90e5-4ab1ab66d025"
+        }
+      ],
+      "latency_ms": 1148.9447000003565,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答没有表示资料不足，而是直接分别列出了三种架构的代表模型（BERT、GPT系列、T5/BART）并给出了注意力机制和适用任务等实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9036261703943365,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q036",
+      "type": "paraphrase",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "把同一份资料分别按不同粒度切开、各建一套库，怎样比较出哪种粒度最好？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "可以按“多粒度并行建库 + 统一评测”来比较：先取几个不同量级的块大小（如 128、256、512 token），按每个量级分别切块并存入对应的向量数据库；再针对用户提问生成回复，用“忠诚度测试”和“相关性测试”对不同块大小的回复打分，选出最优量级（片段1）。\n\n也可用 AB 测试：对同一批生成的 QA 对，分别用不同切块策略（128/256/512 token，固定切分 vs 语义切分）做检索测试，选指标最好的策略（片段2）。此外，少量人工标注（20-50 个高质量 QA 对）可校准 AI 自动评估的可靠性（片段2）。",
+      "clean_answer": "可以按“多粒度并行建库 + 统一评测”来比较：先取几个不同量级的块大小（如 128、256、512 token），按每个量级分别切块并存入对应的向量数据库；再针对用户提问生成回复，用“忠诚度测试”和“相关性测试”对不同块大小的回复打分，选出最优量级（片段1）。\n\n也可用 AB 测试：对同一批生成的 QA 对，分别用不同切块策略（128/256/512 token，固定切分 vs 语义切分）做检索测试，选指标最好的策略（片段2）。此外，少量人工标注（20-50 个高质量 QA 对）可校准 AI 自动评估的可靠性（片段2）。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 分块（Chunking）/切块大小如何选择？",
+          "child_id": "2673aa9f-682d-49d6-9155-c670a670fd37"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题",
+          "child_id": "8b068069-0689-4fc9-bad2-ca6ac71da54b"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 分块（Chunking）/切块方法",
+          "child_id": "b47bb529-c1fb-4bfb-bae1-893b4e8e76a4"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/三种主流方案",
+          "child_id": "0a646488-83f6-44ca-9e48-caee3151754c"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/0. 太长不读",
+          "child_id": "9ebb09c5-958e-4186-b704-47488a9b226e"
+        }
+      ],
+      "latency_ms": 1466.3233999999647,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答给出了多粒度并行建库、忠诚度与相关性测试、AB 测试及人工标注校准等具体比较方法，直接针对问题提供了实质内容。",
+      "faithfulness": 0.9230769230769231,
+      "answer_relevancy": 0.6425162059036711,
+      "context_precision": 0.99999999995,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q050",
+      "type": "factual",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "在 OpenAI 的 Agent 优先开发实践中，AGENTS.md 保留多少行？它起什么作用？",
+      "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+      "raw_answer": "AGENTS.md 只保留约 100 行，作为索引使用，细节拆到各 docs 目录按需引用。其背后的原则是\"Agent 看不到的内容等于不存在\"——知识必须存在于代码库本身，外部文档对运行中的 Agent 不可见。",
+      "clean_answer": "AGENTS.md 只保留约 100 行，作为索引使用，细节拆到各 docs 目录按需引用。其背后的原则是\"Agent 看不到的内容等于不存在\"——知识必须存在于代码库本身，外部文档对运行中的 Agent 不可见。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/OpenAI 的 Agent 优先开发实践",
+          "child_id": "a86492dd-1113-47f8-aa90-b58cf3a33ae5"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/Harness 的关键结论",
+          "child_id": "529cea09-9bc1-4932-9c7f-67e043e0bc1c"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/5. 记忆系统设计",
+          "child_id": "7a857b89-ce60-474a-80e1-16621d3eacab"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式",
+          "child_id": "370c43e5-c267-4235-ad0e-0c7248fee5a6"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/压缩最容易丢掉什么",
+          "child_id": "c1cc178f-c7cb-4ef9-af30-325e49e38f2f"
+        }
+      ],
+      "latency_ms": 765.1246000004903,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接给出了AGENTS.md约100行的具体数字、作为索引的作用以及背后的原则，属于针对问题的实质内容，且未表示信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.7990091555633488,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q049",
+      "type": "factual",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "Human-in-the-Loop 的典型使用场景有哪些？",
+      "source_doc": "Agent 复习.md",
+      "raw_answer": "Human-in-the-Loop 的典型使用场景包括：\n\n1. **执行危险操作前**：如发送邮件、删除文件、调用付费 API 等，需要人工确认后再执行。\n2. **审查中间规划**：Agent 给出中间规划后，由人工审查计划再继续执行。\n3. **补充信息场景**：需要人工补充信息才能继续的情况。\n\n其核心机制是在工作流执行到关键节点时暂停，等待人工确认或修改后再继续（如 LangGraph 中通过 `interrupt_before`/`interrupt_after` 指定暂停节点）。",
+      "clean_answer": "Human-in-the-Loop 的典型使用场景包括：\n\n1. **执行危险操作前**：如发送邮件、删除文件、调用付费 API 等，需要人工确认后再执行。\n2. **审查中间规划**：Agent 给出中间规划后，由人工审查计划再继续执行。\n3. **补充信息场景**：需要人工补充信息才能继续的情况。\n\n其核心机制是在工作流执行到关键节点时暂停，等待人工确认或修改后再继续（如 LangGraph 中通过 `interrupt_before`/`interrupt_after` 指定暂停节点）。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Human-in-the-Loop（人工介入）",
+          "child_id": "49394a77-5907-48b6-bba1-4a9a82882867"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "Human-in-the-Loop（人工介入）/在 LangGraph 中的实现",
+          "child_id": "14654f19-57ea-4d2f-b422-cb6af823f469"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "生成环节（Generation）/1. Lost in the Middle（中间信息丢失）",
+          "child_id": "127065d5-1994-4dc2-8ad6-51327e3be060"
+        },
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "人工审查 State，确认后恢复执行（传入 None 表示继续）/典型使用场景",
+          "child_id": "51ecbdbd-ffbb-4452-b3eb-c1125d568d11"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/1. Agent Loop 的基本运转方式",
+          "child_id": "370c43e5-c267-4235-ad0e-0c7248fee5a6"
+        }
+      ],
+      "latency_ms": 1474.8149999995803,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了 Human-in-the-Loop 的三类典型场景并解释了核心机制，给出了针对问题的实质内容，没有表明资料不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9652414797599138,
+      "context_precision": 0.7499999999625,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q047",
+      "type": "factual",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "解析 PDF 时，为什么表格模块需要单独做专项解析？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "根据检索片段，表格模块需要单独做专项解析，是因为**仅靠 OCR 很难完整识别出表格的准确含义**，因此需要使用专门的模型和工具进行深度解析（片段[1]）。\n\n具体流程上，PDF 解析会先全部 OCR 识别并拆解成小模块，再给模块打标签区分属性（正文、标题、页眉、页脚等），然后**筛选出标签为\"表格\"的模块**单独处理。此外，表格、图片等模块还需与文本模块分开提取，独立进行后续解析处理。",
+      "clean_answer": "根据检索片段，表格模块需要单独做专项解析，是因为**仅靠 OCR 很难完整识别出表格的准确含义**，因此需要使用专门的模型和工具进行深度解析（片段）。\n\n具体流程上，PDF 解析会先全部 OCR 识别并拆解成小模块，再给模块打标签区分属性（正文、标题、页眉、页脚等），然后**筛选出标签为\"表格\"的模块**单独处理。此外，表格、图片等模块还需与文本模块分开提取，独立进行后续解析处理。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "文档解析",
+          "child_id": "7094fec6-375c-4ec8-91af-3867c07956e4"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 分块（Chunking）",
+          "child_id": "091e836f-065a-4fdf-ba04-7db451caf930"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口",
+          "child_id": "469fa90b-1dca-4abc-9530-87e5133263bf"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 分块（Chunking）/复杂结构文档的层级保留",
+          "child_id": "e215a236-c35e-4a7e-ba7f-2d3cadf78db3"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/核心问题",
+          "child_id": "5c0cc890-cde4-4545-b396-6a348307f7da"
+        }
+      ],
+      "latency_ms": 1296.9069999999192,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答明确给出了表格需单独专项解析的原因（仅靠 OCR 难以完整识别含义）以及具体处理流程（打标签、筛选表格模块、与文本分开提取），属于直接的实质内容，没有表明信息不足。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8604177404121799,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q048",
+      "type": "factual",
+      "answerable": true,
+      "origin": "draft_reviewed",
+      "question": "重排序模型有哪三种训练目标？大多数常用的重排序模型采用哪种？",
+      "source_doc": "RAG复习.md",
+      "raw_answer": "重排序模型（Cross-Encoder）有三种训练目标：\n\n- **Pointwise（单点评分）**：对每个（query, document）对独立打分，训练简单，但无法显式建模文档间相对顺序。\n- **Pairwise（对比学习）**：对两个文档做相对比较，直接优化排序目标，效果通常优于 Pointwise。\n- **Listwise（列表级优化）**：对整个候选列表建模，直接优化排名指标（如 NDCG），效果最好但训练成本最高。\n\n大多数常用的 Reranking 模型（如 bge-reranker、ms-marco-MiniLM）采用 **Pointwise 或 Pairwise** 训练。",
+      "clean_answer": "重排序模型（Cross-Encoder）有三种训练目标：\n\n- **Pointwise（单点评分）**：对每个（query, document）对独立打分，训练简单，但无法显式建模文档间相对顺序。\n- **Pairwise（对比学习）**：对两个文档做相对比较，直接优化排序目标，效果通常优于 Pointwise。\n- **Listwise（列表级优化）**：对整个候选列表建模，直接优化排名指标（如 NDCG），效果最好但训练成本最高。\n\n大多数常用的 Reranking 模型（如 bge-reranker、ms-marco-MiniLM）采用 **Pointwise 或 Pairwise** 训练。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/Reranking 模型的训练目标",
+          "child_id": "4a21b079-65af-464d-bdcc-2cc693d75abe"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/常见的 Reranking 方案",
+          "child_id": "b494060d-d332-4ef2-90e5-4ab1ab66d025"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/为什么需要 Reranking？",
+          "child_id": "c7a9e116-3e68-4345-93db-772c4c6ee56b"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）",
+          "child_id": "1262a2d7-544d-4c5e-93a4-a69754317422"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "8. Layer Normalization/Pre-Norm vs Post-Norm",
+          "child_id": "d127c412-c71e-42b6-ad75-9f12f1cd06e1"
+        }
+      ],
+      "latency_ms": 1448.9157999996678,
+      "recall_at_k": 1.0,
+      "rr": 1.0,
+      "rr_raw": 1.0,
+      "rr_reranked": 1.0,
+      "refusal_label": "answer",
+      "refusal_reason": "回答直接列出了三种训练目标并给出各自特点，同时回答了大多数常用模型采用的训练方式，给出了针对问题的实质内容。",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.6871764586446673,
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0
+    },
+    {
+      "id": "q051",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "RAPTOR 方法如何通过递归聚类和摘要构建树状索引来改进 RAG 检索？",
+      "source_doc": "",
+      "raw_answer": "检索片段中没有关于 RAPTOR 方法的内容，无法回答该问题。片段仅涉及 GraphRAG、Naive RAG、Multi-hop RAG 及评估方法等，未提及递归聚类或树状索引。建议补充相关文档。",
+      "clean_answer": "检索片段中没有关于 RAPTOR 方法的内容，无法回答该问题。片段仅涉及 GraphRAG、Naive RAG、Multi-hop RAG 及评估方法等，未提及递归聚类或树状索引。建议补充相关文档。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/GraphRAG（知识图谱 RAG）",
+          "child_id": "f202d270-1e4c-4649-afb0-ad188cdfecae"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Naive RAG（朴素 RAG）",
+          "child_id": "986b480b-68d7-4c88-b60b-981d05123119"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/Multi-hop RAG（多跳检索）",
+          "child_id": "9a456627-eb06-4a8a-ae9c-7341c9e9096f"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 系统评估/端到端评估方法",
+          "child_id": "9f1b16a1-85e3-45a7-a219-2b7c36b9c4b9"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/核心问题",
+          "child_id": "5c0cc890-cde4-4545-b396-6a348307f7da"
+        }
+      ],
+      "latency_ms": 1013.5569000012765,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确指出检索片段中没有相关信息，未对递归聚类和树状索引等问题给出任何实质性内容，只说明无法回答并建议补充文档。"
+    },
+    {
+      "id": "q052",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "Corrective RAG（CRAG）中，检索评估器判断检索结果质量差时会采取什么动作？",
+      "source_doc": "",
+      "raw_answer": "检索片段中没有关于 Corrective RAG（CRAG）及其检索评估器的内容，无法回答该问题。片段仅涉及 Naive RAG、Self-RAG、Multi-hop RAG 及检索质量评估指标（Recall、Precision、MRR、NDCG）等，未提及 CRAG 的纠错动作。",
+      "clean_answer": "检索片段中没有关于 Corrective RAG（CRAG）及其检索评估器的内容，无法回答该问题。片段仅涉及 Naive RAG、Self-RAG、Multi-hop RAG 及检索质量评估指标（Recall、Precision、MRR、NDCG）等，未提及 CRAG 的纠错动作。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/Self-RAG（自反思 RAG）",
+          "child_id": "e45c87f4-8021-448b-9977-f19220c86c1b"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Naive RAG（朴素 RAG）",
+          "child_id": "986b480b-68d7-4c88-b60b-981d05123119"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索环节/检索质量评估指标",
+          "child_id": "b044b75d-8260-4564-8ea2-c5f0a4d3b242"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/Multi-hop RAG（多跳检索）",
+          "child_id": "9a456627-eb06-4a8a-ae9c-7341c9e9096f"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 系统评估",
+          "child_id": "22fe2ac4-4c41-44e8-838c-606eb6fbdfb2"
+        }
+      ],
+      "latency_ms": 1166.3669000008667,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确表示检索片段中没有 CRAG 的相关内容，未给出针对问题（检索质量差时的纠错动作）的实质内容。"
+    },
+    {
+      "id": "q053",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "RoPE（旋转位置编码）是如何把相对位置信息注入注意力计算的？",
+      "source_doc": "",
+      "raw_answer": "检索片段中未提及 RoPE（旋转位置编码）的相关内容，仅涉及原始 Transformer 的正余弦位置编码（相加方式、不参与梯度更新、泛化性强等）。因此无法根据现有信息回答 RoPE 如何注入相对位置信息，建议补充相关文档。",
+      "clean_answer": "检索片段中未提及 RoPE（旋转位置编码）的相关内容，仅涉及原始 Transformer 的正余弦位置编码（相加方式、不参与梯度更新、泛化性强等）。因此无法根据现有信息回答 RoPE 如何注入相对位置信息，建议补充相关文档。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）/关键要点",
+          "child_id": "00a5b46b-018c-4d8c-9307-b733808916a8"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）",
+          "child_id": "3a7b524a-c1af-4178-9f0a-ef06b310a937"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "3. 位置编码（Positional Encoding）/为什么用正余弦而不是可学习的位置编码？",
+          "child_id": "e31956c3-031d-4995-9e7c-19f644c3291b"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention",
+          "child_id": "e19e66a0-5283-4e25-8961-0b37984a54f8"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制",
+          "child_id": "951fff31-b8f2-46c5-86e3-410dd1c1ea40"
+        }
+      ],
+      "latency_ms": 1115.200600001117,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确表示检索片段中没有 RoPE 的相关内容，无法回答问题，且仅提及原始正余弦位置编码等无关信息，没有给出针对 RoPE 注入相对位置信息方式的实质内容。"
+    },
+    {
+      "id": "q054",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "FlashAttention 通过什么方式减少注意力计算中的显存读写？",
+      "source_doc": "",
+      "raw_answer": "检索片段中没有关于 FlashAttention 的内容，无法回答该问题。片段仅涉及 Self-Attention、Multi-Head Attention、Softmax、Cross-Attention 及 Mask 机制，未提及 FlashAttention 的显存读写优化方式。",
+      "clean_answer": "检索片段中没有关于 FlashAttention 的内容，无法回答该问题。片段仅涉及 Self-Attention、Multi-Head Attention、Softmax、Cross-Attention 及 Mask 机制，未提及 FlashAttention 的显存读写优化方式。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention",
+          "child_id": "e19e66a0-5283-4e25-8961-0b37984a54f8"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制",
+          "child_id": "951fff31-b8f2-46c5-86e3-410dd1c1ea40"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制/Softmax 的作用",
+          "child_id": "7a99a4cc-8bd3-4eeb-a068-27d061b894e6"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder/Encoder-Decoder 的 Cross-Attention",
+          "child_id": "ceac9014-012b-427d-9c8b-e975a7e63854"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention/Mask 机制",
+          "child_id": "ac4f35a6-d832-4d1c-898e-5f8417f5f2c9"
+        }
+      ],
+      "latency_ms": 1231.6515000002255,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确说明检索片段中没有相关信息，且未给出任何关于FlashAttention显存读写优化方式的实质内容，只列出了片段涉及的其他概念。"
+    },
+    {
+      "id": "q055",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "GQA（Grouped-Query Attention）相比 Multi-Head Attention，如何减少推理时的显存占用？",
+      "source_doc": "",
+      "raw_answer": "检索片段中没有关于 GQA（Grouped-Query Attention）的任何信息，无法据此回答该问题。片段仅涉及 Multi-Head Attention 的机制（多头并行关注不同语义特征、不增加计算量）、Mask 机制、缩放原因及 Cross-Attention 的 Q/K/V 来源，均未提及 GQA 或推理显存占用的相关内容。建议补充 GQA 相关文档后再作答。",
+      "clean_answer": "检索片段中没有关于 GQA（Grouped-Query Attention）的任何信息，无法据此回答该问题。片段仅涉及 Multi-Head Attention 的机制（多头并行关注不同语义特征、不增加计算量）、Mask 机制、缩放原因及 Cross-Attention 的 Q/K/V 来源，均未提及 GQA 或推理显存占用的相关内容。建议补充 GQA 相关文档后再作答。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention",
+          "child_id": "e19e66a0-5283-4e25-8961-0b37984a54f8"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "5. Multi-Head Attention/Mask 机制",
+          "child_id": "ac4f35a6-d832-4d1c-898e-5f8417f5f2c9"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制/为什么需要除以 √d_k 进行缩放？",
+          "child_id": "193b4997-92b9-4d7b-92c5-faa375a20800"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "4. Self-Attention 机制",
+          "child_id": "951fff31-b8f2-46c5-86e3-410dd1c1ea40"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder/Encoder-Decoder 的 Cross-Attention",
+          "child_id": "ceac9014-012b-427d-9c8b-e975a7e63854"
+        }
+      ],
+      "latency_ms": 1184.3456999995396,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确表示检索片段中没有 GQA 相关信息，只列举了片段涉及的其他内容，没有给出针对 GQA 减少显存占用的实质解释。"
+    },
+    {
+      "id": "q056",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "MoE（混合专家）模型中的路由器如何为每个 token 选择专家？",
+      "source_doc": "",
+      "raw_answer": "检索片段中未提及 MoE（混合专家）模型及其路由器机制的相关内容，无法据此回答该问题。现有片段仅涉及 Transformer 的 BPE 分词、Token Embedding、RAG 的分块评估、混合检索（BM25 与向量融合）及 Embedding 模型选择，均与 MoE 路由无关。建议补充 MoE 相关文档后再作答。",
+      "clean_answer": "检索片段中未提及 MoE（混合专家）模型及其路由器机制的相关内容，无法据此回答该问题。现有片段仅涉及 Transformer 的 BPE 分词、Token Embedding、RAG 的分块评估、混合检索（BM25 与向量融合）及 Embedding 模型选择，均与 MoE 路由无关。建议补充 MoE 相关文档后再作答。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "2. Token Embedding",
+          "child_id": "c1ee8657-f6de-4b24-acbb-cf76d460f276"
+        },
+        {
+          "source_doc": "Transformer 复习.md",
+          "heading_path": "1. BPE 分词器",
+          "child_id": "4a91e81e-deed-4aea-a002-3763a6329836"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题",
+          "child_id": "8b068069-0689-4fc9-bad2-ca6ac71da54b"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索环节/混合检索（Hybrid Search）",
+          "child_id": "8e5b5d3f-5869-4d23-99bb-8efff0651379"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量化与索引/Embedding 模型的选择",
+          "child_id": "800f7074-eb49-4bbb-985c-69c190c74293"
+        }
+      ],
+      "latency_ms": 820.7516000002215,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确表示检索片段中没有 MoE 路由器相关内容，仅列举了无关主题并建议补充文档，没有给出针对问题的实质性解释。"
+    },
+    {
+      "id": "q057",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "SPLADE 模型是如何生成用于检索的稀疏向量的？",
+      "source_doc": "",
+      "raw_answer": "检索片段中未提及 SPLADE 模型的相关内容，无法回答该问题。现有片段涉及 HNSW 索引、多模态检索方案、HyDE、GraphRAG 和 Naive RAG 等主题，均不包含 SPLADE 稀疏向量的生成机制。建议补充相关文档后再作答。",
+      "clean_answer": "检索片段中未提及 SPLADE 模型的相关内容，无法回答该问题。现有片段涉及 HNSW 索引、多模态检索方案、HyDE、GraphRAG 和 Naive RAG 等主题，均不包含 SPLADE 稀疏向量的生成机制。建议补充相关文档后再作答。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/HNSW 原理详解",
+          "child_id": "bfe527be-9f4a-4847-9ad6-c87d92ff5104"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/三种主流方案",
+          "child_id": "0a646488-83f6-44ca-9e48-caee3151754c"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Query-Doc 语义鸿沟/HyDE 的完整原理与适用场景",
+          "child_id": "bd134235-4536-4858-b734-90a5500650e1"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/GraphRAG（知识图谱 RAG）",
+          "child_id": "f202d270-1e4c-4649-afb0-ad188cdfecae"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "RAG 三代架构演进/Naive RAG（朴素 RAG）",
+          "child_id": "986b480b-68d7-4c88-b60b-981d05123119"
+        }
+      ],
+      "latency_ms": 1065.4138999998395,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确表示检索片段中没有 SPLADE 相关内容，无法回答，仅列举了不相关的主题并建议补充文档，未给出针对问题的实质内容。"
+    },
+    {
+      "id": "q058",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "DiskANN 是如何把向量索引放在 SSD 上，同时保持较低检索延迟的？",
+      "source_doc": "",
+      "raw_answer": "检索片段中未提及 DiskANN 相关内容，无法回答该问题。片段仅涉及 Flat、IVF、HNSW、PQ 等索引类型及 HNSW 原理，未包含 DiskANN 的 SSD 索引机制或延迟优化方案。",
+      "clean_answer": "检索片段中未提及 DiskANN 相关内容，无法回答该问题。片段仅涉及 Flat、IVF、HNSW、PQ 等索引类型及 HNSW 原理，未包含 DiskANN 的 SSD 索引机制或延迟优化方案。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/HNSW 原理详解",
+          "child_id": "bfe527be-9f4a-4847-9ad6-c87d92ff5104"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/向量数据库与索引策略",
+          "child_id": "6189197f-ed4c-407d-a0a2-f06029a62ea0"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量数据库的 Metadata Filter/核心思路",
+          "child_id": "d3470e17-ca93-497a-b51a-d80c91f4f9e5"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量化与索引",
+          "child_id": "e8d34b2f-324a-4ca1-a034-0f5feed77947"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "对每个 chunk 生成测试问题/三种主流方案",
+          "child_id": "0a646488-83f6-44ca-9e48-caee3151754c"
+        }
+      ],
+      "latency_ms": 969.0750999998272,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确说明检索片段中没有DiskANN相关内容，无法回答，且没有给出关于SSD索引或延迟优化的实质性说明。"
+    },
+    {
+      "id": "q059",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "Tree of Thoughts（思维树）框架在推理时如何对多个候选思路进行搜索和回溯？",
+      "source_doc": "",
+      "raw_answer": "检索片段中没有关于 Tree of Thoughts（思维树）框架的内容，无法回答其搜索与回溯机制。片段仅涉及 ReAct 框架（Thought/Action/Observation 循环）、RAG 的 Metadata Filter、Reranking、Contextual Compression 及 GraphRAG 等，均未提及思维树。建议补充相关文档。",
+      "clean_answer": "检索片段中没有关于 Tree of Thoughts（思维树）框架的内容，无法回答其搜索与回溯机制。片段仅涉及 ReAct 框架（Thought/Action/Observation 循环）、RAG 的 Metadata Filter、Reranking、Contextual Compression 及 GraphRAG 等，均未提及思维树。建议补充相关文档。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "ReAct 框架",
+          "child_id": "6f57f218-0367-467c-a3fb-266ed27f58a2"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "向量数据库的 Metadata Filter/核心思路",
+          "child_id": "d3470e17-ca93-497a-b51a-d80c91f4f9e5"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "检索时自动压缩每个返回的 chunk/与 Reranking 的关系",
+          "child_id": "4d350fb7-be59-455f-8304-bb55785aee2b"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "重排序（Reranking）/常见的 Reranking 方案",
+          "child_id": "b494060d-d332-4ef2-90e5-4ab1ab66d025"
+        },
+        {
+          "source_doc": "RAG复习.md",
+          "heading_path": "Advanced RAG 进阶模式/GraphRAG（知识图谱 RAG）",
+          "child_id": "f202d270-1e4c-4649-afb0-ad188cdfecae"
+        }
+      ],
+      "latency_ms": 1194.692600000053,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确指出检索片段中没有思维树的相关内容，仅列举了其他无关框架并建议补充文档，没有给出关于搜索与回溯机制的实质内容。"
+    },
+    {
+      "id": "q060",
+      "type": "refusal",
+      "answerable": false,
+      "origin": "draft_reviewed",
+      "question": "Google 提出的 A2A（Agent2Agent）协议中，Agent Card 用来描述什么？",
+      "source_doc": "",
+      "raw_answer": "检索片段中没有关于 Google A2A（Agent2Agent）协议或 Agent Card 的任何信息，无法回答该问题。片段仅涉及 Anthropic 的 MCP 协议、工具设计演进（API 封装、ACI、Advanced Tool Use）及多 Agent 组织模式，未提及 A2A 协议。建议补充相关文档。",
+      "clean_answer": "检索片段中没有关于 Google A2A（Agent2Agent）协议或 Agent Card 的任何信息，无法回答该问题。片段仅涉及 Anthropic 的 MCP 协议、工具设计演进（API 封装、ACI、Advanced Tool Use）及多 Agent 组织模式，未提及 A2A 协议。建议补充相关文档。",
+      "citation": null,
+      "retrieved": [
+        {
+          "source_doc": "Agent 复习.md",
+          "heading_path": "MCP（Model Context Protocol）",
+          "child_id": "14aaadd3-8db3-481e-ad44-18a5592f54cd"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/4. 工具设计决定 Agent 能做什么",
+          "child_id": "4bbc6f57-c8e0-4130-9100-75f326af80ed"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口",
+          "child_id": "469fa90b-1dca-4abc-9530-87e5133263bf"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/工具设计如何演进",
+          "child_id": "f3731dc1-783a-4ebf-b5ba-1c96db90ca46"
+        },
+        {
+          "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+          "heading_path": "你不知道的 Agent：原理、架构与工程实践/7. 多 Agent 组织",
+          "child_id": "6aa92b59-fc6e-430f-ac52-8b61c5c95f3b"
+        }
+      ],
+      "latency_ms": 1093.672200000583,
+      "refusal_label": "refusal",
+      "refusal_reason": "回答明确表示检索片段中没有A2A协议或Agent Card的信息，未给出任何关于Agent Card用途的实质内容，只说明无法回答并建议补充文档。"
+    }
+  ],
+  "refusal_metrics": {
+    "refusal_correct": 10,
+    "refusal_total": 10,
+    "refusal_accuracy": 1.0,
+    "false_refusals": 1,
+    "answerable_total": 50,
+    "false_refusal_rate": 0.02,
+    "unjudged": 0,
+    "label_counts": {
+      "refusal": 11,
+      "partial": 3,
+      "answer": 46
+    }
+  },
+  "ragas_means": {
+    "faithfulness": 0.9329668860551213,
+    "answer_relevancy": 0.7724292427333623,
+    "llm_context_precision_with_reference": 0.8411111110406567,
+    "context_recall": 0.895
+  },
+  "ragas_metric_status": {
+    "faithfulness": {
+      "status": "ok",
+      "valid_count": 50,
+      "sample_count": 50
+    },
+    "answer_relevancy": {
+      "status": "ok",
+      "valid_count": 50,
+      "sample_count": 50
+    },
+    "llm_context_precision_with_reference": {
+      "status": "ok",
+      "valid_count": 50,
+      "sample_count": 50
+    },
+    "context_recall": {
+      "status": "ok",
+      "valid_count": 50,
+      "sample_count": 50
+    }
+  },
+  "sample_count": 50
+}

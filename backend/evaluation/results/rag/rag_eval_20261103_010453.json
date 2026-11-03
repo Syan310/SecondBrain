@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "run_id": "rag_20261103_010453",
+    "run_log_file": "C:\\Users\\Shaoyu Yan\\Desktop\\SecondBrain\\backend\\evaluation\\results\\logs_rag\\eval_rag_20261103_010453.log",
+    "timezone": "America/Los_Angeles",
+    "started_at": "2026-11-03T01:04:53.765054-08:00",
+    "finished_at": "2026-11-03T01:06:11.917941-08:00",
+    "profile": "full",
+    "mode": "rag",
+    "concurrency": 4,
+    "dataset": {
+      "name": "qa_l0_v1.json",
+      "sha256": "ee47c4ecc71352f628a4ca46fe3d73d6f12be187aefc70bdc871d6fcf6c2d0db",
+      "items": 60,
+      "answerable": 50,
+      "refusal": 10,
+      "type_counts": {
+        "original": 20,
+        "term": 10,
+        "paraphrase": 10,
+        "heading": 5,
+        "factual": 5,
+        "refusal": 10
+      }
+    },
+    "output_file": "C:\\Users\\Shaoyu Yan\\Desktop\\SecondBrain\\backend\\evaluation\\results\\rag\\rag_eval_20261103_010453.json",
+    "status": "invalid",
+    "health_issues": [],
+    "completed_phases": [],
+    "commit": {
+      "sha": "c0986cfc3ceb4f5df2d2a8d965892c0429572972",
+      "dirty": false
+    },
+    "config": {
+      "enable_reranker": false,
+      "reranker_use_heading": false,
+      "citation_mode": "fallback",
+      "reranker_max_length": 1024,
+      "top_k": 5,
+      "candidate_k": 15,
+      "rrf_k": 60,
+      "bm25_k1": 1.2,
+      "bm25_b": 0.75,
+      "qa_temperature": 0.1,
+      "qa_max_tokens": 1024
+    },
+    "prompt_sha256": "4516ac5ebffd",
+    "refusal_judge_prompt_sha256": "b2bf34152599",
+    "correctness_judge_prompt_sha256": "b1c544cf8626",
+    "corpus": {
+      "dir": "C:\\Users\\Shaoyu Yan\\Desktop\\LLM_Learn",
+      "files": {
+        "Agent 复习.md": {
+          "sha256": "ff0038ecfd356dc7a7c0fcb14db20999987d206f474ccd2c5b6f7bb14652d15a",
+          "chunks": 52
+        },
+        "RAG复习.md": {
+          "sha256": "49e7980d9bc8ca6c3a5eb6d5f2c5ee8f391e7ff3d6e67f6c1507669b9e720557",
+          "chunks": 81
+        },
+        "Transformer 复习.md": {
+          "sha256": "4e0af6eb3a8bb1995481166c317ab8c7fe514116a36e0cdf9b1dcf99bfb53e81",
+          "chunks": 21
+        },
+        "你不知道的Agent-原理架构与工程实践.md": {
+          "sha256": "8f544c38718654a8962c18a6f07530aa42e36740a4adfb16af5448156bf0f473",
+          "chunks": 33
+        }
+      },
+      "scope": "l0",
+      "collection": "secondbrain_docs",
+      "total_rows": 187,
+      "source_docs": 4
+    },
+    "models": {
+      "llm": {
+        "model": "deepseek-flash",
+        "base_url": "https://api.deepseek.com",
+        "provider_order": [],
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        }
+      },
+      "judge": {
+        "model": "anthropic/claude-haiku-5.5",
+        "base_url": "https://openrouter.ai/api/v1",
+        "provider_order": [
+          "anthropic"
+        ],
+        "extra_body": {
+          "usage": {
+            "include": true
+          },
+          "provider": {
+            "order": [
+              "anthropic"
+            ],
+            "allow_fallbacks": false
+          }
+        },
+        "sampling": "temperature/top_p not sent (provider default)",
+        "reasoning": "not sent (OpenRouter default)"
+      },
+      "embedding": {
+        "name": "BAAI/bge-m3",
+        "path": "./models/bge-m3"
+      },
+      "reranker": {
+        "name": "BAAI/bge-reranker-v2-m3",
+        "path": "./models/bge-reranker-v2-m3"
+      }
+    },
+    "versions": {
+      "python": "3.11.15",
+      "pymilvus": "2.6.17",
+      "milvus_server": "2.6.25",
+      "ragas": "0.4.3",
+      "langgraph": "1.2.19",
+      "openai": "1.109.1",
+      "FlagEmbedding": "1.4.2",
+      "transformers": "4.57.6",
+      "torch": "2.11.0+cu128"
+    },
+    "longctx": null,
+    "usage": {
+      "llm": {
+        "requests": 43,
+        "prompt_tokens": 42960,
+        "completion_tokens": 3803,
+        "prompt_cache_hit_tokens": 34560,
+        "prompt_cache_miss_tokens": 8400,
+        "cost_usd": 0.0,
+        "providers": {
+          "api.deepseek.com": 43
+        },
+        "models": {
+          "deepseek-flash": 43
+        }
+      }
+    },
+    "provider_problems": [],
+    "run_problems": [
+      "phase 'ir' did not complete",
+      "phase 'refusal' did not complete",
+      "phase 'correctness' did not complete",
+      "phase 'ragas' did not complete"
+    ]
+  },
+  "subset": {
+    "answerable_limit": null,
+    "answerable_types": null,
+    "refusal_limit": null,
+    "answerable_selected": 50,
+    "refusal_selected": 10,
+    "selected": 60,
+    "group_counts": {
+      "Transformer 复习.md": 12,
+      "RAG复习.md": 14,
+      "你不知道的Agent-原理架构与工程实践.md": 12,
+      "Agent 复习.md": 12
+    },
+    "ids": [
+      "q001",
+      "q006",
+      "q011",
+      "q016",
+      "q002",
+      "q007",
+      "q012",
+      "q017",
+      "q003",
+      "q008",
+      "q013",
+      "q018",
+      "q004",
+      "q009",
+      "q014",
+      "q019",
+      "q005",
+      "q010",
+      "q015",
+      "q020",
+      "q021",
+      "q023",
+      "q029",
+      "q026",
+      "q022",
+      "q024",
+      "q030",
+      "q027",
+      "q031",
+      "q025",
+      "q039",
+      "q028",
+      "q032",
+      "q033",
+      "q040",
+      "q037",
+      "q041",
+      "q034",
+      "q044",
+      "q038",
+      "q042",
+      "q035",
+      "q045",
+      "q043",
+      "q046",
+      "q036",
+      "q050",
+      "q049",
+      "q047",
+      "q048",
+      "q051",
+      "q052",
+      "q053",
+      "q054",
+      "q055",
+      "q056",
+      "q057",
+      "q058",
+      "q059",
+      "q060"
+    ]
+  },
+  "ir_metrics": {
+    "error": "InternalServerError: Error code: 503 - {'error': {'message': 'Service is too busy. We advise users to temporarily switch to alternative LLM API service providers. (request_id: 804856c9-5aad-4537-b19a-1fc3c32f7823)', 'type': 'service_unavailable_error', 'param': None, 'code': 'service_unavailable_error'}}"
+  },
+  "per_question": [],
+  "ragas_means": {
+    "skipped": "Phase 1 failed or returned no results"
+  },
+  "cost_metrics": {
+    "n": 0,
+    "unpriced": 0,
+    "input_tokens_mean": null,
+    "output_tokens_mean": null,
+    "cache_hit_ratio": null,
+    "cost_usd_actual_mean": null,
+    "cost_usd_no_cache_mean": null,
+    "cost_usd_actual_total": 0,
+    "cost_usd_no_cache_total": 0,
+    "price_periods": {
+      "peak": 0,
+      "off_peak": 0
+    },
+    "prices_usd_per_1m": {
+      "peak": {
+        "cache_hit": 0.006,
+        "cache_miss": 0.3,
+        "output": 1.2
+      },
+      "off_peak": {
+        "cache_hit": 0.003,
+        "cache_miss": 0.15,
+        "output": 0.6
+      }
+    },
+    "prices_checked": "2026-11-02, https://api-docs.deepseek.com/quick_start/pricing"
+  }
+}

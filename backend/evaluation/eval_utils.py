@@ -70,10 +70,9 @@ async def warmup_and_health_check(
     try:
         from app.services.embedding import embedding_service
         from app.services.milvus_client import milvus_service
-        test_out = embedding_service.encode_query("health check")
         results = milvus_service.hybrid_search(
-            query_vector=test_out.dense.tolist(),
-            sparse_vector=test_out.sparse[0],
+            query_vector=embedding_service.encode_dense("health check")[0].tolist(),
+            query_text="health check",
             top_k=1,
         )
         if not results:

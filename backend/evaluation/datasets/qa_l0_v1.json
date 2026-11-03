@@ -1,0 +1,876 @@
+[
+  {
+    "id": "q001",
+    "question": "原始 Transformer 使用什么函数生成位置编码？这些编码在训练过程中是否参与梯度更新？",
+    "ground_truth": "使用正余弦函数生成，且不参与梯度更新。",
+    "type": "original",
+    "original_type": "factual",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "3. 位置编码（Positional Encoding）"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q002",
+    "question": "为什么多头注意力（Multi-Head Attention）机制在增加 head 数量的同时不会增加整体计算量？",
+    "ground_truth": "因为整个 d_model 维度被按 head 数量均分，每个 head 仅在低维子空间中独立计算注意力，最后将所有 head 的输出拼接回原始维度，因此总计算量保持不变。",
+    "type": "original",
+    "original_type": "conceptual",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "5. Multi-Head Attention"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q003",
+    "question": "Pre-Norm 和 Post-Norm 在 Layer Normalization 的放置位置上有何区别？为什么现代大模型普遍采用 Pre-Norm？",
+    "ground_truth": "Post-Norm 将 LayerNorm 放在残差连接之后，而 Pre-Norm 将其放在残差连接之前。现代模型采用 Pre-Norm 是因为它能保持残差路径通畅，使梯度回传更稳定，训练更容易收敛。",
+    "type": "original",
+    "original_type": "comparison",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "8. Layer Normalization/Pre-Norm vs Post-Norm"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q004",
+    "question": "在训练用于文本生成的 Decoder 模型时，为了防止模型“偷看答案”，应在注意力分数矩阵的哪个具体区域填充 -∞？这属于哪种 Mask 机制？",
+    "ground_truth": "应在注意力分数矩阵（Q·Kᵀ 之后、Softmax 之前）的右上三角区域填充 -∞。这属于 Causal Mask（因果掩码）机制。",
+    "type": "original",
+    "original_type": "application",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "5. Multi-Head Attention/Mask 机制"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q005",
+    "question": "Feed Forward Network (FFN) 在处理数据时，其内部维度的标准变化流程是怎样的？",
+    "ground_truth": "先将 d_model 维升维到高维（通常为 4 × d_model），在高维空间应用非线性激活函数后，再降维投射回 d_model 维。",
+    "type": "original",
+    "original_type": "factual",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "6. Feed Forward Network（FFN）/工作流程"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q006",
+    "question": "在 Naive RAG（朴素 RAG）架构中，标准的处理流程固定为哪三个步骤？",
+    "ground_truth": "索引 → 检索 → 生成",
+    "type": "original",
+    "original_type": "factual",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "RAG 三代架构演进/Naive RAG（朴素 RAG）"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q007",
+    "question": "为什么 E5 系列模型不能混用 query 和 document 的编码策略？",
+    "ground_truth": "因为这类模型在训练时使用了不对称训练（asymmetric training），混用会导致向量空间不对齐，相似度计算失准。",
+    "type": "original",
+    "original_type": "conceptual",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q008",
+    "question": "OpenAI 的 text-embedding 系列模型与 E5 系列模型在处理输入前缀时有什么主要区别？",
+    "ground_truth": "OpenAI 的 text-embedding 系列不需要加前缀，对称使用即可；而 E5 系列需要分别为 query 添加 'query: ' 前缀，为 document 添加 'passage: ' 前缀。",
+    "type": "original",
+    "original_type": "comparison",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q009",
+    "question": "在实际工程中，如果缺乏历史数据来评估 RAG 系统，文档推荐的最常用构建测试集方案是什么？",
+    "ground_truth": "利用 LLM 自动生成测试集，即直接让 LLM 从已有文档中生成问题-答案对。",
+    "type": "original",
+    "original_type": "application",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "Advanced RAG 进阶模式/解决方案"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q010",
+    "question": "在计算 RAGAS 的 Faithfulness（忠实度）指标时，具体的计算公式是什么？",
+    "ground_truth": "Faithfulness = 可被上下文支持的陈述数 / 总陈述数",
+    "type": "original",
+    "original_type": "factual",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "RAG 系统评估/RAGAS 核心指标的计算方式"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q011",
+    "question": "在 Agent 的记忆系统设计中，MEMORY.md 对应的是哪一种记忆类型？",
+    "ground_truth": "语义记忆。",
+    "type": "original",
+    "original_type": "factual",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/5. 记忆系统设计"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q012",
+    "question": "根据文档，Workflow 和 Agent 的核心区别是什么？",
+    "ground_truth": "核心区别在于控制权掌握在谁手里。Workflow 的执行路径由代码预先写死，而 Agent 的下一步由 LLM 动态决定。",
+    "type": "original",
+    "original_type": "comparison",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/Workflow 和 Agent 有什么区别"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q013",
+    "question": "为什么在上下文分层管理中强调“别把确定性逻辑放进上下文”？正确的处理方式是什么？",
+    "ground_truth": "因为将确定性逻辑放入上下文会降低信息密度，使模型难以注意到真正有用的部分。正确的处理方式是将其交给外部系统（如 Hooks、代码规则或工具约束）来处理，而不是让模型反复读取。",
+    "type": "original",
+    "original_type": "conceptual",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/上下文为什么要分层"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q014",
+    "question": "根据 Harness 的关键结论，若要让 Agent 在开发任务中发挥最大效能，团队应如何调整任务属性并设定验收标准？",
+    "ground_truth": "应将任务推进到“目标明确、结果可以自动验证”的右上角区域。验收标准应设定为机器可执行的判断标准，以替代人工审查，从而突破吞吐量天花板。",
+    "type": "original",
+    "original_type": "application",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/Harness 的关键结论"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q015",
+    "question": "在工具设计的第三代演进中，采用“Programmatic Tool Calling（代码编排）”方式后，token 消耗大约能从多少降低到多少？",
+    "ground_truth": "token 消耗可从约 150,000 降到约 2,000。",
+    "type": "original",
+    "original_type": "factual",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/工具设计如何演进"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q016",
+    "question": "LangGraph 的 Checkpointer 机制主要提供哪四种核心能力？",
+    "ground_truth": "跨会话记忆、Human-in-the-Loop（人工介入/暂停确认）、错误恢复、时间旅行（Time Travel）。",
+    "type": "original",
+    "original_type": "factual",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "LangGraph 深入：Checkpointer 与持久化"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q017",
+    "question": "相比原始的 ReAct 框架，Reflexion 框架的核心优势是什么？",
+    "ground_truth": "对中间结果的质量做显式检查，允许 Agent 从失败中学习并在同一任务内自我纠错。",
+    "type": "original",
+    "original_type": "conceptual",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "Reflexion 框架"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q018",
+    "question": "在 LangGraph 中实现 Function Call 时，为什么推荐使用“独立 Tool 节点”而非“共享 Tool 节点”？",
+    "ground_truth": "独立 Tool 节点逻辑清晰且维护简单；而共享 Tool 节点需要额外编写路由逻辑来判断工具归属并正确返回结果，实现复杂度更高，因此一般不推荐。",
+    "type": "original",
+    "original_type": "comparison",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "Function Call（工具调用）/LangGraph 中的 Function Call 实现"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q019",
+    "question": "当 Agent 运行出现“上下文爆炸（Context Overflow）”问题时，文档推荐了哪些具体解法？",
+    "ground_truth": "使用滑动窗口或摘要压缩策略；将中间结果存入长期记忆而非全部保留在上下文中。",
+    "type": "original",
+    "original_type": "application",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "Agent 常见失败模式/3. 上下文爆炸（Context Overflow）"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q020",
+    "question": "根据文档中的正反示例对比，一个“好的工具描述”应当包含哪些关键要素？",
+    "ground_truth": "应明确说明工具的具体用途、输入格式（如字符串）、输出内容（如返回的文档数量和字段），以及清晰的使用边界或限制条件（如仅适用于特定场景，不适用于其他场景）。",
+    "type": "original",
+    "original_type": "application",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "Tool 设计规范/高质量 Tool Description 的要素"
+      },
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "Tool 设计规范/示例对比"
+      }
+    ],
+    "origin": "original_v1"
+  },
+  {
+    "id": "q021",
+    "question": "BPE 分词器是按照什么流程构建词表的？",
+    "ground_truth": "先把词表中的所有词拆成最小的字符单元；统计每两个相邻字符对的出现频率；把频率最高的字符对合并为一个新 token 加入词表；重复统计和合并，直到词表达到预设大小。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "1. BPE 分词器"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q022",
+    "question": "Encoder-Decoder 架构的 Cross-Attention 中，Q、K、V 分别来自哪里？",
+    "ground_truth": "Q 来自 Decoder 的隐层输出，K 和 V 来自 Encoder 的最终输出。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder/Encoder-Decoder 的 Cross-Attention"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q023",
+    "question": "IVF 索引中把 nprobe 调大会带来什么影响？",
+    "ground_truth": "nprobe 越大，搜索的簇越多，召回率越高，但速度越慢；nprobe 等于 nlist 时退化为暴力搜索。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/IVF 原理详解"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q024",
+    "question": "HNSW 的 ef_search 参数控制什么？调整它需要重建索引吗？",
+    "ground_truth": "ef_search 是检索阶段的动态候选集大小，控制检索精度；可以在不重建索引的情况下动态调整。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "存入数据库的 document 不需要加前缀（或加不同前缀）/HNSW 原理详解"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q025",
+    "question": "混合检索用 RRF（Reciprocal Rank Fusion）融合时，公式是什么？k 通常取多少？",
+    "ground_truth": "RRF 不依赖原始分数，而是按各检索结果在各自列表中的排名融合，公式为 score = Σ 1/(k + rank_i)，k 通常为 60。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "检索环节/混合检索（Hybrid Search）"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q026",
+    "question": "LangGraph 的 MemorySaver、SqliteSaver 和 PostgresSaver 分别适合什么场景？",
+    "ground_truth": "MemorySaver 存在进程内存里，适合开发调试和单次会话；SqliteSaver 存在 SQLite 文件里，适合本地持久化和轻量生产；PostgresSaver 存在 PostgreSQL 里，适合生产环境和多实例部署。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "LangGraph 深入：Checkpointer 与持久化/常用 Checkpointer"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q027",
+    "question": "在 LangGraph 的 State 定义里，Annotated[list, operator.add] 有什么作用？",
+    "ground_truth": "它是追加模式：新值追加到列表末尾，不覆盖原有内容，多用于 messages 字段；不加 Annotated 时，后写入的值直接覆盖先写入的值。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "LangGraph 深入：State Reducer 机制/基本用法"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q028",
+    "question": "MCP 中的 MCP Server 对外暴露哪三类内容？",
+    "ground_truth": "工具（Tools）、资源（Resources）和提示模板（Prompts）。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "MCP（Model Context Protocol）"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q029",
+    "question": "Agent 评测中，Pass@k 和 Pass^k 分别适合什么阶段？",
+    "ground_truth": "Pass@k 适合开发阶段，用来回答能力边界；Pass^k 适合上线前，用来保证质量。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/8. Agent 评测"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q030",
+    "question": "Cursor 在 MCP 工具上验证 Dynamic Context Discovery 时，A/B 测试的结果是什么？",
+    "ground_truth": "Cursor 把工具描述同步到文件夹，Agent 默认只看到工具名，需要时再查询具体定义；A/B 测试中，调用 MCP 工具的任务总 token 消耗减少了 46.9%。",
+    "type": "term",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/文件系统为什么适合做上下文接口"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q031",
+    "question": "词向量在送进模型之前，为什么要先放大一个跟模型宽度有关的倍数？",
+    "ground_truth": "Embedding 向量会乘以 √d_model（模型维度的平方根），目的是确保 Embedding 的数值尺度不会被位置编码淹没。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "2. Token Embedding"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q032",
+    "question": "让每一层的原始信息绕过该层、原样并入它的结果，这种设计主要为了解决什么训练难题？",
+    "ground_truth": "这是残差连接，核心目的是缓解深层网络中的梯度消失问题：把子层的输入直接加到输出上（output = x + sublayer(x)），即使某一层学得不好，也能保留原始输入的信息，保证梯度顺利回传。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "7. 残差连接（Residual Connection）"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q033",
+    "question": "提问只有一句话、资料却是大段说明时，先让模型凭空写一份设想的回复，再拿这份回复去查找资料，为什么能找得更准？",
+    "ground_truth": "这是 HyDE。短问题的向量与长文档的向量天然存在语义差距；先让 LLM 生成一段假设性回答，这段回答的向量与数据库中真实答案的向量更接近，所以检索效果更好。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "Query-Doc 语义鸿沟/HyDE 的完整原理与适用场景"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q034",
+    "question": "在把每个文本片段写入库之前，先让模型给它补一两句交代来龙去脉的话，这样做能把找不到资料的情况减少多少？",
+    "ground_truth": "这是 Contextual Retrieval。Anthropic 的测试数据显示，它配合 BM25 可以把检索失败率降低约 49%。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "Contextual Retrieval（上下文检索）/效果"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q035",
+    "question": "用户换一种说法问同一件事时，只按原文逐字比对来复用旧结果的机制为什么会失灵？应该改成什么做法？",
+    "ground_truth": "普通缓存（如 Redis）基于精确字符串匹配，语义相同但表述不同的问题无法命中。Semantic Cache 改为按向量相似度匹配：新问题与缓存中某个问题的相似度高于阈值时，直接返回缓存结果，跳过检索和 LLM 调用。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "并行对多个子问题检索/语义缓存（Semantic Cache）"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q036",
+    "question": "把同一份资料分别按不同粒度切开、各建一套库，怎样比较出哪种粒度最好？",
+    "ground_truth": "给定几个不同量级的块大小（如 128、256、512 token），按每个量级分别切块并存入对应的向量数据库，针对用户提问生成回复，再用「忠诚度测试」和「相关性测试」给不同块大小的回复打分，选出最优量级。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "RAG 分块（Chunking）/切块大小如何选择？"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q037",
+    "question": "先让模型把整件复杂工作排出完整的步骤单，然后照单逐项完成，这种智能体设计的长处和短处各是什么？",
+    "ground_truth": "这是 Plan-and-Execute 架构。优点是对复杂长任务结构更清晰，减少中间跑偏；缺点是初始计划的质量强依赖 LLM 能力，中途出错时重新规划的代价较高。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "Plan-and-Execute 架构"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q038",
+    "question": "几个子智能体并发干完活后，各自把产出存进一个共用字段，如果不做合并设置会出什么问题？",
+    "ground_truth": "后完成的 Agent 会直接覆盖先完成的 Agent 的结果，导致数据丢失。用 operator.add 这类 Reducer，可以把多个 Sub-Agent 的输出安全地合并到同一个列表字段中。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "LangGraph 深入：State Reducer 机制/为什么在 Multi-Agent 中很重要"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q039",
+    "question": "为什么一份很少改动、篇幅很长的开场指令，反而可能比经常改动的短指令更省钱？",
+    "ground_truth": "Prompt Caching 要求输入前缀精确一致才能命中。稳定的大系统提示写入缓存的成本只付一次，后续每次调用读取可以打到约 90% 的折扣；经常改动的提示会破坏前缀匹配，无法命中缓存。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/Prompt Caching 减少重复开销"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q040",
+    "question": "搭建大模型应用时，有哪几种把模型调用串起来、分流或同时跑的基础套路？",
+    "ground_truth": "五种：提示链（Prompt Chaining）、路由（Routing）、并行（Parallelization）、编排器-工作者（Orchestrator-Workers）、评估器-优化器（Evaluator-Optimizer）。",
+    "type": "paraphrase",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/五种常见控制模式"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q041",
+    "question": "Transformer 为什么需要 LayerNorm？",
+    "ground_truth": "如果不做标准化，各层输出的数值范围可能差异很大（部分值极大、部分极小），下一层难以处理，训练过程会非常不稳定。",
+    "type": "heading",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "8. Layer Normalization/为什么需要 LayerNorm？"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q042",
+    "question": "Self-Attention 中 Softmax 起什么作用？",
+    "ground_truth": "把注意力分数（logits）转化为归一化的注意力权重（概率分布），使所有权重之和为 1。",
+    "type": "heading",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "4. Self-Attention 机制/Softmax 的作用"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q043",
+    "question": "Agent 出现幻觉工具调用时，有哪些解法？",
+    "ground_truth": "完善工具描述；对工具调用结果做参数校验；使用 strict 模式的 JSON Schema。",
+    "type": "heading",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "Agent 常见失败模式/1. 幻觉工具调用（Hallucinated Tool Call）"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q044",
+    "question": "Agent 压缩上下文时，保留优先级从高到低是怎样的？",
+    "ground_truth": "1. 架构决策，不得摘要；2. 已修改文件和关键变更；3. 验证状态（pass/fail）；4. 未解决的 TODO 和回滚笔记；5. 工具输出，可删，只保留 pass/fail 结论。",
+    "type": "heading",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/保留优先级"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q045",
+    "question": "Agent 的可观测性与追踪要记录哪三个关键节点？",
+    "ground_truth": "tool_start、tool_end、turn_end。完整 Trace 同步落盘，并分发给日志系统、UI 更新、在线评测等下游。",
+    "type": "heading",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/9. 可观测性与追踪"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q046",
+    "question": "Encoder、Decoder 和 Encoder-Decoder 三种架构的代表模型分别是什么？",
+    "ground_truth": "Encoder 的代表是 BERT；Decoder 的代表是 GPT 系列；Encoder-Decoder 的代表是 T5 和 BART。",
+    "type": "factual",
+    "answerable": true,
+    "source_doc": "Transformer 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Transformer 复习.md",
+        "heading_path": "9. 三种架构：Encoder、Decoder、Encoder-Decoder"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q047",
+    "question": "解析 PDF 时，为什么表格模块需要单独做专项解析？",
+    "ground_truth": "仅靠 OCR 很难完整识别出表格的准确含义，所以要筛选出标签为「表格」的模块，用专门的模型和工具进行深度解析。",
+    "type": "factual",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "文档解析"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q048",
+    "question": "重排序模型有哪三种训练目标？大多数常用的重排序模型采用哪种？",
+    "ground_truth": "Pointwise（单点评分）、Pairwise（对比学习）、Listwise（列表级优化）。大多数常用的 Reranking 模型（如 bge-reranker、ms-marco-MiniLM）采用 Pointwise 或 Pairwise。",
+    "type": "factual",
+    "answerable": true,
+    "source_doc": "RAG复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "RAG复习.md",
+        "heading_path": "重排序（Reranking）/Reranking 模型的训练目标"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q049",
+    "question": "Human-in-the-Loop 的典型使用场景有哪些？",
+    "ground_truth": "执行危险操作前（发送邮件、删除文件、调用付费 API）需要人工确认；Agent 给出中间规划后，人工审查计划再执行；需要人工补充信息才能继续的场景。",
+    "type": "factual",
+    "answerable": true,
+    "source_doc": "Agent 复习.md",
+    "gold_sections": [
+      {
+        "source_doc": "Agent 复习.md",
+        "heading_path": "人工审查 State，确认后恢复执行（传入 None 表示继续）/典型使用场景"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q050",
+    "question": "在 OpenAI 的 Agent 优先开发实践中，AGENTS.md 保留多少行？它起什么作用？",
+    "ground_truth": "约 100 行，只作为索引，细节拆到各 docs 目录按需引用。",
+    "type": "factual",
+    "answerable": true,
+    "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+    "gold_sections": [
+      {
+        "source_doc": "你不知道的Agent-原理架构与工程实践.md",
+        "heading_path": "你不知道的 Agent：原理、架构与工程实践/OpenAI 的 Agent 优先开发实践"
+      }
+    ],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q051",
+    "question": "RAPTOR 方法如何通过递归聚类和摘要构建树状索引来改进 RAG 检索？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q052",
+    "question": "Corrective RAG（CRAG）中，检索评估器判断检索结果质量差时会采取什么动作？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q053",
+    "question": "RoPE（旋转位置编码）是如何把相对位置信息注入注意力计算的？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q054",
+    "question": "FlashAttention 通过什么方式减少注意力计算中的显存读写？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q055",
+    "question": "GQA（Grouped-Query Attention）相比 Multi-Head Attention，如何减少推理时的显存占用？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q056",
+    "question": "MoE（混合专家）模型中的路由器如何为每个 token 选择专家？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q057",
+    "question": "SPLADE 模型是如何生成用于检索的稀疏向量的？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q058",
+    "question": "DiskANN 是如何把向量索引放在 SSD 上，同时保持较低检索延迟的？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q059",
+    "question": "Tree of Thoughts（思维树）框架在推理时如何对多个候选思路进行搜索和回溯？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  },
+  {
+    "id": "q060",
+    "question": "Google 提出的 A2A（Agent2Agent）协议中，Agent Card 用来描述什么？",
+    "ground_truth": "知识库中没有这个问题的答案",
+    "type": "refusal",
+    "answerable": false,
+    "source_doc": "",
+    "gold_sections": [],
+    "origin": "draft_reviewed"
+  }
+]

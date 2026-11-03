@@ -12,6 +12,10 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Max tokens per [query, passage] pair. FlagReranker defaults to 512 and silently
+# truncates longer pairs; the model supports up to 8192.
+RERANKER_MAX_LENGTH = 1024  # §4.3: qa_l0_v1 has pairs up to 555 tokens (18/1800 over 512)
+
 
 @dataclass
 class RerankResult:
@@ -25,9 +29,10 @@ class RerankResult:
 class RerankerService:
     """Singleton wrapper around bge-reranker-v2-m3 cross-encoder."""
 
-    def __init__(self) -> None:
+    def __init__(self, max_length: int = RERANKER_MAX_LENGTH) -> None:
         self._model: FlagReranker | None = None
         self._lock = threading.Lock()
+        self.max_length = max_length
 
     def _load_model(self) -> FlagReranker:
         if self._model is None:
@@ -67,7 +72,7 @@ class RerankerService:
 
         pairs = [[query, p] for p in passages]
         with self._lock:
-            scores = model.compute_score(pairs, normalize=True)
+            scores = model.compute_score(pairs, normalize=True, max_length=self.max_length)
 
         # compute_score returns a single float when there's only one pair
         if isinstance(scores, (float, int)):
