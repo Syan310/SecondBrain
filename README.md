@@ -2,7 +2,7 @@
 
 A study assistant built on your own notes. Upload notes, then ask questions, take quizzes, and get a report on your weak topics.
 
-The repository also contains the evaluation pipeline and reports behind every number below.
+The repository also contains the evaluation pipeline (`backend/evaluation/`) and reports (`docs/`).
 
 ## Features
 
@@ -51,7 +51,7 @@ flowchart LR
 | --- | --- |
 | Frontend | React 19, Vite, TypeScript, Tailwind CSS v4 |
 | Backend | FastAPI, LangGraph, Python 3.11 |
-| LLM | Any OpenAI-compatible API, set by `LLM_MODEL` (default `qwen3.6-plus`). The evaluation runs used DeepSeek-V4.1-Flash. |
+| LLM | Any OpenAI-compatible API |
 | Embedding | BAAI/bge-m3, 1024 dimensions, Chinese and English |
 | Vector store | Milvus 2.6: HNSW dense index + built-in BM25 (jieba analyzer) |
 | Database | SQLite (aiosqlite + SQLAlchemy async, WAL mode) |
@@ -59,69 +59,6 @@ flowchart LR
 | Evaluation | RAGAS, LLM judge (Claude Haiku 5.5 via OpenRouter), paired bootstrap |
 | Tracing | Langfuse (optional) |
 | Deployment | Docker Compose (Milvus, etcd, MinIO, backend) |
-
-## Evaluation results
-
-Setup for all numbers in this section:
-
-- Notes: 4 Markdown files, 86 KB, 187 chunks (called L0). The larger set adds 44 files, 1.35 MB in total (called L1).
-- Questions: a fixed set of 60, `backend/evaluation/datasets/qa_l0_v1.json`. 50 have answers in the notes; 10 do not.
-- Each setup ran 3 times. Comparisons use a paired bootstrap (1,000 resamples). A difference counts only when its 95% CI excludes 0.
-- Answer correctness is graded by Claude Haiku 5.5. Its labels were checked against Claude Opus 5.5 on 50 answers: Spearman 0.945, 50/50 majority labels match.
-
-### Retrieval (L0, top 5, no reranker)
-
-| Method | Recall@5 | MRR |
-| --- | --- | --- |
-| Dense only | 0.98 | 0.93 |
-| BM25 only | 0.94 | 0.91 |
-| Hybrid (RRF) | 0.96 | 0.95 |
-
-Hybrid and dense-only are not significantly different. Hybrid beats BM25-only on MRR by 0.045 (95% CI [+0.010, +0.095]).
-
-### Answering when the notes do not have the answer (L0)
-
-| Mode | Answer correctness |
-| --- | --- |
-| `filter`: drop sentences without citations, refuse if none are left | 0.88 |
-| `fallback`: say the notes do not cover it, then answer from model knowledge | 0.93 |
-
-The difference is significant (95% CI [+0.007, +0.100]). `fallback` is the default.
-
-### RAG compared with putting all notes in the prompt
-
-| Notes | Method | Answer correctness | Input tokens per question |
-| --- | --- | --- | --- |
-| L0, 86 KB | RAG | 0.89 | 932 |
-| L0, 86 KB | All notes in prompt | 1.00 | 20,346 |
-| L0 + L1, 1.35 MB | RAG | 0.86 | 1,207 |
-| L0 + L1, 1.35 MB | All notes in prompt | 0.97 | 351,587 |
-
-- With 86 KB of notes, putting all notes in the prompt answered more questions correctly (95% CI [+0.04, +0.21]).
-- With 1.35 MB of notes, the accuracy difference is not significant (95% CI [-0.01, +0.21]). RAG used 1/291 of the input tokens and cost 1/8 as much per question (1/215 without prompt caching).
-
-### Gap classification speed
-
-Sorting 471 topics takes about 6 ms (P50, local SQLite). This excludes the LLM report.
-
-### Known limits
-
-- 50 answerable questions give wide confidence intervals. Differences under about 0.05 cannot be called.
-- When the notes grow to 1.35 MB, one large file that overlaps with the core notes can fill most of the top 5 results. This raised false refusals from 1/50 to 4–5/50. This is not fixed yet.
-- Recall@5 and MRR only count the source note named in the question set. On L1, a correct chunk from another file counts as a miss, so these two numbers run low there.
-- In `fallback` mode, the model sometimes rewords the "not found" sentence. `is_not_found()` only matches the exact sentence, so it misses these replies.
-- The document parser treats `#` comments inside code blocks as headings.
-
-### Reports
-
-The full reports are in Chinese:
-
-- [Citation modes and heading-aware reranker](docs/eval-report-2026-11-02-citation-reranker.md)
-- [Larger notes and full-context comparison](docs/eval-report-2026-11-02-l1-scale.md)
-- [Fallback answers](docs/eval-report-2026-11-03-fallback.md)
-- [Retrieval ablation and gap classification timing](docs/eval-report-2026-11-03-resume-numbers.md)
-
-The L1 notes are personal, so the L1 raw result files are not in this repository. Paired statistics for every comparison are in `backend/evaluation/results/stats/`.
 
 ## Quick start
 
@@ -136,8 +73,8 @@ The L1 notes are personal, so the L1 raw result files are not in this repository
 ```env
 # App LLM: any OpenAI-compatible endpoint
 LLM_API_KEY=your-key
-LLM_BASE_URL=https://dashscope-us.aliyuncs.com/compatible-mode/v1
-LLM_MODEL=qwen3.6-plus
+LLM_BASE_URL=https://your-openai-compatible-endpoint/v1
+LLM_MODEL=your-model
 
 EMBEDDING_MODEL_PATH=./models/bge-m3
 RERANKER_MODEL_PATH=./models/bge-reranker-v2-m3
